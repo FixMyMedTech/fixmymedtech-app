@@ -1,0 +1,71 @@
+site_name: FixMyMedTech Documentation
+repo_url: https://github.com/FixMyMedTech/fixmymedtech-app
+site_url: https://fixmymedtech.github.io/fixmymedtech-app/
+site_description: Medical equipment management for LMICs.
+site_author: Care Again
+edit_uri: edit/main/docs/
+repo_name: FixMyMedTech/fixmymedtech-app/
+copyright: Maintained by <a href="https://www.opencareagain.org/">Open Care Again</a>.
+
+nav:
+  - Overview: index.md
+  - Set Up: setup.md
+  - Arquitecture: architecture.md
+
+theme:
+  name: material
+  logo: images/favicon.svg
+  favicon: images/favicon.svg
+  feature:
+    tabs: true
+  highlightjs: true
+  features:
+    - content.code.copy
+  hljs_languages:
+    - python
+    - yaml
+    - bash
+    - json
+    - markdown
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/FixMyMedTech/fixmymedtech-app/
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.snippets
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+  - toc:
+      permalink: true
+
+  - pymdownx.arithmatex:
+      generic: true
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true

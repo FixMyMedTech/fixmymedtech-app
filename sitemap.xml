@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://careagain-org.github.io/fixmymedtech/</loc>
+         <loc>https://fixmymedtech.github.io/fixmymedtech-app/</loc>
          <lastmod>2026-04-27</lastmod>
     </url>
     <url>
-         <loc>https://careagain-org.github.io/fixmymedtech/architecture/</loc>
+         <loc>https://fixmymedtech.github.io/fixmymedtech-app/architecture/</loc>
          <lastmod>2026-04-27</lastmod>
     </url>
     <url>
-         <loc>https://careagain-org.github.io/fixmymedtech/setup/</loc>
+         <loc>https://fixmymedtech.github.io/fixmymedtech-app/setup/</loc>
          <lastmod>2026-04-27</lastmod>
     </url>
 </urlset>

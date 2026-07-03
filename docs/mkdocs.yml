@@ -5,7 +5,7 @@ site_description: Medical equipment management for LMICs.
 site_author: Care Again
 edit_uri: edit/main/docs/
 repo_name: FixMyMedTech/fixmymedtech-app/
-copyright: Maintained by <a href="https://www.opencareagain.org/">Open Care Again</a>.
+copyright: Maintained by <a href="https://www.careagain.org/">Care Again</a>.
 
 nav:
   - Overview: index.md

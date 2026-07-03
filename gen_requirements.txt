@@ -1,0 +1,14 @@
+python-fasthtml
+httpx
+python-dotenv
+itsdangerous
+fastapi
+uvicorn[standard]
+supabase
+python-dotenv
+pydantic[email]
+qrcode[pil]
+pillow
+sqlalchemy 
+asyncpg 
+psycopg2-binary

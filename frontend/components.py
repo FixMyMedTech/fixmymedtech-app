@@ -265,3 +265,42 @@ def fmt_date(iso: str) -> str:
         return dt.strftime("%-d %b %Y")
     except Exception:
         return iso[:10]
+    
+
+def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px"):
+    """
+    markers = [
+        {"lat": 0.3476, "lng": 32.5825, "title": "Mulago Hospital"},
+        {"lat": 0.3200, "lng": 32.5700, "title": "Clinic B"},
+    ]
+    """
+    markers = markers or []
+
+    # Build JS marker code
+    marker_js = "\n".join([
+        f"L.marker([{m['lat']}, {m['lng']}]).addTo(map).bindPopup('{m.get('title', '')}');"
+        for m in markers
+    ])
+
+    return Div(
+        # Leaflet CSS
+        Link(rel="stylesheet",
+             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"),
+
+        # Map container
+        Div(id="map", style=f"height:{height}; width:100%; border-radius:10px;"),
+
+        # Leaflet JS + init
+        Script(src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"),
+        Script(f"""
+            var map = L.map('map').setView([{lat}, {lng}], {zoom});
+
+            L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                attribution: '© OpenStreetMap contributors'
+            }}).addTo(map);
+
+            {marker_js}
+        """),
+        style="margin-top:12px;margin-bottom:12px;",
+        cls="card"
+    )

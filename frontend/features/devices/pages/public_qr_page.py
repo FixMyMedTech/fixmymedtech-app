@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # __ API imports __
-import auth.helper as auth_helper
+import features.auth.helper as auth_helper
 import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api

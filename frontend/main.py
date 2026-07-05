@@ -11,12 +11,18 @@ load_dotenv()
 
 from features.dashboard import pages as dashboard
 from features.devices.pages import device_list,device_detail,new_device,public_qr_page
-from auth import pages as auth
+from features.auth.pages import login as auth
 from features.faults.pages import report_page
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
 
-app, route = fast_app(secret_key=SECRET,static="/static/",live=True)
+app, route = fast_app(secret_key=SECRET,
+                      static="/static/",
+                      live=True,
+                      hdrs=(Link(rel="icon", type="image/png", href="/favicon.ico"),),
+    )
+# put favicon.ico in your project root or /static
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key=SECRET)
 
 auth.rt.to_app(app)

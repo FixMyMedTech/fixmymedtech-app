@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # __ API imports __
-import auth.helper as auth_helper
+import features.auth.helper as auth_helper
 import features.devices.api as devices_api
 
 from components import page_shell, status_badge, fmt_date

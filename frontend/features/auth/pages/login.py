@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # __ API imports __
-import auth.api as auth_api
+import features.auth.api as auth_api
+import features.organizations.api as org_api
 import features.dashboard.api as dashboard_api
 
-import auth.helper as auth_helper
+import features.auth.helper as auth_helper
 from components import pub_shell
 rt = APIRouter()
 
@@ -146,7 +147,7 @@ async def get(req):
         return RedirectResponse("/dashboard", status_code=302)
 
     try:
-        orgs = await auth_api.get_organizations()
+        orgs = await org_api.get_organizations()
     except Exception:
         orgs = []
 

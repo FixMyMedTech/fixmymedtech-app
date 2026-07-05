@@ -1,18 +1,27 @@
 # routers/fault_reports.py
 
-from fastapi import APIRouter, HTTPException, Request, Depends
-from pydantic import BaseModel
+from datetime import datetime, timezone
 from typing import Optional
-from routers.deps import get_supabase, get_current_user
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from config.supabase_config import get_db
+from utils.profile import get_current_profile
+from models.models import Device, FaultReport, Profile
 
 router = APIRouter()
 
 
 class FaultReportCreate(BaseModel):
-    device_id: str
+    device_id: UUID
     description: str
     severity: str = "medium"
-    reporter_name: Optional[str] = None  # for anonymous reports
+    reporter_name: Optional[str] = None  # para reportes anónimos
 
 
 class FaultStatusUpdate(BaseModel):
@@ -20,74 +29,79 @@ class FaultStatusUpdate(BaseModel):
     resolution_notes: Optional[str] = None
 
 
-# ── Public: submit a fault report (no auth — via QR page) ────
+# ── Público: enviar reporte de falla (sin auth — vía página QR) ──
 @router.post("/public")
-async def submit_fault_public(body: FaultReportCreate, request: Request):
-    """Anyone who scans the QR can report a fault. No account needed."""
-    sb = get_supabase(request)
+async def submit_fault_public(body: FaultReportCreate, db: AsyncSession = Depends(get_db)):
+    """Cualquiera que escanee el QR puede reportar una falla. No requiere cuenta."""
 
-    # Verify device exists
-    device = sb.table("devices").select("id, name").eq("id", body.device_id).single().execute()
-    if not device.data:
+    result = await db.execute(select(Device).where(Device.id == body.device_id))
+    device = result.scalar_one_or_none()
+    if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    result = sb.table("fault_reports").insert({
-        "device_id": body.device_id,
-        "description": body.description,
-        "severity": body.severity,
-        "reporter_name": body.reporter_name or "Anonymous",
-        "status": "open",
-    }).execute()
+    fault = FaultReport(
+        device_id=body.device_id,
+        description=body.description,
+        severity=body.severity,
+        reporter_name=body.reporter_name or "Anonymous",
+        status="open",
+    )
+    db.add(fault)
 
-    # Update device status if critical
+    # Actualizar status del device si es crítico
     if body.severity in ("high", "critical"):
-        sb.table("devices").update({"status": "fault"}).eq("id", body.device_id).execute()
+        device.status = "fault"
 
-    return {"message": "Fault report submitted. A technician will be notified.", "id": result.data[0]["id"]}
+    await db.commit()
+    await db.refresh(fault)
+
+    return {"message": "Fault report submitted. A technician will be notified.", "id": fault.id}
 
 
-# ── Protected: list all faults for the organization ──────────
+# ── Protegido: listar todas las fallas de la organización ──────
 @router.get("/")
 async def list_faults(
-    request: Request,
     status: Optional[str] = None,
-    user=Depends(get_current_user),
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
 ):
-    sb = get_supabase(request)
-
-    profile = sb.table("profiles").select("organization_id").eq("id", user.id).single().execute()
-    org_id = profile.data["organization_id"]
-
-    # Get device IDs for this org
-    devices = sb.table("devices").select("id").eq("organization_id", org_id).execute()
-    device_ids = [d["id"] for d in devices.data]
-
-    query = sb.table("fault_reports").select(
-        "*, devices(name, location)"
-    ).in_("device_id", device_ids).order("reported_at", desc=True)
+    query = (
+        select(FaultReport)
+        .join(Device, FaultReport.device_id == Device.id)
+        .options(selectinload(FaultReport.device))
+        .where(Device.organization_id == profile.organization_id)
+        .order_by(FaultReport.reported_at.desc())
+    )
 
     if status:
-        query = query.eq("status", status)
+        query = query.where(FaultReport.status == status)
 
-    result = query.execute()
-    return result.data
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
-# ── Protected: update fault status ───────────────────────────
+# ── Protegido: actualizar status de una falla ───────────────────
 @router.patch("/{fault_id}")
-async def update_fault(fault_id: str, body: FaultStatusUpdate, request: Request, user=Depends(get_current_user)):
-    sb = get_supabase(request)
-
-    profile = sb.table("profiles").select("role").eq("id", user.id).single().execute()
-    if profile.data["role"] not in ("admin", "technician"):
+async def update_fault(
+    fault_id: UUID,
+    body: FaultStatusUpdate,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    if profile.role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    payload = {"status": body.status}
-    if body.resolution_notes:
-        payload["resolution_notes"] = body.resolution_notes
-    if body.status == "resolved":
-        from datetime import datetime, timezone
-        payload["resolved_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.execute(select(FaultReport).where(FaultReport.id == fault_id))
+    fault = result.scalar_one_or_none()
+    if not fault:
+        raise HTTPException(status_code=404, detail="Fault report not found")
 
-    result = sb.table("fault_reports").update(payload).eq("id", fault_id).execute()
-    return result.data[0]
+    fault.status = body.status
+    if body.resolution_notes:
+        fault.resolution_notes = body.resolution_notes
+    if body.status == "resolved":
+        fault.resolved_at = datetime.now(timezone.utc)
+
+    await db.commit()
+    await db.refresh(fault)
+    return fault

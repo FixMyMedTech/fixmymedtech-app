@@ -1,20 +1,28 @@
 # routers/devices.py
 
-from fastapi import APIRouter, HTTPException, Request, Depends
-from pydantic import BaseModel
-from typing import Optional
 from datetime import date
-from routers.deps import get_supabase, get_current_user
+from typing import Optional
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from config.supabase_config import get_db
+from utils.profile import get_current_profile
+from models.models import Device, DeviceCategory, Document, MaintenanceLog, FaultReport, Profile
 
 router = APIRouter()
 
-
+# TODO: Add Pydantic models for request/response schemas
 class DeviceCreate(BaseModel):
     name: str
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
-    category_id: Optional[str] = None
+    category_id: Optional[UUID] = None
     manufacture_year: Optional[int] = None
     acquisition_date: Optional[date] = None
     acquisition_type: Optional[str] = "purchased"
@@ -31,131 +39,172 @@ class DeviceUpdate(BaseModel):
     next_maintenance: Optional[date] = None
 
 
-# ── Public endpoint: scanned via QR (no auth needed) ──────────
+# ── Endpoint público: escaneado vía QR (sin auth) ──────────────
 @router.get("/public/{device_id}")
-async def get_device_public(device_id: str, request: Request):
+async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db)):
     """
-    Called when someone scans the QR code on a device.
-    Returns device info + documents + recent fault reports.
-    No authentication required.
+    Se llama cuando alguien escanea el QR del dispositivo.
+    Devuelve info del device + documentos + fallas recientes.
+    No requiere autenticación.
     """
-    sb = get_supabase(request)
-
-    device = sb.table("devices").select(
-        "*, device_categories(name, icon), organizations(name, country)"
-    ).eq("id", device_id).single().execute()
-
-    if not device.data:
+    result = await db.execute(
+        select(Device)
+        .options(
+            selectinload(Device.category),
+            selectinload(Device.organization),
+        )
+        .where(Device.id == device_id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    docs = sb.table("documents").select("*").eq("device_id", device_id).execute()
+    docs_result = await db.execute(
+        select(Document).where(Document.device_id == device_id)
+    )
+    docs = docs_result.scalars().all()
 
-    recent_faults = sb.table("fault_reports").select(
-        "id, reported_at, description, severity, status"
-    ).eq("device_id", device_id).order("reported_at", desc=True).limit(5).execute()
+    faults_result = await db.execute(
+        select(FaultReport)
+        .where(FaultReport.device_id == device_id)
+        .order_by(FaultReport.reported_at.desc())
+        .limit(5)
+    )
+    recent_faults = faults_result.scalars().all()
 
     return {
-        "device": device.data,
-        "documents": docs.data,
-        "recent_faults": recent_faults.data,
+        "device": device,
+        "documents": docs,
+        "recent_faults": recent_faults,
     }
 
 
-# ── Protected endpoints (require auth) ───────────────────────
+# ── Endpoints protegidos (requieren auth) ──────────────────────
 @router.get("/")
 async def list_devices(
-    request: Request,
     status: Optional[str] = None,
-    user=Depends(get_current_user),
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
 ):
-    sb = get_supabase(request)
-
-    # Get user's organization
-    profile = sb.table("profiles").select("organization_id").eq("id", user.id).single().execute()
-    org_id = profile.data["organization_id"]
-
-    query = sb.table("devices").select(
-        "*, device_categories(name, icon)"
-    ).eq("organization_id", org_id).order("name")
+    query = (
+        select(Device)
+        .options(selectinload(Device.category))
+        .where(Device.organization_id == profile.organization_id)
+        .order_by(Device.name)
+    )
 
     if status:
-        query = query.eq("status", status)
+        query = query.where(Device.status == status)
 
-    result = query.execute()
-    return result.data
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 @router.get("/{device_id}")
-async def get_device(device_id: str, request: Request, user=Depends(get_current_user)):
-    sb = get_supabase(request)
-
-    device = sb.table("devices").select(
-        "*, device_categories(name, icon), organizations(name)"
-    ).eq("id", device_id).single().execute()
-
-    if not device.data:
+async def get_device(
+    device_id: UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    device_result = await db.execute(
+        select(Device)
+        .options(
+            selectinload(Device.category),
+            selectinload(Device.organization),
+        )
+        .where(Device.id == device_id)
+    )
+    device = device_result.scalar_one_or_none()
+    if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    logs = sb.table("maintenance_logs").select(
-        "*, profiles(full_name)"
-    ).eq("device_id", device_id).order("performed_at", desc=True).limit(10).execute()
+    logs_result = await db.execute(
+        select(MaintenanceLog)
+        .options(selectinload(MaintenanceLog.performed_by_profile))
+        .where(MaintenanceLog.device_id == device_id)
+        .order_by(MaintenanceLog.performed_at.desc())
+        .limit(10)
+    )
+    logs = logs_result.scalars().all()
 
-    faults = sb.table("fault_reports").select("*").eq(
-        "device_id", device_id
-    ).order("reported_at", desc=True).limit(10).execute()
+    faults_result = await db.execute(
+        select(FaultReport)
+        .where(FaultReport.device_id == device_id)
+        .order_by(FaultReport.reported_at.desc())
+        .limit(10)
+    )
+    faults = faults_result.scalars().all()
 
-    docs = sb.table("documents").select("*").eq("device_id", device_id).execute()
+    docs_result = await db.execute(
+        select(Document).where(Document.device_id == device_id)
+    )
+    docs = docs_result.scalars().all()
 
     return {
-        "device": device.data,
-        "maintenance_logs": logs.data,
-        "fault_reports": faults.data,
-        "documents": docs.data,
+        "device": device,
+        "maintenance_logs": logs,
+        "fault_reports": faults,
+        "documents": docs,
     }
 
-
+# TODO: Add endpoints for creating, updating, and deleting devices, with proper role-based access control (admin/technician).
+# TODO: Handle category_id validation when creating/updating devices (ensure it belongs to the same organization).
 @router.post("/")
-async def create_device(body: DeviceCreate, request: Request, user=Depends(get_current_user)):
-    sb = get_supabase(request)
-
-    profile = sb.table("profiles").select("organization_id, role").eq("id", user.id).single().execute()
-    if profile.data["role"] not in ("admin", "technician"):
+async def create_device(
+    body: DeviceCreate,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    if profile.role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = body.model_dump(exclude_none=True)
-    payload["organization_id"] = profile.data["organization_id"]
-    if "acquisition_date" in payload:
-        payload["acquisition_date"] = str(payload["acquisition_date"])
-    if "next_maintenance" in payload:
-        payload["next_maintenance"] = str(payload["next_maintenance"])
+    device = Device(**payload, organization_id=profile.organization_id)
 
-    result = sb.table("devices").insert(payload).execute()
-    return result.data[0]
+    db.add(device)
+    await db.commit()
+    await db.refresh(device)
+    return device
 
 
 @router.patch("/{device_id}")
-async def update_device(device_id: str, body: DeviceUpdate, request: Request, user=Depends(get_current_user)):
-    sb = get_supabase(request)
-
-    profile = sb.table("profiles").select("role").eq("id", user.id).single().execute()
-    if profile.data["role"] not in ("admin", "technician"):
+async def update_device(
+    device_id: UUID,
+    body: DeviceUpdate,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    if profile.role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    payload = body.model_dump(exclude_none=True)
-    if "next_maintenance" in payload:
-        payload["next_maintenance"] = str(payload["next_maintenance"])
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
 
-    result = sb.table("devices").update(payload).eq("id", device_id).execute()
-    return result.data[0]
+    payload = body.model_dump(exclude_none=True)
+    for key, value in payload.items():
+        setattr(device, key, value)
+
+    await db.commit()
+    await db.refresh(device)
+    return device
 
 
 @router.delete("/{device_id}")
-async def delete_device(device_id: str, request: Request, user=Depends(get_current_user)):
-    sb = get_supabase(request)
-
-    profile = sb.table("profiles").select("role").eq("id", user.id).single().execute()
-    if profile.data["role"] != "admin":
+async def delete_device(
+    device_id: UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    if profile.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can delete devices")
 
-    sb.table("devices").delete().eq("id", device_id).execute()
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    await db.delete(device)
+    await db.commit()
     return {"message": "Device deleted"}

@@ -1,10 +1,11 @@
 # routers/auth.py
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from models.models import Profile
 from routers.deps import get_supabase
-from config.supabase_config import supa_client as sb
+from config.supabase_config import AsyncSession,get_db, supa_client as sb
 import uuid
 router = APIRouter()
 
@@ -26,17 +27,11 @@ class SignupRequest(BaseModel):
     role: str = "clinical_staff"
 
 
-@router.get("/organizations")
-async def list_organizations(request: Request):
-    """Public endpoint — needed for signup form dropdown."""
-    sb = get_supabase(request)
-    from config.supabase_config import supa_client as sb
-    result = sb.table("organizations").select("*").order("name").execute()
-    return result.data
 
 
 @router.post("/login")
-async def login(body: LoginRequest, request: Request):
+async def login(body: LoginRequest, request: Request,
+                db: AsyncSession = Depends(get_db)):
     sb = get_supabase(request)
     try:
         res = sb.auth.sign_in_with_password({"email": body.email, "password": body.password})
@@ -53,8 +48,9 @@ async def login(body: LoginRequest, request: Request):
 
 
 @router.post("/signup")
-async def signup(body: SignupRequest, request: Request):
-    print("entra")
+async def signup(body: SignupRequest, request: Request, 
+                 db: AsyncSession = Depends(get_db)):
+
     print(body)
     print(request)
     sb = get_supabase(request)
@@ -66,6 +62,7 @@ async def signup(body: SignupRequest, request: Request):
         })
         user_id = res.user.id
 
+        
         # Create profile
         profile = {
             "id": user_id,
@@ -73,10 +70,24 @@ async def signup(body: SignupRequest, request: Request):
             "organization_id": body.organization_id,
             "role": body.role,
         }
- 
-        sb.table("profiles").insert(profile).execute()
+
+        # Crear el profile en nuestra DB vía SQLAlchemy
+        profile = Profile(
+            id=user_id,
+            full_name=body.full_name,
+            organization_id=body.organization_id,
+            role=body.role,
+        )
+        db.add(profile)
+
+        try:
+            await db.commit()
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(status_code=400, detail=f"Error creating profile: {str(e)}")
 
         return {"message": "Account created. Check your email to confirm."}
+ 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

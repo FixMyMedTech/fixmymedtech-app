@@ -11,15 +11,32 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.sql import func
 import uuid
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 # ── Schema setup ─────────────────────────────────────────────
-SCHEMA = os.getenv("SUPABASE_SCHEMA")
+SCHEMA = os.getenv("SUPABASE_DB_SCHEMA")
 metadata = MetaData(schema=SCHEMA)
 
 
 class Base(DeclarativeBase):
     metadata = metadata
+
+# ══════════════════════════════════════════════════════════════
+# AUTH USERS (from Supabase auth.users table) - only add columns I actually need
+# ══════════════════════════════════════════════════════════════
+
+
+class AuthUser(Base):
+    __tablename__ = "users"
+    __table_args__ = {
+        "schema": "auth",
+        "extend_existing": True,  # don't try to redefine if already reflected elsewhere
+    }
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    email = Column(String)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -68,7 +85,7 @@ class Profile(Base):
         {"schema": SCHEMA},
     )
 
-    id              = Column(UUID(as_uuid=True), primary_key=True)  # References auth.users
+    id              = Column(UUID(as_uuid=True), ForeignKey(f"auth.users.id", ondelete="CASCADE"), primary_key=True)  # References auth.users
     organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"))
     full_name       = Column(Text)
     role            = Column(Text, nullable=False, default="clinical_staff")
@@ -78,6 +95,7 @@ class Profile(Base):
     organization    = relationship("Organization", back_populates="profiles", foreign_keys=[organization_id])
     maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile")
     fault_reports   = relationship("FaultReport", back_populates="reported_by_profile")
+    auth_user = relationship("AuthUser", backref="profile", lazy="selectin")
 
     def __repr__(self):
         return f"<Profile {self.full_name} ({self.role})>"

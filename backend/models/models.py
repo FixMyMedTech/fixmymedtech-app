@@ -86,7 +86,7 @@ class Profile(Base):
     )
 
     id              = Column(UUID(as_uuid=True), ForeignKey(f"auth.users.id", ondelete="CASCADE"), primary_key=True)  # References auth.users
-    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"))
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"),nullable=False)
     full_name       = Column(Text)
     role            = Column(Text, nullable=False, default="clinical_staff")
     created_at      = Column(DateTime(timezone=True), server_default=func.now())

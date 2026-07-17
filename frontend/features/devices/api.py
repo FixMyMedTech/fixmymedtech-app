@@ -12,8 +12,8 @@ async def get_device(token: str, device_id: str):
 async def get_device_public(device_id: str):
     return await _get(f"/api/devices/public/{device_id}")
 
-async def get_categories(token: str):
-    return await _get("/api/devices/categories", token)
+async def get_categories():
+    return await _get("/api/devices/categories")
 
 async def create_device(token: str, data: dict):
     return await _post("/api/devices", data, token)

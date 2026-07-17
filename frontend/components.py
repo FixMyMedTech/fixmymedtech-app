@@ -44,6 +44,30 @@ CSS = """
   --font-body:   'DM Sans', system-ui, sans-serif;
   --r-md: 10px; --r-lg: 16px;
 }
+:root {
+  --sidebar-width: 240px;
+}
+
+/* Base: escritorio */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+}
+
+/* Tablet/móvil: sidebar colapsa */
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--font-body); background: var(--c-bg); color: var(--c-text); -webkit-font-smoothing: antialiased; }
@@ -176,6 +200,7 @@ tr:hover td { background:var(--c-bg); }
   .auth-card { padding:32px 20px; }
   .form-row { grid-template-columns:1fr; }
 }
+
 """
 
 
@@ -303,4 +328,72 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px"):
         """),
         style="margin-top:12px;margin-bottom:12px;",
         cls="card"
+    )
+
+def qr_scanner_component(target_url="/devices/scan-result"):
+    return Div(
+        Button(
+            "📷 Scan QR code",
+            id="btn-open-scanner",
+            cls="btn btn-primary",
+            onclick="openScanner()"
+        ),
+        # Scanner container, hidden until opened
+        Div(
+            Div(id="qr-reader", style="width:100%;max-width:400px;margin:16px auto;"),
+            Button("Cancel", id="btn-close-scanner", cls="btn btn-secondary",
+                   onclick="closeScanner()"),
+            id="scanner-wrapper",
+            style="display:none;text-align:center;"
+        ),
+        # Fallback manual entry
+        Div(
+            Label("Or enter code manually:", cls="label"),
+            Input(id="manual-code", cls="input", placeholder="e.g. MT-00123"),
+            Button("Submit", cls="btn btn-secondary", onclick="submitManualCode()"),
+            style="margin-top:12px;"
+        ),
+        Script(f"""
+        let html5QrCode = null;
+
+        function openScanner() {{
+            document.getElementById('scanner-wrapper').style.display = 'block';
+            document.getElementById('btn-open-scanner').style.display = 'none';
+
+            html5QrCode = new Html5Qrcode("qr-reader");
+            const config = {{ fps: 10, qrbox: {{ width: 250, height: 250 }} }};
+
+            html5QrCode.start(
+                {{ facingMode: "environment" }},  // rear camera
+                config,
+                (decodedText) => {{
+                    // Success — stop scanner and navigate
+                    html5QrCode.stop().then(() => {{
+                        window.location.href = "{target_url}?code=" + encodeURIComponent(decodedText);
+                    }});
+                }},
+                (errorMessage) => {{
+                    // Ignore per-frame decode errors (fires constantly while scanning)
+                }}
+            ).catch((err) => {{
+                alert("Could not access camera: " + err);
+                closeScanner();
+            }});
+        }}
+
+        function closeScanner() {{
+            if (html5QrCode) {{
+                html5QrCode.stop().catch(() => {{}});
+            }}
+            document.getElementById('scanner-wrapper').style.display = 'none';
+            document.getElementById('btn-open-scanner').style.display = 'inline-block';
+        }}
+
+        function submitManualCode() {{
+            const code = document.getElementById('manual-code').value.trim();
+            if (code) {{
+                window.location.href = "{target_url}?code=" + encodeURIComponent(code);
+            }}
+        }}
+        """)
     )

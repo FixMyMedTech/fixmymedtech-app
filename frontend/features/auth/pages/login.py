@@ -193,11 +193,6 @@ async def get(req):
                 cls="form-row"
             ),
             Div(
-                Label("Organisation", cls="label", for_="org"),
-                Select(*org_options, id="org", name="organization_id", cls="input"),
-                cls="form-group"
-            ),
-            Div(
                 Label("Role", cls="label"),
                 Div(
                     Label(Input(type="radio", name="role", value="clinical_staff", checked=True),
@@ -284,6 +279,98 @@ async def post(req, full_name: str, email: str, password: str,
         except Exception as e:
             errors.append(str(e))
 
-    error_html = Div(*[Div(e, cls="alert alert-error") for e in errors])
-    return RedirectResponse(f"/signup?error={'|'.join(errors)}", status_code=302)
+    if errors:
+        error_msg = Div(*[Div(e, cls="alert alert-error") for e in errors])
+
+        signup_form = Div(
+            Div(
+                Div(
+                    Span(
+                        Img(src=os.getenv("LOGO_URL"),
+                        style="height:56px; width:auto; display:block; margin-bottom:10px;"),
+                        cls="brand-icon"),
+                    H1("Create account"),
+                    P("Join FixMyMedTech to manage your hospital's equipment"),
+                    cls="auth-brand"
+                ),
+                error_msg,
+                Div(
+                    Label("Full name", cls="label", for_="full_name"),
+                    Input(id="full_name", name="full_name", type="text",
+                        placeholder="Dr. Jane Smith", cls="input"),
+                    cls="form-group"
+                ),
+                Div(
+                    Label("Email", cls="label", for_="email"),
+                    Input(id="email", name="email", type="email",
+                        placeholder="you@hospital.org", cls="input"),
+                    cls="form-group"
+                ),
+                Div(
+                    Div(
+                        Label("Password", cls="label", for_="password"),
+                        Input(id="password", name="password", type="password",
+                            placeholder="Min. 8 characters", cls="input"),
+                        cls="form-group"
+                    ),
+                    Div(
+                        Label("Confirm password", cls="label", for_="password2"),
+                        Input(id="password2", name="password2", type="password",
+                            placeholder="Repeat password", cls="input"),
+                        cls="form-group"
+                    ),
+                    cls="form-row"
+                ),
+                Div(
+                    Label("Role", cls="label"),
+                    Div(
+                        Label(Input(type="radio", name="role", value="clinical_staff", checked=True),
+                            " Clinical staff (nurse, doctor)"),
+                        Label(Input(type="radio", name="role", value="technician"),
+                            " Biomedical technician"),
+                        Label(Input(type="radio", name="role", value="admin"),
+                            " Hospital administrator"),
+                        style="display:flex;flex-direction:column;gap:6px;font-size:0.875rem;"
+                    ),
+                    cls="form-group"
+                ),
+                Button("Create account", type="submit", cls="btn btn-primary",
+                    style="width:100%;justify-content:center;margin-top:8px;"),
+                P("Already have an account? ", A("Sign in", href="/login"),
+                cls="auth-link", style="margin-top:12px;"),
+                cls="auth-card"
+            ),
+            Div(
+                Div(
+                    Div(
+                        Span("1", cls="step-num"), 
+                        Div(P("Create your account", style="color:#fff;font-weight:500;margin:0;"),
+                            P("Register with your hospital email",
+                            style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
+                        style="display:flex;gap:14px;align-items:flex-start;margin-bottom:24px;"
+                    ),
+                    Div(
+                        Span("2", cls="step-num"),
+                        Div(P("Confirm your email", style="color:#fff;font-weight:500;margin:0;"),
+                            P("Click the link we send you",
+                            style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
+                        style="display:flex;gap:14px;align-items:flex-start;margin-bottom:24px;"
+                    ),
+                    Div(
+                        Span("3", cls="step-num"),
+                        Div(P("Start tracking", style="color:#fff;font-weight:500;margin:0;"),
+                            P("Manage your equipment fleet",
+                            style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
+                        style="display:flex;gap:14px;align-items:flex-start;"
+                    ),
+                ),
+                cls="auth-bg"
+            ),
+            cls="auth-wrap"
+        )
+
+        return pub_shell(
+            Form(signup_form, method="post", action="/signup"),
+            title="Sign up — FixMyMedTech"
+        )
 

@@ -113,15 +113,16 @@ async def get(req):
     content = Div(
         Div(
             Div(H1("Dashboard"), P("Overview of your equipment fleet", style="color:var(--c-text-3);")),
-            A("+ Add device", href="/devices/new", cls="btn btn-primary"),
+            A("+ Add device", href="/new_device", cls="btn btn-primary"),
             cls="page-header"
         ),
         stat_cards,
         two_col,
-        map_component(lat=0.3476, lng=32.5825, markers=[
-            {"lat": 0.3476, "lng": 32.5825, "title": "Mulago Hospital"},
-            {"lat": 0.3200, "lng": 32.5700, "title": "Clinic B"},
-        ]),
+        map_component(lat=0.3476, lng=32.5825,),
+        #   markers=[
+        #     {"lat": 0.3476, "lng": 32.5825, "title": "Mulago Hospital"},
+        #     {"lat": 0.3200, "lng": 32.5700, "title": "Clinic B"},
+        # ]),
     )
 
     return page_shell(content, current="/dashboard", title="Dashboard — FixMyMedTech")

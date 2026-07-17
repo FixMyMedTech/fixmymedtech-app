@@ -18,6 +18,7 @@ router = APIRouter()
 
 # TODO: Add Pydantic models for request/response schemas
 class DeviceCreate(BaseModel):
+    id: Optional[UUID] = None
     name: str
     manufacturer: Optional[str] = None
     model: Optional[str] = None
@@ -99,6 +100,16 @@ async def list_devices(
     result = await db.execute(query)
     return result.scalars().all()
 
+@router.get("/categories")
+async def get_categories(
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(DeviceCategory)
+        .order_by(DeviceCategory.name)
+    )
+    return result.scalars().all()
+
 
 @router.get("/{device_id}")
 async def get_device(
@@ -159,8 +170,8 @@ async def create_device(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = body.model_dump(exclude_none=True)
-    device = Device(**payload, organization_id=profile.organization_id)
-
+    device = Device(**payload, organization_id=profile.organization_id,organization_maintenance_id=profile.organization_id)
+    print(device) 
     db.add(device)
     await db.commit()
     await db.refresh(device)

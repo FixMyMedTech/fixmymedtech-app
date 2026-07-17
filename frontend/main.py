@@ -19,8 +19,12 @@ SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
 app, route = fast_app(secret_key=SECRET,
                       static="/static/",
                       live=True,
-                      hdrs=(Link(rel="icon", type="image/png", href="/favicon.ico"),),
+                      hdrs=(
+                        Script(src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"),
+                        Link(rel="icon", href="/favicon.ico"),
+                    )
     )
+                    
 # put favicon.ico in your project root or /static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key=SECRET)

@@ -33,6 +33,8 @@ async def get(req, device_id: str):
                 Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
                 H2("Device not found"),
                 P("This QR code doesn't match any registered device."),
+                A("Register new device", href=f"/device/{device_id}/new", cls="btn btn-primary",
+                style="margin-top:20px;"),
                 style="text-align:center;padding:60px 24px;"
             )
         )

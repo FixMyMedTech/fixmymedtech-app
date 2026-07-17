@@ -17,7 +17,7 @@ rt = APIRouter()
 # DEVICE DETAIL
 # ══════════════════════════════════════════════════════════════
 
-@rt("/devices/{device_id}")
+@rt("/device/{device_id}")
 async def get(req, device_id: str):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
@@ -28,9 +28,9 @@ async def get(req, device_id: str):
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
             return RedirectResponse("/login?expired=1", status_code=302)
-        return RedirectResponse("/devices", status_code=302)
+        return RedirectResponse("/device/{device_id}", status_code=302)
     except Exception:
-        return RedirectResponse("/devices", status_code=302)
+        return RedirectResponse(f"/device/{device_id}", status_code=302)
 
     d = data.get("device", {})
     cat = d.get("device_categories") or {}

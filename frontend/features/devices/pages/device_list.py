@@ -28,8 +28,17 @@ async def get(req, status: str = ""):
         devices = await devices_api.get_devices(token, status or None)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
-            clear_session(req)
+            auth_helper.clear_session(req)
             return RedirectResponse("/login?expired=1", status_code=302)
+        if e.response.status_code == 403:
+            return page_shell(
+                Div(
+                    Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
+                    H2("Access denied"),
+                    P("You need to be part of an organization to view devices. Please contact your administrator."),
+                    style="text-align:center;padding:60px 24px;"
+                )
+            )
         devices = []
     except Exception:
         devices = []
@@ -62,7 +71,7 @@ async def get(req, status: str = ""):
                 Span(fmt_date(nm), cls="overdue" if overdue else ""),
                 Span("overdue", cls="overdue-tag") if overdue else ""
             ),
-            Td(A("View", href=f"/devices/{d['id']}", cls="btn btn-secondary btn-sm")),
+            Td(A("View", href=f"/device/{d['id']}", cls="btn btn-secondary btn-sm")),
         ))
 
     table = Div(
@@ -81,7 +90,7 @@ async def get(req, status: str = ""):
         Div(
             Div(H1("Devices"), P(f"{len(devices)} device{'s' if len(devices)!=1 else ''} registered",
                                 style="color:var(--c-text-3);")),
-            A("+ Add device", href="/devices/new", cls="btn btn-primary"),
+            A("+ Add device", href="/new_device", cls="btn btn-primary"),
             cls="page-header"
         ),
         Div(*pills, cls="toolbar"),

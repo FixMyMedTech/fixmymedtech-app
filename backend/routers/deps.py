@@ -1,9 +1,7 @@
 # deps.py — shared dependencies
 
 from fastapi import HTTPException, Header, Depends
-from sqlalchemy import select
 from supabase import Client
-from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 # from jwt import PyJWKClient
 # import jwt
@@ -55,11 +53,5 @@ async def get_current_user(authorization: str = Header(...),
             raise HTTPException(status_code=403, detail="Usuario sin organización asignada")
 
         return profile
-        
-
-
-        if not user or not user.user:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        return user.user
     except Exception:
         raise HTTPException(status_code=401, detail="Could not validate token")

@@ -2,6 +2,9 @@
 # Install: pip install sqlalchemy psycopg2-binary
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from sqlalchemy import (
     Column, String, Text, Integer, Numeric, Date, DateTime,
@@ -11,12 +14,9 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.sql import func
 import uuid
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.ext.hybrid import hybrid_property
 
 
-# ── Schema setup ─────────────────────────────────────────────
-SCHEMA = os.getenv("SUPABASE_DB_SCHEMA")
+SCHEMA = os.getenv("SUPABASE_DB_SCHEMA", "fixmymedtech")
 metadata = MetaData(schema=SCHEMA)
 
 

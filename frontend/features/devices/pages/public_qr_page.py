@@ -1,5 +1,3 @@
-from ast import Div
-
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
@@ -42,7 +40,7 @@ async def get(req, device_id: str):
     d = data.get("device", {})
     docs = data.get("documents", [])
     faults = data.get("recent_faults", [])
-    cat = d.get("device_categories") or {}
+    cat = d.get("category") or {}
 
     nm = d.get("next_maintenance","")
     import datetime

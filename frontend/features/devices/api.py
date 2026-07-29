@@ -16,7 +16,7 @@ async def get_categories():
     return await _get("/api/devices/categories")
 
 async def create_device(token: str, data: dict):
-    return await _post("/api/devices", data, token)
+    return await _post("/api/devices/", data, token)
 
 async def update_device(token: str, device_id: str, data: dict):
     return await _patch(f"/api/devices/{device_id}", data, token)

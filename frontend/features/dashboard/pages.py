@@ -63,7 +63,7 @@ async def get(req):
     # Open faults
     fault_rows = []
     for f in stats.get("open_faults", []):
-        device = f.get("devices") or {}
+        device = f.get("device") or {}
         fault_rows.append(
             Div(
                 Div(
@@ -82,7 +82,7 @@ async def get(req):
     # Recent maintenance
     maint_rows = []
     for m in stats.get("recent_maintenance", []):
-        device = m.get("devices") or {}
+        device = m.get("device") or {}
         color = "var(--c-green)" if m.get("type") == "preventive" else "var(--c-amber)"
         maint_rows.append(
             Div(

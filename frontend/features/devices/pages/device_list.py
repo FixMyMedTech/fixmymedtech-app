@@ -57,7 +57,7 @@ async def get(req, status: str = ""):
 
     rows = []
     for d in devices:
-        cat = d.get("device_categories") or {}
+        cat = d.get("category") or {}
         nm = d.get("next_maintenance", "")
         overdue = nm and nm < __import__("datetime").datetime.now().isoformat()
         rows.append(Tr(

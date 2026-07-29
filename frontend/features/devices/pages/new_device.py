@@ -50,17 +50,26 @@ async def get(req):
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
             return RedirectResponse("/login?expired=1", status_code=302)
-        org = {}
-    except Exception:
-        org = {}
-    
         return page_shell(
                 Div(
                     Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
                     H2("Access denied"),
                     P("You need to be part of an organization to register a device. Please contact your administrator."),
                     style="text-align:center;padding:60px 24px;"
-                )
+                ),
+                current="/new_device",
+                title="New Device — FixMyMedTech"
+            )
+    except Exception:
+        return page_shell(
+                Div(
+                    Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
+                    H2("Access denied"),
+                    P("You need to be part of an organization to register a device. Please contact your administrator."),
+                    style="text-align:center;padding:60px 24px;"
+                ),
+                current="/new_device",
+                title="New Device — FixMyMedTech"
             )
 
 @rt("/scan-result")
@@ -70,11 +79,30 @@ async def get(req, code: str = ""):
 
     parsed = urlparse(code)
     parts = [p for p in parsed.path.split("/") if p]
-    if parts:
-        device_id = parts[-1]
+    device_id = parts[-1] if parts else code
 
-    # code here is your device_id or QR payload
-    # look up the device and redirect to its detail page
+    try:
+        existing = await devices_api.get_device_public(device_id)
+        if existing:
+            content = Div(
+                Div("✅", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
+                H2("Device already registered"),
+                P("This device has already been registered in the system.", style="margin-top:8px;"),
+                Div(
+                    A("View device page →", href=f"/d/{device_id}", cls="btn btn-primary"),
+                    A("← Scan another", href="/new_device", cls="btn btn-secondary"),
+                    style="display:flex;gap:10px;justify-content:center;margin-top:20px;"
+                ),
+                style="text-align:center;padding:60px 40px;"
+            )
+            return page_shell(content, current="/new_device", title="Already registered — FixMyMedTech")
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in (404, 422):
+            return RedirectResponse(f"/device/{device_id}/new")
+        if e.response.status_code == 401:
+            auth_helper.clear_session(req)
+            return RedirectResponse("/login?expired=1", status_code=302)
+
     return RedirectResponse(f"/device/{device_id}/new")
 
 
@@ -82,8 +110,6 @@ async def get(req, code: str = ""):
 async def get(req,device_id: str):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
-
-    categories = await devices_api.get_categories()
 
     try:
         categories = await devices_api.get_categories()
@@ -285,11 +311,12 @@ async def post(req, device_id: str,name: str, manufacturer: str = "", model: str
     if location:          payload["location"]         = location
     if acquisition_type:  payload["acquisition_type"] = acquisition_type
     if acquisition_date:  payload["acquisition_date"] = acquisition_date
-    if manufacture_year:  payload["manufacture_year"] = int(manufacture_year)
     if next_maintenance:  payload["next_maintenance"] = next_maintenance
     if notes:             payload["notes"]            = notes
 
     try:
+        if manufacture_year:
+            payload["manufacture_year"] = int(manufacture_year)
         device = await devices_api.create_device(token, payload)
         return RedirectResponse(f"/device/{device_id}")
     except Exception as e:

@@ -28,13 +28,13 @@ async def get(req, device_id: str):
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
             return RedirectResponse("/login?expired=1", status_code=302)
-        return RedirectResponse("/device/{device_id}", status_code=302)
+        return RedirectResponse(f"/device/{device_id}", status_code=302)
     except Exception:
         return RedirectResponse(f"/device/{device_id}", status_code=302)
 
     d = data.get("device", {})
-    cat = d.get("device_categories") or {}
-    org = d.get("organizations") or {}
+    cat = d.get("category") or {}
+    org = d.get("organization") or {}
     logs = data.get("maintenance_logs", [])
     faults = data.get("fault_reports", [])
     docs = data.get("documents", [])
@@ -47,7 +47,7 @@ async def get(req, device_id: str):
             Td(fmt_date(l.get("performed_at", "")), style="font-size:0.875rem;"),
             Td(Span(l.get("type",""), cls="badge badge-blue")),
             Td(l.get("description","—"), style="font-size:0.875rem;"),
-            Td((l.get("profiles") or {}).get("full_name","—"), style="font-size:0.875rem;"),
+            Td((l.get("performed_by_profile") or {}).get("full_name","—"), style="font-size:0.875rem;"),
             Td(f"${l['cost_usd']}" if l.get("cost_usd") else "—", style="font-size:0.875rem;"),
         ) for l in logs
     ]

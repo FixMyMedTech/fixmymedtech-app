@@ -17,6 +17,8 @@ import features.organizations.api as organizations_api
 
 from components import *
 
+from i18n import t as make_t
+
 from components import page_shell, status_badge, fmt_date
 rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
@@ -29,6 +31,9 @@ async def get(req):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+
     try:
         org = await organizations_api.get_my_organizations(token)
 
@@ -36,15 +41,15 @@ async def get(req):
                 Div(
                     Script(src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"),
                     Div("📸", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
-                    H2("Scan a QR code to register a device"),
-                    P(f"Login in your mobile and place the QR code in front of your camera to scan it.", style="margin-top:8px;"),
+                    H2(_("new_device.scan_heading")),
+                    P(_("new_device.scan_desc"), style="margin-top:8px;"),
                     qr_scanner_component(target_url="/scan-result"),
                     style="text-align:center;padding:60px 40px;"
                 ),
                 style="max-width:440px;margin:80px auto;"
             )
         
-        return page_shell(content, current="/new_device", title="New Device — FixMyMedTech")
+        return page_shell(content, current="/new_device", title=_("title.new_device"), lang=lang)
 
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
@@ -53,29 +58,34 @@ async def get(req):
         return page_shell(
                 Div(
                     Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
-                    H2("Access denied"),
-                    P("You need to be part of an organization to register a device. Please contact your administrator."),
+                    H2(_("new_device.access_denied")),
+                    P(_("new_device.access_msg")),
                     style="text-align:center;padding:60px 24px;"
                 ),
                 current="/new_device",
-                title="New Device — FixMyMedTech"
+                title=_("title.new_device"),
+                lang=lang
             )
     except Exception:
         return page_shell(
                 Div(
                     Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
-                    H2("Access denied"),
-                    P("You need to be part of an organization to register a device. Please contact your administrator."),
+                    H2(_("new_device.access_denied")),
+                    P(_("new_device.access_msg")),
                     style="text-align:center;padding:60px 24px;"
                 ),
                 current="/new_device",
-                title="New Device — FixMyMedTech"
+                title=_("title.new_device"),
+                lang=lang
             )
 
 @rt("/scan-result")
 async def get(req, code: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
+
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
 
     parsed = urlparse(code)
     parts = [p for p in parsed.path.split("/") if p]
@@ -86,16 +96,16 @@ async def get(req, code: str = ""):
         if existing:
             content = Div(
                 Div("✅", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
-                H2("Device already registered"),
-                P("This device has already been registered in the system.", style="margin-top:8px;"),
+                H2(_("new_device.already_heading")),
+                P(_("new_device.already_msg"), style="margin-top:8px;"),
                 Div(
-                    A("View device page →", href=f"/d/{device_id}", cls="btn btn-primary"),
-                    A("← Scan another", href="/new_device", cls="btn btn-secondary"),
+                    A(_("new_device.view_device"), href=f"/d/{device_id}", cls="btn btn-primary"),
+                    A(_("new_device.scan_another"), href="/new_device", cls="btn btn-secondary"),
                     style="display:flex;gap:10px;justify-content:center;margin-top:20px;"
                 ),
                 style="text-align:center;padding:60px 40px;"
             )
-            return page_shell(content, current="/new_device", title="Already registered — FixMyMedTech")
+            return page_shell(content, current="/new_device", title=_("title.already_registered"), lang=lang)
     except httpx.HTTPStatusError as e:
         if e.response.status_code in (404, 422):
             return RedirectResponse(f"/device/{device_id}/new")
@@ -111,71 +121,74 @@ async def get(req,device_id: str):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+
     try:
         categories = await devices_api.get_categories()
     except Exception:
         categories = []
 
-    cat_options = [Option("— Select category —", value="")]
+    cat_options = [Option(_("new_device.category_placeholder"), value="")]
     cat_options += [Option(f"{c.get('icon','')} {c['name']}", value=c["id"]) for c in categories]
 
 
     form = Form(
-        A("← Devices", href="/devices",
+        A(_("new_device.back"), href="/devices",
         style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;margin-bottom:20px;display:inline-block;"),
-        H1("Add new device", style="margin-bottom:4px;"),
-        P("Register a medical device to start tracking it", style="margin-bottom:20px;"),
+        H1(_("new_device.add_heading"), style="margin-bottom:4px;"),
+        P(_("new_device.add_desc"), style="margin-bottom:20px;"),
         Div(
-            H3("Basic information", style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
+            H3(_("new_device.basic_info"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
             Div(
-                Div(Label("Device name *", cls="label", for_="name"),
-                    Input(id="name", name="name", cls="input", placeholder="e.g. Ventilator LTV 1200"),
+                Div(Label(_("new_device.name_label"), cls="label", for_="name"),
+                    Input(id="name", name="name", cls="input", placeholder=_("new_device.name_placeholder")),
                     cls="form-group"),
-                Div(Label("Category", cls="label", for_="category"),
+                Div(Label(_("new_device.category_label"), cls="label", for_="category"),
                     Select(*cat_options, id="category", name="category_id", cls="input"),
                     cls="form-group"),
                 cls="form-row"
             ),
             Div(
-                Div(Label("Manufacturer", cls="label"),
-                    Input(name="manufacturer", cls="input", placeholder="e.g. GE Healthcare"),
+                Div(Label(_("new_device.manufacturer_label"), cls="label"),
+                    Input(name="manufacturer", cls="input", placeholder=_("new_device.manufacturer_placeholder")),
                     cls="form-group"),
-                Div(Label("Model", cls="label"),
-                    Input(name="model", cls="input", placeholder="e.g. ProCare B40"),
+                Div(Label(_("new_device.model_label"), cls="label"),
+                    Input(name="model", cls="input", placeholder=_("new_device.model_placeholder")),
                     cls="form-group"),
                 cls="form-row"
             ),
             Div(
-                Div(Label("Serial number", cls="label"),
-                    Input(name="serial_number", cls="input", placeholder="SN-XXXXXX"),
+                Div(Label(_("new_device.serial_label"), cls="label"),
+                    Input(name="serial_number", cls="input", placeholder=_("new_device.serial_placeholder")),
                     cls="form-group"),
-                Div(Label("Manufacture year", cls="label"),
+                Div(Label(_("new_device.year_label"), cls="label"),
                     Input(name="manufacture_year", type="number", cls="input",
-                        placeholder="2018", min="1990", max="2030"),
+                        placeholder=_("new_device.year_placeholder"), min="1990", max="2030"),
                     cls="form-group"),
                 cls="form-row"
             ),
             cls="card", style="margin-bottom:14px;"
         ),
         Div(
-            H3("Location & acquisition", style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
+            H3(_("new_device.location_acquisition"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
             Div(
-                Div(Label("Location", cls="label"),
-                    Input(name="location", cls="input", placeholder="e.g. ICU / Bed 4"),
+                Div(Label(_("new_device.location_label"), cls="label"),
+                    Input(name="location", cls="input", placeholder=_("new_device.location_placeholder")),
                     cls="form-group"),
-                Div(Label("Acquisition type", cls="label"),
-                    Select(Option("Purchased", value="purchased"),
-                        Option("Donated", value="donated"),
-                        Option("Leased", value="leased"),
+                Div(Label(_("new_device.acquisition_label"), cls="label"),
+                    Select(Option(_("new_device.acquisition_purchased"), value="purchased"),
+                        Option(_("new_device.acquisition_donated"), value="donated"),
+                        Option(_("new_device.acquisition_leased"), value="leased"),
                         name="acquisition_type", cls="input"),
                     cls="form-group"),
                 cls="form-row"
             ),
             Div(
-                Div(Label("Acquisition date", cls="label"),
+                Div(Label(_("new_device.acquisition_date"), cls="label"),
                     Input(name="acquisition_date", type="date", cls="input"),
                     cls="form-group"),
-                Div(Label("Next maintenance due", cls="label"),
+                Div(Label(_("new_device.next_maint"), cls="label"),
                     Input(name="next_maintenance", type="date", cls="input"),
                     cls="form-group"),
                 cls="form-row"
@@ -183,21 +196,21 @@ async def get(req,device_id: str):
             cls="card", style="margin-bottom:14px;"
         ),
         Div(
-            H3("Notes", style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
-            Div(Textarea(name="notes", cls="input", placeholder="Any relevant notes…", rows="3"),
+            H3(_("new_device.notes"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
+            Div(Textarea(name="notes", cls="input", placeholder=_("new_device.notes_placeholder"), rows="3"),
                 cls="form-group"),
             cls="card", style="margin-bottom:14px;"
         ),
         Div(
-            A("Cancel", href="/devices", cls="btn btn-secondary"),
-            Button("Register device", type="submit", cls="btn btn-primary"),
+            A(_("new_device.cancel"), href="/devices", cls="btn btn-secondary"),
+            Button(_("new_device.register"), type="submit", cls="btn btn-primary"),
             style="display:flex;justify-content:flex-end;gap:10px;"
         ),
         method="post", action=f"/device/{device_id}/new",
         style="max-width:720px;"
     )
 
-    return page_shell(form, current=f"/device/{device_id}/new", title="Add device — FixMyMedTech")
+    return page_shell(form, current=f"/device/{device_id}/new", title=_("title.add_device"), lang=lang)
 
 
 
@@ -301,6 +314,9 @@ async def post(req, device_id: str,name: str, manufacturer: str = "", model: str
             manufacture_year: str = "", next_maintenance: str = "", notes: str = ""):
     token, redirect =  auth_helper.require_auth(req)
     if redirect: return redirect
+
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
 
     payload = {"name": name}
     if device_id:         payload["id"]        = device_id

@@ -1,6 +1,7 @@
 # components.py — reusable FastHTML UI components
 
 from fasthtml.common import *
+from i18n import LANGUAGES, t as make_t
 
 
 # ── Design tokens ────────────────────────────────────────────
@@ -204,35 +205,38 @@ tr:hover td { background:var(--c-bg); }
 """
 
 
-def status_badge(status: str, type: str = "device"):
-    device_map = {
-        "operational":    ("Operational",   "badge-green"),
-        "maintenance":    ("Maintenance",    "badge-amber"),
-        "fault":          ("Fault",          "badge-red"),
-        "decommissioned": ("Decommissioned", "badge-gray"),
+def status_badge(status: str, type: str = "device", lang: str = "en"):
+    _ = make_t(lang)
+    m = {
+        "device": {
+            "operational":    (_("badge.operational"),     "badge-green"),
+            "maintenance":    (_("badge.maintenance"),     "badge-amber"),
+            "fault":          (_("badge.fault"),           "badge-red"),
+            "decommissioned": (_("badge.decommissioned"),  "badge-gray"),
+        },
+        "fault": {
+            "open":        (_("badge.open"),        "badge-red"),
+            "assigned":    (_("badge.assigned"),    "badge-amber"),
+            "in_progress": (_("badge.in_progress"), "badge-blue"),
+            "resolved":    (_("badge.resolved"),    "badge-green"),
+        },
+        "severity": {
+            "low":      (_("badge.low"),      "badge-gray"),
+            "medium":   (_("badge.medium"),   "badge-amber"),
+            "high":     (_("badge.high"),     "badge-red"),
+            "critical": (_("badge.critical"), "badge-red"),
+        },
     }
-    fault_map = {
-        "open":        ("Open",        "badge-red"),
-        "assigned":    ("Assigned",    "badge-amber"),
-        "in_progress": ("In Progress", "badge-blue"),
-        "resolved":    ("Resolved",    "badge-green"),
-    }
-    severity_map = {
-        "low":      ("Low",      "badge-gray"),
-        "medium":   ("Medium",   "badge-amber"),
-        "high":     ("High",     "badge-red"),
-        "critical": ("Critical", "badge-red"),
-    }
-    m = fault_map if type == "fault" else severity_map if type == "severity" else device_map
-    label, cls = m.get(status, (status, "badge-gray"))
+    label, cls = m.get(type, m["device"]).get(status, (status, "badge-gray"))
     return Span(label, cls=f"badge {cls}")
 
 
-def sidebar(current: str = ""):
+def sidebar(current: str = "", lang: str = "en"):
+    _ = make_t(lang)
     links = [
-        ("/dashboard", "◈", "Dashboard"),
-        ("/devices",   "⊞", "Devices"),
-        ("/logout",   "➜]", "Logout"),
+        ("/dashboard", "◈", _("nav.dashboard")),
+        ("/devices",   "⊞", _("nav.devices")),
+        ("/logout",   "➜]", _("nav.logout")),
     ]
     return Aside(
         Div(Span("✚", cls="sb-cross"), Span("FixMyMedTech", cls="sb-name"), cls="sb-logo"),
@@ -246,34 +250,80 @@ def sidebar(current: str = ""):
     )
 
 
-def page_shell(content, current: str = "", title: str = "FixMyMedTEch"):
+def language_switcher(current_lang: str):
+    options = []
+    for code, name in LANGUAGES.items():
+        options.append(Option(name, value=code, selected=(code == current_lang)))
+    return Form(
+        Select(*options, name="lang", cls="input-lang",
+               onchange="this.form.submit()"),
+        method="post", action="/lang",
+        style="display:flex;align-items:center;gap:6px;margin-left:auto;"
+    )
+
+
+def page_shell(content, current: str = "", title: str = "FixMyMedTech",
+               lang: str = "en"):
+    _ = make_t(lang)
+    top_bar = Div(
+        Div(style="flex:1"),
+        language_switcher(lang),
+        style="display:flex;align-items:center;padding:8px 0;margin-bottom:6px;"
+    )
     return Html(
         Head(
             Meta(charset="utf-8"),
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
             Style(CSS),
+            Style("""
+                .input-lang {
+                    padding:4px 8px;border:1px solid var(--c-border);
+                    border-radius:var(--r-md);font-size:0.75rem;
+                    background:var(--c-surface);color:var(--c-text);
+                    cursor:pointer;outline:none;
+                }
+                .input-lang:focus { border-color:var(--c-primary); }
+            """)
         ),
         Body(
             Div(
-                sidebar(current),
-                Main(content, cls="main"),
+                sidebar(current, lang),
+                Main(
+                    top_bar,
+                    content,
+                    cls="main"
+                ),
                 cls="shell"
             )
         )
     )
 
 
-def pub_shell(content, title: str = "FixMyMedTech"):
+def pub_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
     """Shell for public QR pages — no sidebar."""
+    top_bar = Div(
+        Div(style="flex:1"),
+        language_switcher(lang),
+        style="display:flex;align-items:center;padding:8px 16px;background:var(--c-bg);"
+    )
     return Html(
         Head(
             Meta(charset="utf-8"),
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
             Style(CSS),
+            Style("""
+                .input-lang {
+                    padding:4px 8px;border:1px solid var(--c-border);
+                    border-radius:var(--r-md);font-size:0.75rem;
+                    background:var(--c-surface);color:var(--c-text);
+                    cursor:pointer;outline:none;
+                }
+                .input-lang:focus { border-color:var(--c-primary); }
+            """)
         ),
-        Body(content)
+        Body(Div(top_bar, content))
     )
 
 

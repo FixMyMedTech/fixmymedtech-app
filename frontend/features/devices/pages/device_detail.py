@@ -11,6 +11,7 @@ import features.auth.helper as auth_helper
 import features.devices.api as devices_api
 
 from components import page_shell, status_badge, fmt_date
+from i18n import t as make_t
 rt = APIRouter()
 
 # ══════════════════════════════════════════════════════════════
@@ -21,6 +22,9 @@ rt = APIRouter()
 async def get(req, device_id: str):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
+
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
 
     try:
         data = await devices_api.get_device(token, device_id)
@@ -46,9 +50,9 @@ async def get(req, device_id: str):
         Tr(
             Td(fmt_date(l.get("performed_at", "")), style="font-size:0.875rem;"),
             Td(Span(l.get("type",""), cls="badge badge-blue")),
-            Td(l.get("description","—"), style="font-size:0.875rem;"),
-            Td((l.get("performed_by_profile") or {}).get("full_name","—"), style="font-size:0.875rem;"),
-            Td(f"${l['cost_usd']}" if l.get("cost_usd") else "—", style="font-size:0.875rem;"),
+            Td(l.get("description",_("common.fallback")), style="font-size:0.875rem;"),
+            Td((l.get("performed_by_profile") or {}).get("full_name",_("common.fallback")), style="font-size:0.875rem;"),
+            Td(f"${l['cost_usd']}" if l.get("cost_usd") else _("common.fallback"), style="font-size:0.875rem;"),
         ) for l in logs
     ]
 
@@ -56,25 +60,25 @@ async def get(req, device_id: str):
     fault_rows = [
         Tr(
             Td(fmt_date(f.get("reported_at","")), style="font-size:0.875rem;"),
-            Td(f.get("reporter_name","—"), style="font-size:0.875rem;"),
+            Td(f.get("reporter_name",_("common.fallback")), style="font-size:0.875rem;"),
             Td(f.get("description",""), style="font-size:0.875rem;"),
-            Td(status_badge(f.get("severity","medium"), "severity")),
-            Td(status_badge(f.get("status","open"), "fault")),
+            Td(status_badge(f.get("severity","medium"), "severity", lang=lang)),
+            Td(status_badge(f.get("status","open"), "fault", lang=lang)),
         ) for f in faults
     ]
 
     content = Div(
-        A("← Devices", href="/devices",
+        A(_("device_detail.back"), href="/devices",
         style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;margin-bottom:14px;display:inline-block;"),
         Div(
             Div(
-                Div(f"{cat.get('icon','🏥')} {cat.get('name','Device')}",
+                Div(f"{cat.get('icon','🏥')} {cat.get('name',_('common.device'))}",
                     style="font-size:0.8rem;color:var(--c-text-3);margin-bottom:4px;"),
                 H1(d.get("name",""), style="margin-bottom:4px;"),
-                P(f"{d.get('manufacturer','')} {d.get('model','')} · {d.get('location','No location')}",
+                P(f"{d.get('manufacturer','')} {d.get('model','')} · {d.get('location',_('device_detail.no_location'))}",
                 style="color:var(--c-text-3);"),
             ),
-            Div(status_badge(d.get("status","operational")),
+            Div(status_badge(d.get("status","operational"), lang=lang),
                 style="flex-shrink:0;"),
             cls="page-header", style="margin-bottom:14px;"
         ),
@@ -82,7 +86,7 @@ async def get(req, device_id: str):
         Div(
             Span("▣", style="font-size:1.3rem;"),
             Div(
-                Div("Public QR page", style="font-size:0.75rem;font-weight:500;color:var(--c-primary);"),
+                Div(_("device_detail.public_qr"), style="font-size:0.75rem;font-weight:500;color:var(--c-primary);"),
                 A(qr_url, href=qr_url, target="_blank",
                 style="font-size:0.8rem;color:var(--c-primary-md);font-family:monospace;"),
             ),
@@ -91,30 +95,30 @@ async def get(req, device_id: str):
         # Device info
         Div(
             Div(
-                H3("Device information", style="margin-bottom:12px;"),
+                H3(_("device_detail.info"), style="margin-bottom:12px;"),
                 Dl(
                     *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
                         style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
                     for k, v in [
-                        ("Serial number", d.get("serial_number","—")),
-                        ("Manufacturer",  d.get("manufacturer","—")),
-                        ("Model",         d.get("model","—")),
-                        ("Year",          str(d.get("manufacture_year","—"))),
-                        ("Acquisition",   f"{d.get('acquisition_type','—')} · {fmt_date(d.get('acquisition_date',''))}"),
-                        ("Location",      d.get("location","—")),
-                        ("Organisation",  org.get("name","—")),
+                        (_("device_detail.serial"), d.get("serial_number",_("common.fallback"))),
+                        (_("device_detail.manufacturer"),  d.get("manufacturer",_("common.fallback"))),
+                        (_("device_detail.model"),         d.get("model",_("common.fallback"))),
+                        (_("device_detail.year"),          str(d.get("manufacture_year",_("common.fallback")))),
+                        (_("device_detail.acquisition"),   f"{d.get('acquisition_type',_('common.fallback'))} · {fmt_date(d.get('acquisition_date',''))}"),
+                        (_("device_detail.location"),      d.get("location",_("common.fallback"))),
+                        (_("device_detail.organisation"),  org.get("name",_("common.fallback"))),
                     ]]
                 ),
                 cls="card"
             ),
             Div(
-                H3("Maintenance", style="margin-bottom:12px;"),
+                H3(_("device_detail.maintenance"), style="margin-bottom:12px;"),
                 Dl(
                     *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
                         style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
                     for k, v in [
-                        ("Last maintenance", fmt_date(d.get("last_maintenance",""))),
-                        ("Next maintenance", fmt_date(d.get("next_maintenance",""))),
+                        (_("device_detail.last_maint"), fmt_date(d.get("last_maintenance",""))),
+                        (_("device_detail.next_maint"), fmt_date(d.get("next_maintenance",""))),
                     ]]
                 ),
                 cls="card"
@@ -123,12 +127,12 @@ async def get(req, device_id: str):
         ),
         # Maintenance logs
         Div(
-            H3("Maintenance history", style="margin-bottom:12px;"),
+            H3(_("device_detail.history"), style="margin-bottom:12px;"),
             Div(
                 Table(
-                    Thead(Tr(Th("Date"), Th("Type"), Th("Description"), Th("Technician"), Th("Cost"))),
+                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_technician")), Th(_("device_detail.col_cost")))),
                     Tbody(*log_rows) if log_rows else Tbody(
-                        Tr(Td("No maintenance logged yet.", colspan="5",
+                        Tr(Td(_("device_detail.no_maint"), colspan="5",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
                 style="border:none;border-radius:0;"
@@ -137,12 +141,12 @@ async def get(req, device_id: str):
         ),
         # Fault reports
         Div(
-            H3("Fault reports", style="margin-bottom:12px;"),
+            H3(_("device_detail.faults"), style="margin-bottom:12px;"),
             Div(
                 Table(
-                    Thead(Tr(Th("Date"), Th("Reported by"), Th("Description"), Th("Severity"), Th("Status"))),
+                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_reported_by")), Th(_("device_detail.col_description")), Th(_("device_detail.col_severity")), Th(_("device_detail.col_status")))),
                     Tbody(*fault_rows) if fault_rows else Tbody(
-                        Tr(Td("No fault reports.", colspan="5",
+                        Tr(Td(_("device_detail.no_faults"), colspan="5",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
                 style="border:none;border-radius:0;"
@@ -151,5 +155,5 @@ async def get(req, device_id: str):
         ),
     )
 
-    return page_shell(content, current="/devices", title=f"{d.get('name','Device')} — FixMyMedTech")
+    return page_shell(content, current="/devices", lang=lang, title=f"{d.get('name',_('common.device'))}{_('title.device_detail')}")
 

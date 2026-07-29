@@ -10,6 +10,7 @@ load_dotenv()
 import features.auth.helper as auth_helper
 import features.dashboard.api as dashboard_api
 
+from i18n import t as make_t
 from components import page_shell, status_badge, fmt_date, map_component
 rt = APIRouter()
 
@@ -21,6 +22,9 @@ rt = APIRouter()
 async def get(req):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
+
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
 
     try:
         stats = await dashboard_api.get_dashboard_stats(token)
@@ -38,25 +42,25 @@ async def get(req):
 
     stat_cards = Div(
         Div(
-            Div("Total devices", cls="stat-label"),
+            Div(_("dashboard.total_devices"), cls="stat-label"),
             Div(str(total), cls="stat-num"),
             Div(style=f"height:3px;background:var(--c-bg-2);border-radius:2px;margin:8px 0 3px;overflow:hidden;",
                 children=[Div(style=f"width:{pct}%;height:100%;background:var(--c-green);border-radius:2px;")]),
-            Div(f"{pct}% operational", cls="stat-sub"),
+            Div(f'{pct}{_("dashboard.pct_operational")}', cls="stat-sub"),
             cls="stat-card"
         ),
-        Div(Div("Operational", cls="stat-label"),
+        Div(Div(_("dashboard.operational"), cls="stat-label"),
             Div(str(by_status.get("operational", 0)), cls="stat-num"), cls="stat-card g"),
-        Div(Div("Maintenance", cls="stat-label"),
+        Div(Div(_("dashboard.maintenance"), cls="stat-label"),
             Div(str(by_status.get("maintenance", 0)), cls="stat-num"), cls="stat-card a"),
-        Div(Div("Fault / down", cls="stat-label"),
+        Div(Div(_("dashboard.fault_down"), cls="stat-label"),
             Div(str(by_status.get("fault", 0)), cls="stat-num"), cls="stat-card r"),
-        Div(Div("Maint. overdue", cls="stat-label"),
+        Div(Div(_("dashboard.maint_overdue"), cls="stat-label"),
             Div(str(stats.get("maintenance_overdue", 0)), cls="stat-num"),
-            Div("Needs attention", cls="stat-sub"), cls="stat-card a"),
-        Div(Div("Due in 30 days", cls="stat-label"),
+            Div(_("dashboard.needs_attention"), cls="stat-sub"), cls="stat-card a"),
+        Div(Div(_("dashboard.due_30"), cls="stat-label"),
             Div(str(stats.get("maintenance_due_soon", 0)), cls="stat-num"),
-            Div("Scheduled soon", cls="stat-sub"), cls="stat-card"),
+            Div(_("dashboard.scheduled_soon"), cls="stat-sub"), cls="stat-card"),
         cls="stat-grid"
     )
 
@@ -67,11 +71,11 @@ async def get(req):
         fault_rows.append(
             Div(
                 Div(
-                    Div(device.get("name", "Unknown"), style="font-size:0.875rem;font-weight:500;color:var(--c-text);"),
+                    Div(device.get("name", _("dashboard.unknown")), style="font-size:0.875rem;font-weight:500;color:var(--c-text);"),
                     Div(device.get("location", ""), style="font-size:0.75rem;color:var(--c-text-3);"),
                     Div(f.get("description", "")[:80], style="font-size:0.8rem;color:var(--c-text-3);margin-top:2px;"),
                 ),
-                Div(status_badge(f.get("severity", "medium"), "severity"),
+                Div(status_badge(f.get("severity", "medium"), "severity", lang=lang),
                     Div(fmt_date(f.get("reported_at", "")),
                         style="font-size:0.72rem;color:var(--c-text-3);margin-top:3px;"),
                     style="text-align:right;flex-shrink:0;"),
@@ -98,13 +102,13 @@ async def get(req):
 
     two_col = Div(
         Div(
-            H3("Open fault reports", style="margin-bottom:12px;"),
-            *fault_rows if fault_rows else [P("No open faults.", style="color:var(--c-text-3);padding:16px 0;")],
+            H3(_("dashboard.open_faults"), style="margin-bottom:12px;"),
+            *fault_rows if fault_rows else [P(_("dashboard.no_faults"), style="color:var(--c-text-3);padding:16px 0;")],
             cls="card"
         ),
         Div(
-            H3("Recent maintenance", style="margin-bottom:12px;"),
-            *maint_rows if maint_rows else [P("No maintenance logged yet.", style="color:var(--c-text-3);padding:16px 0;")],
+            H3(_("dashboard.recent_maint"), style="margin-bottom:12px;"),
+            *maint_rows if maint_rows else [P(_("dashboard.no_maint"), style="color:var(--c-text-3);padding:16px 0;")],
             cls="card"
         ),
         cls="two-col"
@@ -112,8 +116,8 @@ async def get(req):
 
     content = Div(
         Div(
-            Div(H1("Dashboard"), P("Overview of your equipment fleet", style="color:var(--c-text-3);")),
-            A("+ Add device", href="/new_device", cls="btn btn-primary"),
+            Div(H1(_("dashboard.title")), P(_("dashboard.subtitle"), style="color:var(--c-text-3);")),
+            A(_("dashboard.add_device"), href="/new_device", cls="btn btn-primary"),
             cls="page-header"
         ),
         stat_cards,
@@ -125,7 +129,7 @@ async def get(req):
         # ]),
     )
 
-    return page_shell(content, current="/dashboard", title="Dashboard — FixMyMedTech")
+    return page_shell(content, current="/dashboard", title=_("title.dashboard"), lang=lang)
 
 
 # ── Root redirect ─────────────────────────────────────────────

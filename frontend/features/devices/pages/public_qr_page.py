@@ -15,6 +15,7 @@ import features.faults.api as faults_api
 from components import *
 
 from components import page_shell, status_badge, fmt_date, pub_shell
+from i18n import t as make_t
 rt = APIRouter()
 
 # ══════════════════════════════════════════════════════════════
@@ -23,18 +24,21 @@ rt = APIRouter()
 
 @rt("/d/{device_id}")
 async def get(req, device_id: str):
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
     try:
         data = await devices_api.get_device_public(device_id)
     except Exception:
         return pub_shell(
             Div(
                 Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
-                H2("Device not found"),
-                P("This QR code doesn't match any registered device."),
-                A("Register new device", href=f"/device/{device_id}/new", cls="btn btn-primary",
+                H2(_("public_qr.not_found")),
+                P(_("public_qr.not_found_msg")),
+                A(_("public_qr.register_new"), href=f"/device/{device_id}/new", cls="btn btn-primary",
                 style="margin-top:20px;"),
                 style="text-align:center;padding:60px 24px;"
-            )
+            ),
+            lang=lang
         )
 
     d = data.get("device", {})
@@ -63,8 +67,8 @@ async def get(req, device_id: str):
     fault_items = [
         Div(
             Div(
-                status_badge(f.get("severity","medium"), "severity"),
-                status_badge(f.get("status","open"), "fault"),
+                status_badge(f.get("severity","medium"), "severity", lang=lang),
+                status_badge(f.get("status","open"), "fault", lang=lang),
                 Span(fmt_date(f.get("reported_at","")),
                      style="font-size:0.72rem;color:var(--c-text-3);"),
                 style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;"
@@ -77,20 +81,20 @@ async def get(req, device_id: str):
     content = Div(
         # Header
         Div(
-            Div(Span("✚", cls="pub-cross"), " FixMyMedTech", cls="pub-logo"),
+            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
             cls="pub-header"
         ),
         # Device identity
         Div(
             Div(cat.get("icon","🏥"), cls="dev-icon"),
             Div(
-                Div(cat.get("name","Device"), cls="dev-cat"),
+                Div(cat.get("name", _("common.device")), cls="dev-cat"),
                 Div(d.get("name",""), cls="dev-name"),
-                Div(f"{d.get('manufacturer','')} · SN: {d.get('serial_number','')}".strip(" ·"),
+                Div(f"{d.get('manufacturer','')}{_('common.sn_prefix')}{d.get('serial_number','')}".strip(" ·"),
                     cls="dev-meta"),
             ),
             Div(
-                status_badge(d.get("status","operational")),
+                status_badge(d.get("status","operational"), lang=lang),
                 Div(d.get("location",""), cls="dev-loc"),
                 cls="dev-status"
             ),
@@ -100,24 +104,24 @@ async def get(req, device_id: str):
         Div(
             Span("⚠", style="font-size:1rem;flex-shrink:0;"),
             Div(
-                Strong("Maintenance overdue"),
-                P(f"Due {fmt_date(nm)}. Contact your biomedical engineer."),
+                Strong(_("public_qr.maint_overdue")),
+                P(f"{_('public_qr.maint_due')}{fmt_date(nm)}{_('public_qr.maint_contact')}"),
             ),
             cls="warn-bar"
         ) if overdue else "",
         # Manuals
         Div(
             Div(
-                Strong("Do you want more information?", style="font-size:0.875rem;"),
-                P("Check the user and maintenance quick guidelines.", style="font-size:0.8rem;margin:2px 0 0;"),
+                Strong(_("public_qr.more_info"), style="font-size:0.875rem;"),
+                P(_("public_qr.guidelines"), style="font-size:0.8rem;margin:2px 0 0;"),
             ),
             A(Span("ⓘ", style="font-size:1.3rem;"),
-              Div("User guide"),
+              Div(_("public_qr.user_guide")),
               href=f"/d/{device_id}/report",
               cls="btn btn-secondary btn-sm",
               style = "margin-left:6px;justify-content:center"),
             A(Span("🔧", style="font-size:1.3rem;"),
-              Div("Maintenance guide"),
+              Div(_("public_qr.maint_guide")),
               href=f"/d/{device_id}/report",
               cls="btn btn-secondary btn-sm",
               style = "margin-left:6px;justify-content:center"),
@@ -126,27 +130,27 @@ async def get(req, device_id: str):
         # Report fault CTA
         Div(
             Div(
-                Strong("Found a problem?", style="font-size:0.875rem;"),
-                P("Report it to the biomed team.", style="font-size:0.8rem;margin:2px 0 0;"),
+                Strong(_("public_qr.found_problem"), style="font-size:0.875rem;"),
+                P(_("public_qr.report_cta"), style="font-size:0.8rem;margin:2px 0 0;"),
             ),
-            A("⚠ Report fault", href=f"/d/{device_id}/report",
+            A(_("public_qr.report_btn"), href=f"/d/{device_id}/report",
               cls="btn btn-danger btn-sm"),
             cls="report-cta"
         ),
         # Device info
         Div(
-            H3("Device information",
+            H3(_("public_qr.info"),
                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
             Dl(
                 *[Div(Dt(k), Dd(v), cls="info-row")
                   for k, v in [
-                      ("Status",       d.get("status","—")),
-                      ("Location",     d.get("location","—")),
-                      ("Manufacturer", d.get("manufacturer","—")),
-                      ("Model",        d.get("model","—")),
-                      ("Serial no.",   d.get("serial_number","—")),
-                      ("Last maint.",  fmt_date(d.get("last_maintenance",""))),
-                      ("Next maint.",  fmt_date(nm)),
+                      (_("public_qr.status"),       d.get("status", _("common.fallback"))),
+                      (_("public_qr.location"),     d.get("location", _("common.fallback"))),
+                      (_("public_qr.manufacturer"), d.get("manufacturer", _("common.fallback"))),
+                      (_("public_qr.model"),        d.get("model", _("common.fallback"))),
+                      (_("public_qr.serial"),       d.get("serial_number", _("common.fallback"))),
+                      (_("public_qr.last_maint"),   fmt_date(d.get("last_maintenance",""))),
+                      (_("public_qr.next_maint"),   fmt_date(nm)),
                   ]],
                 cls="info-list"
             ),
@@ -154,21 +158,21 @@ async def get(req, device_id: str):
         ),
         # Manuals
         Div(
-            H3("Manuals & documents",
+            H3(_("public_qr.documents"),
                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            *doc_items if doc_items else [P("No documents attached.", style="color:var(--c-text-3);font-size:0.875rem;")],
+            *doc_items if doc_items else [P(_("public_qr.no_docs"), style="color:var(--c-text-3);font-size:0.875rem;")],
             cls="pub-section"
         ) if docs else "",
         # Recent faults
         Div(
-            H3("Recent fault reports",
+            H3(_("public_qr.faults"),
                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            *fault_items if fault_items else [P("No fault reports on record.", style="color:var(--c-text-3);font-size:0.875rem;")],
+            *fault_items if fault_items else [P(_("public_qr.no_faults"), style="color:var(--c-text-3);font-size:0.875rem;")],
             cls="pub-section"
         ),
         # Footer
-        Div("FixMyMedTech · Powered by CareAgain", cls="pub-footer"),
+        Div(_("brand_footer"), cls="pub-footer"),
         cls="pub-page"
     )
 
-    return pub_shell(content, title=f"{d.get('name','Device')} — FixMyMedTech")
+    return pub_shell(content, title=f"{d.get('name', _('common.device'))} — {_('brand')}", lang=lang)

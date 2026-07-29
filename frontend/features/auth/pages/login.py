@@ -11,6 +11,7 @@ import features.organizations.api as org_api
 import features.dashboard.api as dashboard_api
 
 import features.auth.helper as auth_helper
+from i18n import t as make_t
 from components import pub_shell
 rt = APIRouter()
 
@@ -20,6 +21,8 @@ rt = APIRouter()
 
 @rt("/login")
 async def get(req, expired: str = ""):
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
     # Only redirect if token is actually still valid
     token = auth_helper.get_token(req)
     if token:
@@ -32,7 +35,7 @@ async def get(req, expired: str = ""):
         except Exception:
             return RedirectResponse("/dashboard", status_code=302)
 
-    expired_msg = Div("Your session has expired. Please sign in again.",
+    expired_msg = Div(_("login.expired"),
                     cls="alert alert-warning") if expired else ""
     form = Form(
         Div(
@@ -43,35 +46,35 @@ async def get(req, expired: str = ""):
                         style="height:56px; width:auto; display:block; margin-bottom:10px;"),
                         cls="brand-icon"
                     ),
-                    H1("FixMyMedTech"),
-                    P("Medical equipment management for LMICs"),
+                    H1(_("login.heading")),
+                    P(_("login.subtitle")),
                     cls="auth-brand"
                 ),
                 expired_msg,
                 Div(
-                    Label("Email", cls="label", for_="email"),
+                    Label(_("login.email_label"), cls="label", for_="email"),
                     Input(id="email", name="email", type="email",
-                        placeholder="you@hospital.org", cls="input"),
+                        placeholder=_("login.email_placeholder"), cls="input"),
                     cls="form-group"
                 ),
                 Div(
-                    Label("Password", cls="label", for_="password"),
+                    Label(_("login.password_label"), cls="label", for_="password"),
                     Input(id="password", name="password", type="password",
-                        placeholder="••••••••", cls="input"),
+                        placeholder=_("login.password_placeholder"), cls="input"),
                     cls="form-group"
                 ),
-                Button("Sign in", type="submit", cls="btn btn-primary",
+                Button(_("login.signin"), type="submit", cls="btn btn-primary",
                     style="width:100%;justify-content:center;margin-top:4px;"),
                 P(
-                    "New to FixMyMedTech? ", A("Create an account", href="/signup"),
+                    _("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
                     cls="auth-link", style="margin-top:12px;"
                 ),
                 cls="auth-card"
             ),
             Div(
                 Blockquote(
-                    '"40–70% of medical equipment in LMICs is out of service. ',
-                    Em("FixMyMedTech helps change that."),
+                    _("login.quote"),
+                    Em(_("login.quote_em")),
                     '"',
                     cls="auth-quote"
                 ),
@@ -82,11 +85,13 @@ async def get(req, expired: str = ""):
         method="post", action="/login"
     )
 
-    return pub_shell(form, title="Login — FixMyMedTech")
+    return pub_shell(form, title=_("title.login"), lang=lang)
 
 
 @rt("/login")
 async def post(req, email: str, password: str):
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
     try:
         res = await auth_api.login(email, password)
         req.session["token"] = res["access_token"]
@@ -101,38 +106,38 @@ async def post(req, email: str, password: str):
                         style="height:56px; width:auto; display:block; margin-bottom:10px;"),
                         cls="brand-icon"
                     ),
-                    H1("FixMyMedTech"),
-                    P("Medical equipment management for LMICs"),
+                    H1(_("login.heading")),
+                    P(_("login.subtitle")),
                     cls="auth-brand"
                 ),
-                Div("Invalid email or password.", cls="alert alert-error"),
+                Div(_("login.error"), cls="alert alert-error"),
                 Div(
-                    Label("Email", cls="label", for_="email"),
+                    Label(_("login.email_label"), cls="label", for_="email"),
                     Input(id="email", name="email", type="email",
                         value=email, cls="input"),
                     cls="form-group"
                 ),
                 Div(
-                    Label("Password", cls="label", for_="password"),
+                    Label(_("login.password_label"), cls="label", for_="password"),
                     Input(id="password", name="password", type="password",
                         cls="input"),
                     cls="form-group"
                 ),
-                Button("Sign in", type="submit", cls="btn btn-primary",
+                Button(_("login.signin"), type="submit", cls="btn btn-primary",
                     style="width:100%;justify-content:center;margin-top:4px;"),
-                P("New to FixMyMedTech? ", A("Create an account", href="/signup"),
+                P(_("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
                 cls="auth-link", style="margin-top:12px;"),
                 cls="auth-card"
             ),
             Div(
-                Blockquote('"40–70% of medical equipment in LMICs is out of service. ',
-                        Em("FixMyMedTech helps change that."), '"', cls="auth-quote"),
+                Blockquote(_("login.quote"),
+                        Em(_("login.quote_em")), '"', cls="auth-quote"),
                 cls="auth-bg"
             ),
             cls="auth-wrap"
         )
         return pub_shell(Form(form_error, method="post", action="/login"),
-                        title="Login — FixMyMedTech")
+                        title=_("title.login"), lang=lang)
 
 
 @rt("/logout")
@@ -143,6 +148,8 @@ async def get(req):
 
 @rt("/signup")
 async def get(req):
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
     if auth_helper.get_token(req):
         return RedirectResponse("/dashboard", status_code=302)
 
@@ -151,7 +158,7 @@ async def get(req):
     except Exception:
         orgs = []
 
-    org_options = [Option("— Select your organisation —", value="")]
+    org_options = [Option(_("signup.select_org"), value="")]
     org_options += [Option(f"{o['name']} ({o['country']})", value=o["id"]) for o in orgs]
 
     content = Div(
@@ -161,53 +168,53 @@ async def get(req):
                     Img(src=os.getenv("LOGO_URL"),
                     style="height:56px; width:auto; display:block; margin-bottom:10px;"),
                     cls="brand-icon"),
-                H1("Create account"),
-                P("Join FixMyMedTech to manage your hospital's equipment"),
+                H1(_("signup.heading")),
+                P(_("signup.subtitle")),
                 cls="auth-brand"
             ),
             Div(
-                Label("Full name", cls="label", for_="full_name"),
+                Label(_("signup.full_name_label"), cls="label", for_="full_name"),
                 Input(id="full_name", name="full_name", type="text",
-                    placeholder="Dr. Jane Smith", cls="input"),
+                    placeholder=_("signup.full_name_placeholder"), cls="input"),
                 cls="form-group"
             ),
             Div(
-                Label("Email", cls="label", for_="email"),
+                Label(_("signup.email_label"), cls="label", for_="email"),
                 Input(id="email", name="email", type="email",
-                    placeholder="you@hospital.org", cls="input"),
+                    placeholder=_("signup.email_placeholder"), cls="input"),
                 cls="form-group"
             ),
             Div(
                 Div(
-                    Label("Password", cls="label", for_="password"),
+                    Label(_("signup.password_label"), cls="label", for_="password"),
                     Input(id="password", name="password", type="password",
-                        placeholder="Min. 8 characters", cls="input"),
+                        placeholder=_("signup.password_placeholder"), cls="input"),
                     cls="form-group"
                 ),
                 Div(
-                    Label("Confirm password", cls="label", for_="password2"),
+                    Label(_("signup.confirm_label"), cls="label", for_="password2"),
                     Input(id="password2", name="password2", type="password",
-                        placeholder="Repeat password", cls="input"),
+                        placeholder=_("signup.confirm_placeholder"), cls="input"),
                     cls="form-group"
                 ),
                 cls="form-row"
             ),
             Div(
-                Label("Role", cls="label"),
+                Label(_("signup.role_label"), cls="label"),
                 Div(
                     Label(Input(type="radio", name="role", value="clinical_staff", checked=True),
-                        " Clinical staff (nurse, doctor)"),
+                        _("signup.role_clinical")),
                     Label(Input(type="radio", name="role", value="technician"),
-                        " Biomedical technician"),
+                        _("signup.role_technician")),
                     Label(Input(type="radio", name="role", value="admin"),
-                        " Hospital administrator"),
+                        _("signup.role_admin")),
                     style="display:flex;flex-direction:column;gap:6px;font-size:0.875rem;"
                 ),
                 cls="form-group"
             ),
-            Button("Create account", type="submit", cls="btn btn-primary",
+            Button(_("signup.submit"), type="submit", cls="btn btn-primary",
                 style="width:100%;justify-content:center;margin-top:8px;"),
-            P("Already have an account? ", A("Sign in", href="/login"),
+            P(_("signup.login_link"), A(_("signup.login_link_action"), href="/login"),
             cls="auth-link", style="margin-top:12px;"),
             cls="auth-card"
         ),
@@ -215,22 +222,22 @@ async def get(req):
             Div(
                 Div(
                     Span("1", cls="step-num"), 
-                    Div(P("Create your account", style="color:#fff;font-weight:500;margin:0;"),
-                        P("Register with your hospital email",
+                    Div(P(_("signup.step1_heading"), style="color:#fff;font-weight:500;margin:0;"),
+                        P(_("signup.step1_desc"),
                         style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
                     style="display:flex;gap:14px;align-items:flex-start;margin-bottom:24px;"
                 ),
                 Div(
                     Span("2", cls="step-num"),
-                    Div(P("Confirm your email", style="color:#fff;font-weight:500;margin:0;"),
-                        P("Click the link we send you",
+                    Div(P(_("signup.step2_heading"), style="color:#fff;font-weight:500;margin:0;"),
+                        P(_("signup.step2_desc"),
                         style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
                     style="display:flex;gap:14px;align-items:flex-start;margin-bottom:24px;"
                 ),
                 Div(
                     Span("3", cls="step-num"),
-                    Div(P("Start tracking", style="color:#fff;font-weight:500;margin:0;"),
-                        P("Manage your equipment fleet",
+                    Div(P(_("signup.step3_heading"), style="color:#fff;font-weight:500;margin:0;"),
+                        P(_("signup.step3_desc"),
                         style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
                     style="display:flex;gap:14px;align-items:flex-start;"
                 ),
@@ -242,18 +249,20 @@ async def get(req):
 
     return pub_shell(
         Form(content, method="post", action="/signup"),
-        title="Sign up — FixMyMedTech"
+        title=_("title.signup"), lang=lang
     )
 
 
 @rt("/signup")
 async def post(req, full_name: str, email: str, password: str,
             password2: str, role: str, organization_id: str = ""):
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
     errors = []
-    if not full_name:     errors.append("Full name is required.")
-    if not email:         errors.append("Email is required.")
-    if len(password) < 8: errors.append("Password must be at least 8 characters.")
-    if password != password2: errors.append("Passwords do not match.")
+    if not full_name:     errors.append(_("signup.error_name"))
+    if not email:         errors.append(_("signup.error_email"))
+    if len(password) < 8: errors.append(_("signup.error_password"))
+    if password != password2: errors.append(_("signup.error_mismatch"))
 
     if not errors:
         try:
@@ -265,15 +274,16 @@ async def post(req, full_name: str, email: str, password: str,
                 Div(
                     Div(
                         Div("✓", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
-                        H2("Check your email"),
-                        P(f"We sent a confirmation link to ", Strong(email),
-                        ". Click it to activate your account."),
-                        A("Go to login", href="/login", cls="btn btn-primary",
+                        H2(_("signup.success_heading")),
+                        P(_("signup.success_msg"), Strong(email),
+                        _("signup.success_msg2")),
+                        A(_("signup.success_btn"), href="/login", cls="btn btn-primary",
                         style="margin-top:20px;"),
                         style="text-align:center;padding:60px 40px;"
                     ),
                     style="max-width:440px;margin:80px auto;"
-                )
+                ),
+                title=_("title.signup"), lang=lang
             )
             return success
         except Exception as e:
@@ -289,54 +299,54 @@ async def post(req, full_name: str, email: str, password: str,
                         Img(src=os.getenv("LOGO_URL"),
                         style="height:56px; width:auto; display:block; margin-bottom:10px;"),
                         cls="brand-icon"),
-                    H1("Create account"),
-                    P("Join FixMyMedTech to manage your hospital's equipment"),
+                    H1(_("signup.heading")),
+                    P(_("signup.subtitle")),
                     cls="auth-brand"
                 ),
                 error_msg,
                 Div(
-                    Label("Full name", cls="label", for_="full_name"),
+                    Label(_("signup.full_name_label"), cls="label", for_="full_name"),
                     Input(id="full_name", name="full_name", type="text",
-                        placeholder="Dr. Jane Smith", cls="input"),
+                        placeholder=_("signup.full_name_placeholder"), cls="input"),
                     cls="form-group"
                 ),
                 Div(
-                    Label("Email", cls="label", for_="email"),
+                    Label(_("signup.email_label"), cls="label", for_="email"),
                     Input(id="email", name="email", type="email",
-                        placeholder="you@hospital.org", cls="input"),
+                        placeholder=_("signup.email_placeholder"), cls="input"),
                     cls="form-group"
                 ),
                 Div(
                     Div(
-                        Label("Password", cls="label", for_="password"),
+                        Label(_("signup.password_label"), cls="label", for_="password"),
                         Input(id="password", name="password", type="password",
-                            placeholder="Min. 8 characters", cls="input"),
+                            placeholder=_("signup.password_placeholder"), cls="input"),
                         cls="form-group"
                     ),
                     Div(
-                        Label("Confirm password", cls="label", for_="password2"),
+                        Label(_("signup.confirm_label"), cls="label", for_="password2"),
                         Input(id="password2", name="password2", type="password",
-                            placeholder="Repeat password", cls="input"),
+                            placeholder=_("signup.confirm_placeholder"), cls="input"),
                         cls="form-group"
                     ),
                     cls="form-row"
                 ),
                 Div(
-                    Label("Role", cls="label"),
+                    Label(_("signup.role_label"), cls="label"),
                     Div(
                         Label(Input(type="radio", name="role", value="clinical_staff", checked=True),
-                            " Clinical staff (nurse, doctor)"),
+                            _("signup.role_clinical")),
                         Label(Input(type="radio", name="role", value="technician"),
-                            " Biomedical technician"),
+                            _("signup.role_technician")),
                         Label(Input(type="radio", name="role", value="admin"),
-                            " Hospital administrator"),
+                            _("signup.role_admin")),
                         style="display:flex;flex-direction:column;gap:6px;font-size:0.875rem;"
                     ),
                     cls="form-group"
                 ),
-                Button("Create account", type="submit", cls="btn btn-primary",
+                Button(_("signup.submit"), type="submit", cls="btn btn-primary",
                     style="width:100%;justify-content:center;margin-top:8px;"),
-                P("Already have an account? ", A("Sign in", href="/login"),
+                P(_("signup.login_link"), A(_("signup.login_link_action"), href="/login"),
                 cls="auth-link", style="margin-top:12px;"),
                 cls="auth-card"
             ),
@@ -344,22 +354,22 @@ async def post(req, full_name: str, email: str, password: str,
                 Div(
                     Div(
                         Span("1", cls="step-num"), 
-                        Div(P("Create your account", style="color:#fff;font-weight:500;margin:0;"),
-                            P("Register with your hospital email",
+                        Div(P(_("signup.step1_heading"), style="color:#fff;font-weight:500;margin:0;"),
+                            P(_("signup.step1_desc"),
                             style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
                         style="display:flex;gap:14px;align-items:flex-start;margin-bottom:24px;"
                     ),
                     Div(
                         Span("2", cls="step-num"),
-                        Div(P("Confirm your email", style="color:#fff;font-weight:500;margin:0;"),
-                            P("Click the link we send you",
+                        Div(P(_("signup.step2_heading"), style="color:#fff;font-weight:500;margin:0;"),
+                            P(_("signup.step2_desc"),
                             style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
                         style="display:flex;gap:14px;align-items:flex-start;margin-bottom:24px;"
                     ),
                     Div(
                         Span("3", cls="step-num"),
-                        Div(P("Start tracking", style="color:#fff;font-weight:500;margin:0;"),
-                            P("Manage your equipment fleet",
+                        Div(P(_("signup.step3_heading"), style="color:#fff;font-weight:500;margin:0;"),
+                            P(_("signup.step3_desc"),
                             style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin:0;")),
                         style="display:flex;gap:14px;align-items:flex-start;"
                     ),
@@ -371,6 +381,5 @@ async def post(req, full_name: str, email: str, password: str,
 
         return pub_shell(
             Form(signup_form, method="post", action="/signup"),
-            title="Sign up — FixMyMedTech"
+            title=_("title.signup"), lang=lang
         )
-

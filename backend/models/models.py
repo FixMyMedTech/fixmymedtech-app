@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from sqlalchemy import (
-    Column, String, Text, Integer, Numeric, Date, DateTime,
+    Column, String, Text, Integer, Numeric, Float, Date, DateTime,
     ForeignKey, CheckConstraint, MetaData, event
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -111,6 +111,7 @@ class DeviceCategory(Base):
 
     id      = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name    = Column(Text, nullable=False)
+    slug    = Column(Text, nullable=False, unique=True)
     icon    = Column(Text, default="🏥")
 
     # Relationships
@@ -142,7 +143,7 @@ class Device(Base):
     id                          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id             = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"), nullable=False)
     organization_maintenance_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"), nullable=False)
-    category_id                 = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.device_categories.id"))
+    category_id                 = Column(Text, ForeignKey(f"{SCHEMA}.device_categories.slug"))
     name                        = Column(Text, nullable=False)
     manufacturer                = Column(Text)
     model                       = Column(Text)
@@ -151,6 +152,8 @@ class Device(Base):
     acquisition_date            = Column(Date)
     acquisition_type            = Column(Text, default="purchased")
     location                    = Column(Text)
+    latitude                    = Column(Float)
+    longitude                   = Column(Float)
     status                      = Column(Text, default="operational")
     last_maintenance            = Column(Date)
     next_maintenance            = Column(Date)

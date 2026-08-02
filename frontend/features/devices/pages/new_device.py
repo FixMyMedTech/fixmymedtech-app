@@ -103,6 +103,28 @@ async def get(req, code: str = ""):
                     A(_("new_device.scan_another"), href="/new_device", cls="btn btn-secondary"),
                     style="display:flex;gap:10px;justify-content:center;margin-top:20px;"
                 ),
+                Form(
+                    Input(type="hidden", id="loc-lat", name="latitude"),
+                    Input(type="hidden", id="loc-lng", name="longitude"),
+                    Button(
+                        "📍 " + _("new_device.capture_location"),
+                        type="button", cls="btn btn-secondary btn-sm",
+                        onclick="getLocation()",
+                        style="margin-top:16px;"
+                    ),
+                    Script("""
+                    function getLocation() {
+                        if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+                        navigator.geolocation.getCurrentPosition((pos) => {
+                            document.getElementById('loc-lat').value = pos.coords.latitude;
+                            document.getElementById('loc-lng').value = pos.coords.longitude;
+                            document.getElementById('loc-form').submit();
+                        }, (err) => alert('Geolocation error: ' + err.message));
+                    }
+                    """),
+                    id="loc-form",
+                    method="post", action=f"/device/{device_id}/location",
+                ) if d.get("latitude") is None or d.get("longitude") is None else "",
                 style="text-align:center;padding:60px 40px;"
             )
             return page_shell(content, current="/new_device", title=_("title.already_registered"), lang=lang)
@@ -192,6 +214,26 @@ async def get(req,device_id: str):
                     Input(name="next_maintenance", type="date", cls="input"),
                     cls="form-group"),
                 cls="form-row"
+            ),
+            Div(
+                Input(type="hidden", id="loc-lat", name="latitude", value=""),
+                Input(type="hidden", id="loc-lng", name="longitude", value=""),
+                Button(
+                    "📍 " + _("new_device.capture_location"),
+                    type="button", cls="btn btn-secondary btn-sm",
+                    onclick="captureLoc()",
+                    style="margin-top:8px;"
+                ),
+                Script("""
+                function captureLoc() {
+                    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        document.getElementById('loc-lat').value = pos.coords.latitude;
+                        document.getElementById('loc-lng').value = pos.coords.longitude;
+                    }, (err) => alert('Geolocation error: ' + err.message));
+                }
+                """),
+                cls="form-group",
             ),
             cls="card", style="margin-bottom:14px;"
         ),
@@ -308,10 +350,11 @@ async def get(req,device_id: str):
 
 
 @rt("/device/{device_id}/new")
-async def post(req, device_id: str,name: str, manufacturer: str = "", model: str = "",
+async def post(req, device_id: str, name: str, manufacturer: str = "", model: str = "",
             serial_number: str = "", category_id: str = "", location: str = "",
             acquisition_type: str = "purchased", acquisition_date: str = "",
-            manufacture_year: str = "", next_maintenance: str = "", notes: str = ""):
+            manufacture_year: str = "", next_maintenance: str = "", notes: str = "",
+            latitude: str = "", longitude: str = ""):
     token, redirect =  auth_helper.require_auth(req)
     if redirect: return redirect
 
@@ -333,7 +376,11 @@ async def post(req, device_id: str,name: str, manufacturer: str = "", model: str
     try:
         if manufacture_year:
             payload["manufacture_year"] = int(manufacture_year)
-        device = await devices_api.create_device(token, payload)
-        return RedirectResponse(f"/device/{device_id}")
-    except Exception as e:
-        return RedirectResponse(f"/device/{device_id}/new")
+        if latitude:
+            payload["latitude"] = float(latitude)
+        if longitude:
+            payload["longitude"] = float(longitude)
+        await devices_api.create_device(token, payload)
+        return RedirectResponse(f"/device/{device_id}", status_code=303)
+    except Exception:
+        return RedirectResponse(f"/device/{device_id}/new", status_code=303)

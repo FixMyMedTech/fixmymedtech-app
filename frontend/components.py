@@ -342,7 +342,7 @@ def fmt_date(iso: str) -> str:
         return iso[:10]
     
 
-def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px"):
+def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False):
     """
     markers = [
         {"lat": 0.3476, "lng": 32.5825, "title": "Mulago Hospital"},
@@ -356,6 +356,12 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px"):
         f"L.marker([{m['lat']}, {m['lng']}]).addTo(map).bindPopup('{m.get('title', '')}');"
         for m in markers
     ])
+
+    if fit and markers:
+        coords = ", ".join(f"[{m['lat']}, {m['lng']}]" for m in markers)
+        fit_js = f"map.fitBounds(L.latLngBounds([{coords}]));"
+    else:
+        fit_js = ""
 
     return Div(
         # Leaflet CSS

@@ -23,11 +23,13 @@ class DeviceCreate(BaseModel):
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
-    category_id: Optional[UUID] = None
+    category_id: Optional[str] = None
     manufacture_year: Optional[int] = None
     acquisition_date: Optional[date] = None
     acquisition_type: Optional[str] = "purchased"
     location: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     notes: Optional[str] = None
     next_maintenance: Optional[date] = None
 
@@ -38,6 +40,11 @@ class DeviceUpdate(BaseModel):
     location: Optional[str] = None
     notes: Optional[str] = None
     next_maintenance: Optional[date] = None
+
+
+class LocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
 
 
 # ── Endpoint público: escaneado vía QR (sin auth) ──────────────
@@ -197,6 +204,25 @@ async def update_device(
     for key, value in payload.items():
         setattr(device, key, value)
 
+    await db.commit()
+    await db.refresh(device)
+    return device
+
+
+@router.patch("/{device_id}/location")
+async def update_device_location(
+    device_id: UUID,
+    body: LocationUpdate,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    device.latitude = body.latitude
+    device.longitude = body.longitude
     await db.commit()
     await db.refresh(device)
     return device

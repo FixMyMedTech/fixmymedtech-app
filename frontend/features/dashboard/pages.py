@@ -9,6 +9,7 @@ load_dotenv()
 # __ API imports __
 import features.auth.helper as auth_helper
 import features.dashboard.api as dashboard_api
+import features.devices.api as devices_api
 
 from i18n import t as make_t
 from components import page_shell, status_badge, fmt_date, map_component
@@ -39,6 +40,21 @@ async def get(req):
     by_status = stats.get("by_status", {})
     total = stats.get("total_devices", 0)
     pct = round((by_status.get("operational", 0) / total) * 100) if total else 0
+
+    try:
+        devices = await devices_api.get_devices(token)
+    except Exception:
+        devices = []
+
+    markers = [
+        {
+            "lat": d["latitude"],
+            "lng": d["longitude"],
+            "title": " · ".join(p for p in (d.get("name", ""), d.get("location", "")) if p),
+        }
+        for d in devices
+        if d.get("latitude") is not None and d.get("longitude") is not None
+    ]
 
     stat_cards = Div(
         Div(
@@ -122,11 +138,7 @@ async def get(req):
         ),
         stat_cards,
         two_col,
-        map_component(lat=0.3476, lng=32.5825,),
-        #   markers=[
-        #     {"lat": 0.3476, "lng": 32.5825, "title": "Mulago Hospital"},
-        #     {"lat": 0.3200, "lng": 32.5700, "title": "Clinic B"},
-        # ]),
+        map_component(lat=0.3476, lng=32.5825, markers=markers, fit=True),
     )
 
     return page_shell(content, current="/dashboard", title=_("title.dashboard"), lang=lang)

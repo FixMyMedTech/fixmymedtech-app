@@ -156,6 +156,18 @@ async def get(req, device_id: str):
             ),
             cls="pub-section"
         ),
+        # Map
+        Div(
+            H3(_("public_qr.location_map"),
+               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
+            map_component(
+                lat=d.get("latitude", 0),
+                lng=d.get("longitude", 0),
+                markers=[{"lat": d["latitude"], "lng": d["longitude"], "title": d.get("name","")}],
+                height="250px"
+            ),
+            cls="pub-section"
+        ) if d.get("latitude") is not None and d.get("longitude") is not None else "",
         # Manuals
         Div(
             H3(_("public_qr.documents"),

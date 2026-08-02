@@ -18,6 +18,18 @@ rt = APIRouter()
 # DEVICE DETAIL
 # ══════════════════════════════════════════════════════════════
 
+
+@rt("/device/{device_id}/location")
+async def post_location(req, device_id: str, latitude: float = 0, longitude: float = 0):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect: return redirect
+    try:
+        await devices_api.update_location_device(token, device_id, {"latitude": latitude, "longitude": longitude})
+    except Exception:
+        pass
+    return RedirectResponse(f"/device/{device_id}", status_code=303)
+
+
 @rt("/device/{device_id}")
 async def get(req, device_id: str):
     token, redirect = auth_helper.require_auth(req)
@@ -124,6 +136,39 @@ async def get(req, device_id: str):
                 cls="card"
             ),
             cls="two-col", style="margin-bottom:16px;"
+        ),
+        # Map
+        Div(
+            H3(_("device_detail.location_map"), style="margin-bottom:12px;"),
+            map_component(
+                lat=d.get("latitude", 0),
+                lng=d.get("longitude", 0),
+                markers=[{"lat": d["latitude"], "lng": d["longitude"], "title": d.get("name","")}],
+                height="300px"
+            ) if d.get("latitude") is not None and d.get("longitude") is not None else "",
+            Form(
+                Input(type="hidden", id="loc-lat", name="latitude"),
+                Input(type="hidden", id="loc-lng", name="longitude"),
+                Button(
+                    "📍 " + _("device_detail.capture_location"),
+                    type="button", cls="btn btn-secondary btn-sm",
+                    onclick="getLocation()",
+                    style="margin-top:8px;"
+                ),
+                Script("""
+                function getLocation() {
+                    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        document.getElementById('loc-lat').value = pos.coords.latitude;
+                        document.getElementById('loc-lng').value = pos.coords.longitude;
+                        document.getElementById('loc-form').submit();
+                    }, (err) => alert('Geolocation error: ' + err.message));
+                }
+                """),
+                id="loc-form",
+                method="post", action=f"/device/{device_id}/location",
+            ),
+            cls="card", style="margin-bottom:16px;"
         ),
         # Maintenance logs
         Div(

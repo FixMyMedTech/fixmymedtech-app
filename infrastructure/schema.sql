@@ -41,19 +41,34 @@ CREATE TABLE fixmymedtech.profiles (
 CREATE TABLE fixmymedtech.device_categories (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name        TEXT NOT NULL,           -- e.g. "Ultrasound", "Ventilator"
+  slug        TEXT NOT NULL UNIQUE,    -- matches maintenance guide slug, e.g. "ultrasound_machine"
   icon        TEXT DEFAULT '🏥'
 );
 
-INSERT INTO fixmymedtech.device_categories (name, icon) VALUES
-  ('Ventilator', '🫁'),
-  ('Ultrasound', '📡'),
-  ('ECG Monitor', '💓'),
-  ('Infusion Pump', '💉'),
-  ('Oxygen Concentrator', '🫧'),
-  ('Sterilizer', '🧪'),
-  ('X-Ray', '🔬'),
-  ('Defibrillator', '⚡'),
-  ('Other', '🏥');
+INSERT INTO fixmymedtech.device_categories (name, icon, slug) VALUES
+  ('Ventilator', '🫁', 'ventilator'),
+  ('Ultrasound', '📡', 'ultrasound_machine'),
+  ('ECG Monitor', '💓', 'ecg_machine'),
+  ('Infusion Pump', '💉', 'infusion_pump'),
+  ('Oxygen Concentrator', '🫧', 'oxygen_concentrator'),
+  ('Sterilizer', '🧪', 'autoclave_sterilizer'),
+  ('X-Ray', '🔬', 'xray_machine'),
+  ('Defibrillator', '⚡', 'defibrillator'),
+  ('Anaesthetic Machine', '⛽', 'anaesthetic_machine'),
+  ('Electronic Diagnostic Equipment', '🔍', 'electronic_diagnostic_equipment'),
+  ('Electrosurgical Unit', '🔥', 'electrosurgical_unit'),
+  ('Endoscope', '🔭', 'endoscope'),
+  ('Incubator', '👶', 'infant_incubator'),
+  ('Lamp', '💡', 'lamp'),
+  ('Nebulizer', '🌫️', 'nebulizer'),
+  ('Oxygen Cylinder / Flowmeter', '💨', 'oxygen_cylinder_flowmeter'),
+  ('Pulse Oximeter', '🖐️', 'pulse_oximeter'),
+  ('Scale', '⚖️', 'scale'),
+  ('Sphygmomanometer', '🩸', 'sphygmomanometer'),
+  ('Stethoscope', '🩺', 'stethoscope'),
+  ('Suction Machine', '🌀', 'suction_machine'),
+  ('Operating Table', '🛏️', 'operating_table'),
+  ('Other', '🏥', 'other');
 
 -- ============================================================
 -- DEVICES (the core entity)
@@ -62,7 +77,7 @@ CREATE TABLE fixmymedtech.devices (
   id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id   UUID NOT NULL REFERENCES fixmymedtech.organizations(id),
   organization_maintenance_id   UUID NOT NULL REFERENCES fixmymedtech.organizations(id),
-  category_id       UUID REFERENCES fixmymedtech.device_categories(id),
+  category_id       TEXT REFERENCES fixmymedtech.device_categories(slug),
   name              TEXT NOT NULL,
   manufacturer      TEXT,
   model             TEXT,

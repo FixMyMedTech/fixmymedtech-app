@@ -88,6 +88,7 @@ a { color: var(--c-primary); text-decoration: none; }
 .nav-link:hover,.nav-link.active { background:rgba(255,255,255,0.15); color:#fff; }
 .sb-foot { padding:12px 10px; border-top:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:rgba(255,255,255,0.5); }
 .main { margin-left:210px; flex:1; padding:28px 32px; }
+.lang-fab { position:fixed; bottom:16px; left:16px; z-index:200; }
 
 /* Buttons */
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:var(--r-md); font-family:var(--font-body); font-size:0.875rem; font-weight:500; cursor:pointer; transition:all .15s; border:none; text-decoration:none; }
@@ -265,11 +266,6 @@ def language_switcher(current_lang: str):
 def page_shell(content, current: str = "", title: str = "FixMyMedTech",
                lang: str = "en"):
     _ = make_t(lang)
-    top_bar = Div(
-        Div(style="flex:1"),
-        language_switcher(lang),
-        style="display:flex;align-items:center;padding:8px 0;margin-bottom:6px;"
-    )
     return Html(
         Head(
             Meta(charset="utf-8"),
@@ -288,13 +284,15 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
         ),
         Body(
             Div(
-                sidebar(current, lang),
-                Main(
-                    top_bar,
-                    content,
-                    cls="main"
+                Div(language_switcher(lang), cls="lang-fab"),
+                Div(
+                    sidebar(current, lang),
+                    Main(
+                        content,
+                        cls="main",
+                    ),
+                    cls="shell"
                 ),
-                cls="shell"
             )
         )
     )
@@ -302,11 +300,7 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
 
 def pub_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
     """Shell for public QR pages — no sidebar."""
-    top_bar = Div(
-        Div(style="flex:1"),
-        language_switcher(lang),
-        style="display:flex;align-items:center;padding:8px 16px;background:var(--c-bg);"
-    )
+
     return Html(
         Head(
             Meta(charset="utf-8"),
@@ -323,7 +317,10 @@ def pub_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
                 .input-lang:focus { border-color:var(--c-primary); }
             """)
         ),
-        Body(Div(top_bar, content))
+        Body(
+            Div(language_switcher(lang), cls="lang-fab"),
+            content
+        )
     )
 
 
@@ -381,6 +378,7 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False
             }}).addTo(map);
 
             {marker_js}
+            {fit_js}
         """),
         style="margin-top:12px;margin-bottom:12px;",
         cls="card"

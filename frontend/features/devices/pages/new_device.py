@@ -94,6 +94,7 @@ async def get(req, code: str = ""):
     try:
         existing = await devices_api.get_device_public(device_id)
         if existing:
+            d = existing.get("device", {})
             content = Div(
                 Div("✅", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
                 H2(_("new_device.already_heading")),
@@ -147,12 +148,21 @@ async def get(req,device_id: str):
     _ = make_t(lang)
 
     try:
-        categories = await devices_api.get_categories()
+        await devices_api.get_device_public(device_id)
+        return RedirectResponse(f"/device/{device_id}", status_code=303)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code not in (404, 422):
+            raise
     except Exception:
-        categories = []
+        pass
+
+    from features.devices.static.guides import GUIDES, CATEGORY_ICONS
 
     cat_options = [Option(_("new_device.category_placeholder"), value="")]
-    cat_options += [Option(f"{c.get('icon','')} {c['name']}", value=c["id"]) for c in categories]
+    for g in GUIDES:
+        content = g.get(lang) or g
+        icon = CATEGORY_ICONS.get(g["slug"], "🏥")
+        cat_options.append(Option(f"{icon} {content.get('title')}", value=g["slug"]))
 
 
     form = Form(

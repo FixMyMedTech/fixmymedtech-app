@@ -10,7 +10,8 @@ load_dotenv()
 import features.auth.helper as auth_helper
 import features.devices.api as devices_api
 
-from components import page_shell, status_badge, fmt_date
+from components import page_shell, status_badge, fmt_date, map_component
+from features.devices.static.guides import category_label
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -84,7 +85,7 @@ async def get(req, device_id: str):
         style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;margin-bottom:14px;display:inline-block;"),
         Div(
             Div(
-                Div(f"{cat.get('icon','🏥')} {cat.get('name',_('common.device'))}",
+                Div(f"{cat.get('icon','🏥')} {category_label(cat, lang)}",
                     style="font-size:0.8rem;color:var(--c-text-3);margin-bottom:4px;"),
                 H1(d.get("name",""), style="margin-bottom:4px;"),
                 P(f"{d.get('manufacturer','')} {d.get('model','')} · {d.get('location',_('device_detail.no_location'))}",

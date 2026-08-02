@@ -15,6 +15,7 @@ import features.devices.api as devices_api
 import features.faults.api as faults_api
 
 from components import page_shell, status_badge, fmt_date
+from features.devices.static.guides import category_label
 rt = APIRouter()
 
 # ══════════════════════════════════════════════════════════════
@@ -72,7 +73,7 @@ async def get(req, status: str = ""):
             Td(Div(d.get("name", ""), style="font-weight:500;font-size:0.875rem;color:var(--c-text);"),
             Div(f"{d.get('manufacturer','')} {d.get('model','')}".strip(),
                 style="font-size:0.75rem;color:var(--c-text-3);")),
-            Td(f"{cat.get('icon','🏥')} {cat.get('name', _('common.fallback'))}", style="font-size:0.875rem;"),
+            Td(f"{cat.get('icon','🏥')} {category_label(cat, lang)}", style="font-size:0.875rem;"),
             Td(d.get("location", _("common.fallback")), style="font-size:0.875rem;"),
             Td(status_badge(d.get("status", "operational"), lang=lang)),
             Td(

@@ -14,7 +14,8 @@ import features.faults.api as faults_api
 
 from components import *
 
-from components import page_shell, status_badge, fmt_date, pub_shell
+from components import page_shell, status_badge, fmt_date, pub_shell, map_component
+from features.devices.static.guides import category_label, GUIDE_INDEX
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -45,6 +46,31 @@ async def get(req, device_id: str):
     docs = data.get("documents", [])
     faults = data.get("recent_faults", [])
     cat = d.get("category") or {}
+
+    maint_slug = cat.get("slug") or d.get("category_id") or ""
+    if maint_slug in GUIDE_INDEX:
+        user_guide_btn = A(Span("ⓘ", style="font-size:1.3rem;"),
+                                    Div(_("public_qr.user_guide")),
+                                    href=f"/device/maintenace_guide/{maint_slug}",
+                                    cls="btn btn-secondary btn-sm",
+                                    style="margin-left:6px;justify-content:center;")
+        maint_guide_btn = A(Span("🔧", style="font-size:1.3rem;"),
+                            Div(_("public_qr.maint_guide")),
+                            href=f"/device/maintenace_guide/{maint_slug}",
+                            cls="btn btn-secondary btn-sm",
+                            style="margin-left:6px;justify-content:center;")
+    else:
+        user_guide_btn = Button(Span("ⓘ", style="font-size:1.3rem;"),
+                                         Div(_("public_qr.user_guide")),
+                                         disabled=True,
+                                         cls="btn btn-secondary btn-sm",
+                                         style="margin-left:6px;justify-content:center;opacity:.5;cursor:not-allowed;")
+        
+        maint_guide_btn = Button(Span("🔧", style="font-size:1.3rem;"),
+                                 Div(_("public_qr.maint_guide")),
+                                 disabled=True,
+                                 cls="btn btn-secondary btn-sm",
+                                 style="margin-left:6px;justify-content:center;opacity:.5;cursor:not-allowed;")
 
     nm = d.get("next_maintenance","")
     import datetime
@@ -88,7 +114,7 @@ async def get(req, device_id: str):
         Div(
             Div(cat.get("icon","🏥"), cls="dev-icon"),
             Div(
-                Div(cat.get("name", _("common.device")), cls="dev-cat"),
+                Div(category_label(cat, lang), cls="dev-cat"),
                 Div(d.get("name",""), cls="dev-name"),
                 Div(f"{d.get('manufacturer','')}{_('common.sn_prefix')}{d.get('serial_number','')}".strip(" ·"),
                     cls="dev-meta"),
@@ -115,16 +141,8 @@ async def get(req, device_id: str):
                 Strong(_("public_qr.more_info"), style="font-size:0.875rem;"),
                 P(_("public_qr.guidelines"), style="font-size:0.8rem;margin:2px 0 0;"),
             ),
-            A(Span("ⓘ", style="font-size:1.3rem;"),
-              Div(_("public_qr.user_guide")),
-              href=f"/d/{device_id}/report",
-              cls="btn btn-secondary btn-sm",
-              style = "margin-left:6px;justify-content:center"),
-            A(Span("🔧", style="font-size:1.3rem;"),
-              Div(_("public_qr.maint_guide")),
-              href=f"/d/{device_id}/report",
-              cls="btn btn-secondary btn-sm",
-              style = "margin-left:6px;justify-content:center"),
+            user_guide_btn,
+            maint_guide_btn,
             cls="report-cta"
         ),
         # Report fault CTA

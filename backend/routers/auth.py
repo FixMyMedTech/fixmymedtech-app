@@ -6,6 +6,7 @@ from typing import Optional
 from models.models import Profile
 from routers.deps import get_supabase
 from config.supabase_config import AsyncSession,get_db, supa_client as sb
+from utils.profile import get_current_profile
 import uuid
 router = APIRouter()
 
@@ -97,3 +98,14 @@ async def logout(request: Request):
     sb = get_supabase(request)
     sb.auth.sign_out()
     return {"message": "Logged out"}
+
+
+@router.get("/me")
+async def me(profile: Profile = Depends(get_current_profile)):
+    return {
+        "id": profile.id,
+        "full_name": profile.full_name,
+        "role": profile.role,
+        "organization_id": profile.organization_id,
+        "organization_name": profile.organization.name if profile.organization else None,
+    }

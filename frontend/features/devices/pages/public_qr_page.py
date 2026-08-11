@@ -142,7 +142,7 @@ async def get(req, device_id: str):
                 P(_("public_qr.guidelines"), style="font-size:0.8rem;margin:2px 0 0;"),
             ),
             user_guide_btn,
-            maint_guide_btn,
+            # maint_guide_btn,
             cls="report-cta"
         ),
         # Report fault CTA

@@ -13,3 +13,6 @@ async def signup(email: str, password: str, full_name: str, role: str, organizat
 
 async def get_organizations():
     return await _get("/api/organizations/")
+
+async def get_me(token: str):
+    return await _get("/api/auth/me", token)

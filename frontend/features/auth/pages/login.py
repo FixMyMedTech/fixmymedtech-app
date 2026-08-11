@@ -20,7 +20,7 @@ rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 
 @rt("/login")
-async def get(req, expired: str = ""):
+async def get(req, expired: str = "", next: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     # Only redirect if token is actually still valid
@@ -28,7 +28,8 @@ async def get(req, expired: str = ""):
     if token:
         try:
             await dashboard_api.get_dashboard_stats(token)
-            return RedirectResponse("/dashboard", status_code=302)
+            target = next if next.startswith("/") else "/dashboard"
+            return RedirectResponse(target, status_code=302)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 auth_helper.clear_session(req)  # clear expired token, show login
@@ -39,6 +40,7 @@ async def get(req, expired: str = ""):
                     cls="alert alert-warning") if expired else ""
     form = Form(
         Div(
+            Input(type="hidden", name="next", value=next),
             Div(
                 Div(
                     Span(
@@ -89,17 +91,19 @@ async def get(req, expired: str = ""):
 
 
 @rt("/login")
-async def post(req, email: str, password: str):
+async def post(req, email: str, password: str, next: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     try:
         res = await auth_api.login(email, password)
         req.session["token"] = res["access_token"]
         req.session["user_email"] = res["user"]["email"]
-        return RedirectResponse("/dashboard", status_code=302)
+        target = next if next.startswith("/") else "/dashboard"
+        return RedirectResponse(target, status_code=302)
     except httpx.HTTPStatusError:
         form_error = Div(
             Div(
+                Input(type="hidden", name="next", value=next),
                 Div(
                     Span(
                         Img(src=os.getenv("LOGO_URL"),

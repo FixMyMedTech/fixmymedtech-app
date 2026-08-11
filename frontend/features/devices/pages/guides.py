@@ -104,6 +104,9 @@ def _guide_page(guide, lang):
             P(_("guide.first_line"),
               style="color:var(--c-text-3);font-size:0.85rem;margin-bottom:20px;"),
             *cards,
+            H4(_("guide.source_title"), style="font-size:0.875rem;margin:14px 0 6px;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.03em;"),
+            P(("Medical Equipment Maintenance Manual — First line maintenance for end users — Ministry of Health and Family Welfare, New Delhi."),
+                          style="color:var(--c-text-3);font-size:0.85rem;margin-bottom:20px;"),
             style="max-width:860px;margin:0 auto;padding:24px 16px 60px;"
         ),
         cls="pub-page"

@@ -241,7 +241,7 @@ https://yourdomain.com/d/{device_id}
 
 The UUID never changes. The content behind it updates in the database. To generate a printable QR label:
 
-1. Go to https://qr.io or https://www.qrcode-monkey.com
+1. Use the utils/generage_qr.py
 2. Enter the device URL
 3. Download as SVG or PNG
 4. Print on water-resistant label and attach to device

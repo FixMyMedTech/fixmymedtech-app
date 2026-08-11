@@ -12,4 +12,7 @@ async def signup(email: str, password: str, full_name: str, role: str, organizat
     return await _post("/api/auth/signup", data)
 
 async def get_organizations():
-    return await _get("/api/auth/organizations")
+    return await _get("/api/organizations/")
+
+async def get_me(token: str):
+    return await _get("/api/auth/me", token)

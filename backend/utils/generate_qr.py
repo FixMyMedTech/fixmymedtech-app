@@ -28,7 +28,7 @@ from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
 from PIL import Image, ImageDraw, ImageFont
 
 
-BASE_URL = "http://localhost:5001"
+BASE_URL = "https://fixmymedtech-dev.careagain.org"
 OUTPUT_DIR = "qr_codes"
 
 

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # __ API imports __
-import auth.api as auth_api
+import features.auth.api as auth_api
 import features.dashboard.api as dashboard_api
 
 # ── Auth helpers ─────────────────────────────────────────────

@@ -1,6 +1,7 @@
 # components.py — reusable FastHTML UI components
 
 from fasthtml.common import *
+from i18n import LANGUAGES, t as make_t
 
 
 # ── Design tokens ────────────────────────────────────────────
@@ -44,6 +45,30 @@ CSS = """
   --font-body:   'DM Sans', system-ui, sans-serif;
   --r-md: 10px; --r-lg: 16px;
 }
+:root {
+  --sidebar-width: 240px;
+}
+
+/* Base: escritorio */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+}
+
+/* Tablet/móvil: sidebar colapsa */
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--font-body); background: var(--c-bg); color: var(--c-text); -webkit-font-smoothing: antialiased; }
@@ -63,6 +88,7 @@ a { color: var(--c-primary); text-decoration: none; }
 .nav-link:hover,.nav-link.active { background:rgba(255,255,255,0.15); color:#fff; }
 .sb-foot { padding:12px 10px; border-top:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:rgba(255,255,255,0.5); }
 .main { margin-left:210px; flex:1; padding:28px 32px; }
+.lang-fab { position:fixed; bottom:16px; left:16px; z-index:200; }
 
 /* Buttons */
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:var(--r-md); font-family:var(--font-body); font-size:0.875rem; font-weight:500; cursor:pointer; transition:all .15s; border:none; text-decoration:none; }
@@ -176,38 +202,42 @@ tr:hover td { background:var(--c-bg); }
   .auth-card { padding:32px 20px; }
   .form-row { grid-template-columns:1fr; }
 }
+
 """
 
 
-def status_badge(status: str, type: str = "device"):
-    device_map = {
-        "operational":    ("Operational",   "badge-green"),
-        "maintenance":    ("Maintenance",    "badge-amber"),
-        "fault":          ("Fault",          "badge-red"),
-        "decommissioned": ("Decommissioned", "badge-gray"),
+def status_badge(status: str, type: str = "device", lang: str = "en"):
+    _ = make_t(lang)
+    m = {
+        "device": {
+            "operational":    (_("badge.operational"),     "badge-green"),
+            "maintenance":    (_("badge.maintenance"),     "badge-amber"),
+            "fault":          (_("badge.fault"),           "badge-red"),
+            "decommissioned": (_("badge.decommissioned"),  "badge-gray"),
+        },
+        "fault": {
+            "open":        (_("badge.open"),        "badge-red"),
+            "assigned":    (_("badge.assigned"),    "badge-amber"),
+            "in_progress": (_("badge.in_progress"), "badge-blue"),
+            "resolved":    (_("badge.resolved"),    "badge-green"),
+        },
+        "severity": {
+            "low":      (_("badge.low"),      "badge-gray"),
+            "medium":   (_("badge.medium"),   "badge-amber"),
+            "high":     (_("badge.high"),     "badge-red"),
+            "critical": (_("badge.critical"), "badge-red"),
+        },
     }
-    fault_map = {
-        "open":        ("Open",        "badge-red"),
-        "assigned":    ("Assigned",    "badge-amber"),
-        "in_progress": ("In Progress", "badge-blue"),
-        "resolved":    ("Resolved",    "badge-green"),
-    }
-    severity_map = {
-        "low":      ("Low",      "badge-gray"),
-        "medium":   ("Medium",   "badge-amber"),
-        "high":     ("High",     "badge-red"),
-        "critical": ("Critical", "badge-red"),
-    }
-    m = fault_map if type == "fault" else severity_map if type == "severity" else device_map
-    label, cls = m.get(status, (status, "badge-gray"))
+    label, cls = m.get(type, m["device"]).get(status, (status, "badge-gray"))
     return Span(label, cls=f"badge {cls}")
 
 
-def sidebar(current: str = ""):
+def sidebar(current: str = "", lang: str = "en"):
+    _ = make_t(lang)
     links = [
-        ("/dashboard", "◈", "Dashboard"),
-        ("/devices",   "⊞", "Devices"),
-        ("/logout",   "➜]", "Logout"),
+        ("/dashboard", "◈", _("nav.dashboard")),
+        ("/devices",   "⊞", _("nav.devices")),
+        ("/logout",   "➜]", _("nav.logout")),
     ]
     return Aside(
         Div(Span("✚", cls="sb-cross"), Span("FixMyMedTech", cls="sb-name"), cls="sb-logo"),
@@ -221,34 +251,76 @@ def sidebar(current: str = ""):
     )
 
 
-def page_shell(content, current: str = "", title: str = "FixMyMedTEch"):
+def language_switcher(current_lang: str):
+    options = []
+    for code, name in LANGUAGES.items():
+        options.append(Option(name, value=code, selected=(code == current_lang)))
+    return Form(
+        Select(*options, name="lang", cls="input-lang",
+               onchange="this.form.submit()"),
+        method="post", action="/lang",
+        style="display:flex;align-items:center;gap:6px;margin-left:auto;"
+    )
+
+
+def page_shell(content, current: str = "", title: str = "FixMyMedTech",
+               lang: str = "en"):
+    _ = make_t(lang)
     return Html(
         Head(
             Meta(charset="utf-8"),
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
             Style(CSS),
+            Style("""
+                .input-lang {
+                    padding:4px 8px;border:1px solid var(--c-border);
+                    border-radius:var(--r-md);font-size:0.75rem;
+                    background:var(--c-surface);color:var(--c-text);
+                    cursor:pointer;outline:none;
+                }
+                .input-lang:focus { border-color:var(--c-primary); }
+            """)
         ),
         Body(
             Div(
-                sidebar(current),
-                Main(content, cls="main"),
-                cls="shell"
+                Div(language_switcher(lang), cls="lang-fab"),
+                Div(
+                    sidebar(current, lang),
+                    Main(
+                        content,
+                        cls="main",
+                    ),
+                    cls="shell"
+                ),
             )
         )
     )
 
 
-def pub_shell(content, title: str = "FixMyMedTech"):
+def pub_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
     """Shell for public QR pages — no sidebar."""
+
     return Html(
         Head(
             Meta(charset="utf-8"),
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
             Style(CSS),
+            Style("""
+                .input-lang {
+                    padding:4px 8px;border:1px solid var(--c-border);
+                    border-radius:var(--r-md);font-size:0.75rem;
+                    background:var(--c-surface);color:var(--c-text);
+                    cursor:pointer;outline:none;
+                }
+                .input-lang:focus { border-color:var(--c-primary); }
+            """)
         ),
-        Body(content)
+        Body(
+            Div(language_switcher(lang), cls="lang-fab"),
+            content
+        )
     )
 
 
@@ -267,7 +339,7 @@ def fmt_date(iso: str) -> str:
         return iso[:10]
     
 
-def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px"):
+def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False):
     """
     markers = [
         {"lat": 0.3476, "lng": 32.5825, "title": "Mulago Hospital"},
@@ -281,6 +353,12 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px"):
         f"L.marker([{m['lat']}, {m['lng']}]).addTo(map).bindPopup('{m.get('title', '')}');"
         for m in markers
     ])
+
+    if fit and markers:
+        coords = ", ".join(f"[{m['lat']}, {m['lng']}]" for m in markers)
+        fit_js = f"map.fitBounds(L.latLngBounds([{coords}]));"
+    else:
+        fit_js = ""
 
     return Div(
         # Leaflet CSS
@@ -300,7 +378,76 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px"):
             }}).addTo(map);
 
             {marker_js}
+            {fit_js}
         """),
         style="margin-top:12px;margin-bottom:12px;",
         cls="card"
+    )
+
+def qr_scanner_component(target_url="/devices/scan-result"):
+    return Div(
+        Button(
+            "📷 Scan QR code",
+            id="btn-open-scanner",
+            cls="btn btn-primary",
+            onclick="openScanner()"
+        ),
+        # Scanner container, hidden until opened
+        Div(
+            Div(id="qr-reader", style="width:100%;max-width:400px;margin:16px auto;"),
+            Button("Cancel", id="btn-close-scanner", cls="btn btn-secondary",
+                   onclick="closeScanner()"),
+            id="scanner-wrapper",
+            style="display:none;text-align:center;"
+        ),
+        # Fallback manual entry
+        Div(
+            Label("Or enter code manually:", cls="label"),
+            Input(id="manual-code", cls="input", placeholder="e.g. MT-00123"),
+            Button("Submit", cls="btn btn-secondary", onclick="submitManualCode()"),
+            style="margin-top:12px;"
+        ),
+        Script(f"""
+        let html5QrCode = null;
+
+        function openScanner() {{
+            document.getElementById('scanner-wrapper').style.display = 'block';
+            document.getElementById('btn-open-scanner').style.display = 'none';
+
+            html5QrCode = new Html5Qrcode("qr-reader");
+            const config = {{ fps: 10, qrbox: {{ width: 250, height: 250 }} }};
+
+            html5QrCode.start(
+                {{ facingMode: "environment" }},  // rear camera
+                config,
+                (decodedText) => {{
+                    // Success — stop scanner and navigate
+                    html5QrCode.stop().then(() => {{
+                        window.location.href = "{target_url}?code=" + encodeURIComponent(decodedText);
+                    }});
+                }},
+                (errorMessage) => {{
+                    // Ignore per-frame decode errors (fires constantly while scanning)
+                }}
+            ).catch((err) => {{
+                alert("Could not access camera: " + err);
+                closeScanner();
+            }});
+        }}
+
+        function closeScanner() {{
+            if (html5QrCode) {{
+                html5QrCode.stop().catch(() => {{}});
+            }}
+            document.getElementById('scanner-wrapper').style.display = 'none';
+            document.getElementById('btn-open-scanner').style.display = 'inline-block';
+        }}
+
+        function submitManualCode() {{
+            const code = document.getElementById('manual-code').value.trim();
+            if (code) {{
+                window.location.href = "{target_url}?code=" + encodeURIComponent(code);
+            }}
+        }}
+        """)
     )

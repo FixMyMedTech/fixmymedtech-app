@@ -116,7 +116,7 @@ async def seed():
                 user_id = res.user.id
                 print(f"  ✓ {email:<30} → {user_id}")
             except Exception as e:
-                if "already exists" in str(e):
+                if "already" in str(e):
                     # Try to find existing user
                     try:
                         users = sb.auth.admin.list_users()

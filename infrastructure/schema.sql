@@ -86,6 +86,8 @@ CREATE TABLE fixmymedtech.devices (
   acquisition_date  DATE,
   acquisition_type  TEXT CHECK (acquisition_type IN ('purchased', 'donated', 'leased')) DEFAULT 'purchased',
   location          TEXT,             -- e.g. "Ward 3 / Room 12"
+  latitude          DOUBLE PRECISION,
+  longitude         DOUBLE PRECISION,
   status            TEXT CHECK (status IN ('operational', 'maintenance', 'fault', 'decommissioned')) DEFAULT 'operational',
   last_maintenance  DATE,
   next_maintenance  DATE,

@@ -2,8 +2,8 @@ name: Deploy Development
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [dev]
+  push:
+    branches: [dev]
 
 concurrency:
   group: deploy-dev
@@ -33,7 +33,7 @@ jobs:
             SUPABASE_URL=${{ secrets.DEV_SUPABASE_URL }}
             SUPABASE_API_ANON_KEY=${{ secrets.DEV_SUPABASE_API_ANON_KEY }}
             SUPABASE_API_SECRET_KEY=${{ secrets.DEV_SUPABASE_API_SECRET_KEY }}
-            SUPABASE_DB_SCHEMA=fixmymedtech
+            SUPABASE_DB_SCHEMA=fixmymedtech_dev
             FRONTEND_URL=${{ secrets.DEV_FRONTEND_URL }}
             API_URL=http://backend:8888
             EOF

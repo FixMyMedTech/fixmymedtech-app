@@ -33,7 +33,8 @@ jobs:
             SUPABASE_URL=${{ secrets.DEV_SUPABASE_URL }}
             SUPABASE_API_ANON_KEY=${{ secrets.DEV_SUPABASE_API_ANON_KEY }}
             SUPABASE_API_SECRET_KEY=${{ secrets.DEV_SUPABASE_API_SECRET_KEY }}
-            SUPABASE_DB_SCHEMA=fixmymedtech_dev
+            SUPABASE_DB_URI=${{ secrets.DEV_SUPABASE_DB_URI }}
+            SUPABASE_DB_SCHEMA=fixmymedtech
             FRONTEND_URL=${{ secrets.DEV_FRONTEND_URL }}
             API_URL=http://backend:8888
             EOF
@@ -45,7 +46,7 @@ jobs:
           username: ${{ secrets.DEV_DEPLOY_USER }}
           key: ${{ secrets.DEV_DEPLOY_KEY }}
           port: ${{ secrets.DEV_DEPLOY_PORT }}
-          source: "backend,frontend,db,docker-compose.dev.yml"
+          source: "backend,frontend,docker-compose.dev.yml"
           target: ${{ env.APP_DIR }}
 
       - name: Build and deploy containers

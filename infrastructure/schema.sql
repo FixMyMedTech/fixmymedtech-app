@@ -134,6 +134,7 @@ CREATE TABLE fixmymedtech.fault_reports (
   device_id       UUID NOT NULL REFERENCES fixmymedtech.devices(id) ON DELETE CASCADE,
   reported_by     UUID REFERENCES fixmymedtech.profiles(id),
   reporter_name   TEXT,               -- for anonymous reports (no account needed)
+  assigned_to     UUID REFERENCES fixmymedtech.profiles(id),
   reported_at     TIMESTAMPTZ DEFAULT NOW(),
   description     TEXT NOT NULL,
   severity        TEXT CHECK (severity IN ('low', 'medium', 'high', 'critical')) DEFAULT 'medium',

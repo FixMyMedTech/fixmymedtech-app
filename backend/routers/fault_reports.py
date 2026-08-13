@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,12 +16,15 @@ from models.models import Device, FaultReport, Profile
 
 router = APIRouter()
 
+ASSIGNABLE_ROLES = ("technician", "engineering_staff", "admin")
+
 
 class FaultReportCreate(BaseModel):
     device_id: UUID
     description: str
     severity: str = "medium"
     reporter_name: Optional[str] = None  # para reportes anónimos
+    assigned_to: Optional[UUID] = None   # técnico/ingeniero de la org de mantenimiento
 
 
 class FaultStatusUpdate(BaseModel):
@@ -39,12 +42,29 @@ async def submit_fault_public(body: FaultReportCreate, db: AsyncSession = Depend
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
+    # Validar que el asignado pertenezca a la org de mantenimiento del device
+    if body.assigned_to:
+        assignee_result = await db.execute(
+            select(Profile).where(Profile.id == body.assigned_to)
+        )
+        assignee = assignee_result.scalar_one_or_none()
+        if (
+            not assignee
+            or assignee.organization_id != device.organization_maintenance_id
+            or assignee.role not in ASSIGNABLE_ROLES
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Assignee must be a technician or engineer of the maintenance organization",
+            )
+
     fault = FaultReport(
         device_id=body.device_id,
         description=body.description,
         severity=body.severity,
         reporter_name=body.reporter_name or "Anonymous",
-        status="open",
+        status="assigned" if body.assigned_to else "open",
+        assigned_to=body.assigned_to,
     )
     db.add(fault)
 
@@ -58,6 +78,31 @@ async def submit_fault_public(body: FaultReportCreate, db: AsyncSession = Depend
     return {"message": "Fault report submitted. A technician will be notified.", "id": fault.id}
 
 
+# ── Protegido: técnicos/ingenieros de la org de mantenimiento ─
+@router.get("/assignees/{device_id}")
+async def get_fault_assignees(
+    device_id: UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Devuelve los técnicos/ingenieros de la organización de mantenimiento
+    del dispositivo, a quienes se puede asignar una falla."""
+    device_result = await db.execute(select(Device).where(Device.id == device_id))
+    device = device_result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    result = await db.execute(
+        select(Profile)
+        .where(
+            Profile.organization_id == device.organization_maintenance_id,
+            Profile.role.in_(ASSIGNABLE_ROLES),
+        )
+        .order_by(Profile.full_name)
+    )
+    return result.scalars().all()
+
+
 # ── Protegido: listar todas las fallas de la organización ──────
 @router.get("/")
 async def list_faults(
@@ -68,8 +113,14 @@ async def list_faults(
     query = (
         select(FaultReport)
         .join(Device, FaultReport.device_id == Device.id)
-        .options(selectinload(FaultReport.device))
-        .where(Device.organization_id == profile.organization_id)
+        .options(
+            selectinload(FaultReport.device),
+            selectinload(FaultReport.assigned_to_profile),
+        )
+        .where(or_(
+            Device.organization_id == profile.organization_id,
+            Device.organization_maintenance_id == profile.organization_id,
+        ))
         .order_by(FaultReport.reported_at.desc())
     )
 

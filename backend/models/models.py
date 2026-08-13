@@ -94,7 +94,7 @@ class Profile(Base):
     # Relationships
     organization    = relationship("Organization", back_populates="profiles", foreign_keys=[organization_id])
     maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile")
-    fault_reports   = relationship("FaultReport", back_populates="reported_by_profile")
+    fault_reports   = relationship("FaultReport", back_populates="reported_by_profile", foreign_keys="FaultReport.reported_by")
     auth_user = relationship("AuthUser", backref="profile", lazy="selectin")
 
     def __repr__(self):
@@ -259,6 +259,7 @@ class FaultReport(Base):
     device_id           = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"), nullable=False)
     reported_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
     reporter_name       = Column(Text)
+    assigned_to         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
     reported_at         = Column(DateTime(timezone=True), server_default=func.now())
     description         = Column(Text, nullable=False)
     severity            = Column(Text, default="medium")
@@ -268,7 +269,16 @@ class FaultReport(Base):
 
     # Relationships
     device                  = relationship("Device", back_populates="fault_reports")
-    reported_by_profile     = relationship("Profile", back_populates="fault_reports")
+    reported_by_profile     = relationship(
+        "Profile",
+        back_populates="fault_reports",
+        foreign_keys=[reported_by],
+    )
+    assigned_to_profile     = relationship(
+        "Profile",
+        foreign_keys=[assigned_to],
+        primaryjoin="Profile.id == FaultReport.assigned_to",
+    )
 
     def __repr__(self):
         return f"<FaultReport {self.severity} on {self.device_id} [{self.status}]>"

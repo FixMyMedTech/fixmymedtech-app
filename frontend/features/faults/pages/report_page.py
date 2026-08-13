@@ -43,6 +43,31 @@ async def get(req, device_id: str):
     except Exception:
         full_name = req.session.get("user_email", "")
 
+    assignees = []
+    try:
+        assignees = await faults_api.get_fault_assignees(token, device_id)
+    except Exception:
+        assignees = []
+
+    assignee_field = ""
+    if assignees:
+        assignee_options = [Option(_("report_fault.assignee_none"), value="")]
+        for a in assignees:
+            role_label = _("role." + (a.get("role") or "technician"))
+            assignee_options.append(
+                Option(f"{a.get('full_name','')} — {role_label}", value=a["id"])
+            )
+        assignee_field = Div(
+            Label(_("report_fault.assignee_label"), cls="label"),
+            Select(
+                *assignee_options,
+                name="assigned_to",
+                cls="input",
+            ),
+            cls="form-group",
+            style="margin-top:12px;"
+        )
+
     content = Div(
         Div(
             A(_("public_qr.back"), href=f"/d/{device_id}",
@@ -72,6 +97,7 @@ async def get(req, device_id: str):
                     style="opacity:.7;"),
                 cls="form-group", style="margin-top:12px;"
             ),
+            assignee_field,
             Button(_("report_fault.submit"), type="submit", cls="btn btn-primary",
                    style="width:100%;justify-content:center;margin-top:8px;"),
             style="padding:16px;"
@@ -87,7 +113,7 @@ async def get(req, device_id: str):
 
 @rt("/d/{device_id}/report")
 async def post(req, device_id: str, description: str,
-               severity: str = "medium"):
+               severity: str = "medium", assigned_to: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return RedirectResponse(f"/login?next=/d/{device_id}/report", status_code=302)
@@ -103,13 +129,17 @@ async def post(req, device_id: str, description: str,
     except Exception:
         full_name = req.session.get("user_email", "Anonymous")
 
+    data = {
+        "device_id": device_id,
+        "description": description,
+        "severity": severity,
+        "reporter_name": full_name,
+    }
+    if assigned_to:
+        data["assigned_to"] = assigned_to
+
     try:
-        await faults_api.submit_fault_public({
-            "device_id": device_id,
-            "description": description,
-            "severity": severity,
-            "reporter_name": full_name,
-        })
+        await faults_api.submit_fault_public(data)
     except Exception:
         pass
 

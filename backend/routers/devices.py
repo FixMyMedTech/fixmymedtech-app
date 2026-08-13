@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -101,7 +101,10 @@ async def list_devices(
             selectinload(Device.category),
             selectinload(Device.organization_maintenance),
         )
-        .where(Device.organization_id == profile.organization_id)
+        .where(or_(
+            Device.organization_id == profile.organization_id,
+            Device.organization_maintenance_id == profile.organization_id,
+        ))
         .order_by(Device.name)
     )
 
@@ -151,6 +154,7 @@ async def get_device(
 
     faults_result = await db.execute(
         select(FaultReport)
+        .options(selectinload(FaultReport.assigned_to_profile))
         .where(FaultReport.device_id == device_id)
         .order_by(FaultReport.reported_at.desc())
         .limit(10)
@@ -199,13 +203,14 @@ async def update_device(
     if profile.role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    if body.organization_maintenance_id is not None and profile.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can change the maintenance organization")
-
     result = await db.execute(select(Device).where(Device.id == device_id))
     device = result.scalar_one_or_none()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
+
+    if body.organization_maintenance_id is not None:
+        if profile.role != "admin" or device.organization_id != profile.organization_id:
+            raise HTTPException(status_code=403, detail="Only the admin of the organization owning the device can change the maintenance organization")
 
     payload = body.model_dump(exclude_none=True)
     for key, value in payload.items():

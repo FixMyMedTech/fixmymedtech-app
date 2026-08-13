@@ -61,9 +61,11 @@ async def get(req, status: str = ""):
     ]
 
     is_admin = False
+    my_org_id = None
     try:
         me = await auth_api.get_me(token)
         is_admin = me.get("role") == "admin"
+        my_org_id = me.get("organization_id")
     except Exception:
         is_admin = False
 
@@ -81,7 +83,8 @@ async def get(req, status: str = ""):
 
     def maintenance_cell(d):
         name = (d.get("organization_maintenance") or {}).get("name", "")
-        if not is_admin:
+        owns = d.get("organization_id") == my_org_id
+        if not (is_admin and owns):
             return Td(Span(name, style="font-size:0.875rem;"))
         options = [
             Option(f"{o['name']} ({o['country']})", value=o["id"],

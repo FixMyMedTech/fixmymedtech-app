@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -25,10 +25,16 @@ async def get_dashboard_stats(
     now = datetime.now(timezone.utc)
     soon = now + timedelta(days=30)
 
+    # Dispositivos que la organización posee o cuyo mantenimiento gestiona
+    device_filter = or_(
+        Device.organization_id == org_id,
+        Device.organization_maintenance_id == org_id,
+    )
+
     # ── Conteo de dispositivos por status (agregado en SQL, no en Python) ──
     status_counts_result = await db.execute(
         select(Device.status, func.count(Device.id))
-        .where(Device.organization_id == org_id)
+        .where(device_filter)
         .group_by(Device.status)
     )
     by_status = {"operational": 0, "maintenance": 0, "fault": 0, "decommissioned": 0}
@@ -44,7 +50,7 @@ async def get_dashboard_stats(
             func.count(case((
                 Device.next_maintenance.between(now.date(), soon.date()), Device.id
             ))),
-        ).where(Device.organization_id == org_id)
+        ).where(device_filter)
     )
     overdue_count, due_soon_count = maintenance_result.one()
 
@@ -53,7 +59,7 @@ async def get_dashboard_stats(
         select(FaultReport)
         .join(Device, FaultReport.device_id == Device.id)
         .options(selectinload(FaultReport.device))
-        .where(Device.organization_id == org_id, FaultReport.status == "open")
+        .where(device_filter, FaultReport.status == "open")
         .order_by(FaultReport.reported_at.desc())
         .limit(10)
     )
@@ -73,7 +79,7 @@ async def get_dashboard_stats(
         select(MaintenanceLog)
         .join(Device, MaintenanceLog.device_id == Device.id)
         .options(selectinload(MaintenanceLog.device))
-        .where(Device.organization_id == org_id)
+        .where(device_filter)
         .order_by(MaintenanceLog.performed_at.desc())
         .limit(5)
     )

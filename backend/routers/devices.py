@@ -40,6 +40,7 @@ class DeviceUpdate(BaseModel):
     location: Optional[str] = None
     notes: Optional[str] = None
     next_maintenance: Optional[date] = None
+    organization_maintenance_id: Optional[UUID] = None
 
 
 class LocationUpdate(BaseModel):
@@ -96,7 +97,10 @@ async def list_devices(
 ):
     query = (
         select(Device)
-        .options(selectinload(Device.category))
+        .options(
+            selectinload(Device.category),
+            selectinload(Device.organization_maintenance),
+        )
         .where(Device.organization_id == profile.organization_id)
         .order_by(Device.name)
     )
@@ -194,6 +198,9 @@ async def update_device(
 ):
     if profile.role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    if body.organization_maintenance_id is not None and profile.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can change the maintenance organization")
 
     result = await db.execute(select(Device).where(Device.id == device_id))
     device = result.scalar_one_or_none()

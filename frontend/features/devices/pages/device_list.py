@@ -10,9 +10,11 @@ from i18n import t as make_t
 
 # __ API imports __
 import features.auth.helper as auth_helper
+import features.auth.api as auth_api
 import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api
+import features.organizations.api as org_api
 
 from components import page_shell, status_badge, fmt_date
 from features.devices.static.guides import category_label
@@ -58,11 +60,46 @@ async def get(req, status: str = ""):
         ("decommissioned", _("device_list.filter_decommissioned")),
     ]
 
+    is_admin = False
+    try:
+        me = await auth_api.get_me(token)
+        is_admin = me.get("role") == "admin"
+    except Exception:
+        is_admin = False
+
+    orgs = []
+    try:
+        orgs = await org_api.get_organizations()
+    except Exception:
+        orgs = []
+
     pills = [
         A(label, href=f"/devices?status={val}",
         cls=f"pill {'active' if status == val else ''}")
         for val, label in status_filters
     ]
+
+    def maintenance_cell(d):
+        name = (d.get("organization_maintenance") or {}).get("name", "")
+        if not is_admin:
+            return Td(Span(name, style="font-size:0.875rem;"))
+        options = [
+            Option(f"{o['name']} ({o['country']})", value=o["id"],
+                   selected=(o["id"] == d.get("organization_maintenance_id")))
+            for o in orgs
+        ]
+        return Td(
+            Form(
+                Select(
+                    *options,
+                    name="organization_maintenance_id",
+                    onchange="this.form.submit()",
+                    style="max-width:220px;padding:6px 8px;border:1px solid var(--c-border);border-radius:var(--r-md);font-size:0.8rem;",
+                ),
+                method="post",
+                action=f"/devices/{d['id']}/maintenance-org",
+            )
+        )
 
     rows = []
     for d in devices:
@@ -80,15 +117,16 @@ async def get(req, status: str = ""):
                 Span(fmt_date(nm), cls="overdue" if overdue else ""),
                 Span(_("device_list.overdue"), cls="overdue-tag") if overdue else ""
             ),
+            maintenance_cell(d),
             Td(A(_("device_list.view"), href=f"/device/{d['id']}", cls="btn btn-secondary btn-sm")),
         ))
 
     table = Div(
         Table(
             Thead(Tr(Th(_("device_list.col_device")), Th(_("device_list.col_category")), Th(_("device_list.col_location")),
-                    Th(_("device_list.col_status")), Th(_("device_list.col_next")), Th(""))),
+                    Th(_("device_list.col_status")), Th(_("device_list.col_next")), Th(_("device_list.col_maintenance_org")), Th(""))),
             Tbody(*rows) if rows else Tbody(
-                Tr(Td(_("device_list.empty"), colspan="6",
+                Tr(Td(_("device_list.empty"), colspan="7",
                     style="text-align:center;padding:32px;color:var(--c-text-3);"))
             )
         ),
@@ -107,3 +145,17 @@ async def get(req, status: str = ""):
     )
 
     return page_shell(content, current="/devices", title=_("title.devices"), lang=lang)
+
+
+@rt("/devices/{device_id}/maintenance-org")
+async def post_maintenance_org(req, device_id: str, organization_maintenance_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect: return redirect
+
+    try:
+        await devices_api.update_device(token, device_id, {"organization_maintenance_id": organization_maintenance_id})
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            auth_helper.clear_session(req)
+            return RedirectResponse("/login?expired=1", status_code=302)
+    return RedirectResponse("/devices", status_code=303)

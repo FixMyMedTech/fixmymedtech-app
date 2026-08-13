@@ -1,0 +1,11 @@
+---
+# App-specific variables for the deploy playbook.
+
+# Directory on the server where the app lives.
+project_dir: /app/
+
+# Optional Docker Hub credentials.
+# Only needed if you pull images from Docker Hub (rate limits / private repos).
+# Leave empty to skip the docker login step.
+dockerhub_username: ${{ secrets.DOCKERHUB_TOKEN }}
+dockerhub_token: ${{ secrets.DOCKERHUB_USERNAME }}

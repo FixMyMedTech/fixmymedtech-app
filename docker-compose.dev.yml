@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: fixmymedtech
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -24,14 +24,14 @@ services:
     build: ./backend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8888:8888"
+      - "127.0.0.1:8889:8888"
     environment:
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_API_SECRET_KEY: ${SUPABASE_API_SECRET_KEY}
       SUPABASE_API_ANON_KEY: ${SUPABASE_API_ANON_KEY}
       SUPABASE_DB_URI: postgresql+asyncpg://postgres:postgres@db:5432/fixmymedtech
       SUPABASE_DB_SCHEMA: fixmymedtech
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      FRONTEND_URL: ${FRONTEND_URL:-https://dev.example.org}
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
     environment:
       API_URL: ${API_URL:-http://backend:8888}
     ports:
-      - "127.0.0.1:5001:5001"
+      - "127.0.0.1:5002:5001"
     depends_on:
       - backend
 

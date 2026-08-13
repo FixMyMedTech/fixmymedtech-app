@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from models.models import Profile
+from models.models import Organization, Profile
 from routers.deps import get_supabase
 from config.supabase_config import AsyncSession,get_db, supa_client as sb
 from utils.profile import get_current_profile
@@ -25,6 +25,8 @@ class SignupRequest(BaseModel):
     password: str
     full_name: str
     organization_id: Optional[str] = None
+    organization_name: Optional[str] = None
+    country: Optional[str] = None
     role: str = "clinical_staff"
 
 
@@ -63,20 +65,25 @@ async def signup(body: SignupRequest, request: Request,
         })
         user_id = res.user.id
 
-        
-        # Create profile
-        profile = {
-            "id": user_id,
-            "full_name": body.full_name,
-            "organization_id": body.organization_id,
-            "role": body.role,
-        }
+        # Auto-create an organization if the user didn't pick one
+        if body.organization_id:
+            org_id = body.organization_id
+        else:
+            org_name = body.organization_name or f"{body.full_name}'s Organization"
+            org = Organization(
+                name=org_name,
+                country=body.country or "",
+                type="hospital",
+            )
+            db.add(org)
+            await db.flush()
+            org_id = str(org.id)
 
         # Crear el profile en nuestra DB vía SQLAlchemy
         profile = Profile(
             id=user_id,
             full_name=body.full_name,
-            organization_id=body.organization_id,
+            organization_id=org_id,
             role=body.role,
         )
         db.add(profile)

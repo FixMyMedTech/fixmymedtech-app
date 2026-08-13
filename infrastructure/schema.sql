@@ -118,6 +118,7 @@ CREATE TABLE fixmymedtech.maintenance_logs (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   device_id       UUID NOT NULL REFERENCES fixmymedtech.devices(id) ON DELETE CASCADE,
   performed_by    UUID REFERENCES fixmymedtech.profiles(id),
+  assigned_to     UUID REFERENCES fixmymedtech.profiles(id),
   performed_at    TIMESTAMPTZ DEFAULT NOW(),
   type            TEXT CHECK (type IN ('preventive', 'corrective', 'inspection')) NOT NULL,
   description     TEXT,

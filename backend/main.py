@@ -19,7 +19,7 @@ import httpx
 
 from models import models
 from config.supabase_config import supa_client, engine, AsyncSessionLocal, Base
-from routers import devices, fault_reports, dashboard, auth, organizations
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, organizations
 from config.supabase_config import supa_client
 
 load_dotenv()
@@ -56,6 +56,7 @@ app.add_middleware(
 app.include_router(auth.router,         prefix="/api/auth",    tags=["auth"])
 app.include_router(devices.router,      prefix="/api/devices", tags=["devices"])
 app.include_router(fault_reports.router,prefix="/api/faults",  tags=["faults"])
+app.include_router(maintenance_logs.router,prefix="/api/maintenance-logs",  tags=["maintenance-logs"])
 app.include_router(dashboard.router,    prefix="/api/dashboard",tags=["dashboard"])
 app.include_router(organizations.router,    prefix="/api/organizations",tags=["organizations"])
 

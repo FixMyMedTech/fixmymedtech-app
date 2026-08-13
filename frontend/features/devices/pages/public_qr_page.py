@@ -133,6 +133,9 @@ async def get(req, device_id: str):
                 Strong(_("public_qr.maint_overdue")),
                 P(f"{_('public_qr.maint_due')}{fmt_date(nm)}{_('public_qr.maint_contact')}"),
             ),
+            A(_("public_qr.maintenance_log_btn"), href=f"/d/{device_id}/maintenance-log",
+              cls="btn btn-primary btn-sm",
+              style="flex-shrink:0;margin-left:auto;justify-content:center;"),
             cls="warn-bar"
         ) if overdue else "",
         # Manuals

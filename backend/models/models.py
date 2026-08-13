@@ -93,7 +93,7 @@ class Profile(Base):
 
     # Relationships
     organization    = relationship("Organization", back_populates="profiles", foreign_keys=[organization_id])
-    maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile")
+    maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile", foreign_keys="MaintenanceLog.performed_by")
     fault_reports   = relationship("FaultReport", back_populates="reported_by_profile", foreign_keys="FaultReport.reported_by")
     auth_user = relationship("AuthUser", backref="profile", lazy="selectin")
 
@@ -222,6 +222,7 @@ class MaintenanceLog(Base):
     id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     device_id       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"), nullable=False)
     performed_by    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    assigned_to     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
     performed_at    = Column(DateTime(timezone=True), server_default=func.now())
     type            = Column(Text, nullable=False)
     description     = Column(Text)
@@ -231,7 +232,12 @@ class MaintenanceLog(Base):
 
     # Relationships
     device                  = relationship("Device", back_populates="maintenance_logs")
-    performed_by_profile    = relationship("Profile", back_populates="maintenance_logs")
+    performed_by_profile    = relationship("Profile", back_populates="maintenance_logs", foreign_keys=[performed_by])
+    assigned_to_profile     = relationship(
+        "Profile",
+        foreign_keys=[assigned_to],
+        primaryjoin="Profile.id == MaintenanceLog.assigned_to",
+    )
 
     def __repr__(self):
         return f"<MaintenanceLog {self.type} on {self.device_id} at {self.performed_at}>"

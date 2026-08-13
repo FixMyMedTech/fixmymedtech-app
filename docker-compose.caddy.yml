@@ -1,6 +1,7 @@
 services:
 
   caddy:
+    platform: linux/arm64
     image: caddy:2
     restart: unless-stopped
     network_mode: host

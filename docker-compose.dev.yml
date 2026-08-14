@@ -2,7 +2,9 @@ services:
 
   backend:
     platform: linux/arm64
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:8889:8888"

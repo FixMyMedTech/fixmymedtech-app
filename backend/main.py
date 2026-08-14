@@ -21,6 +21,7 @@ from models import models
 from config.supabase_config import supa_client, engine, AsyncSessionLocal, Base
 from routers import devices, fault_reports, maintenance_logs, dashboard, auth, organizations
 from config.supabase_config import supa_client
+from migrations import run_migrations
 
 load_dotenv()
 
@@ -30,6 +31,12 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Apply pending DB migrations before serving traffic
+    try:
+        await run_migrations(engine)
+    except Exception as e:
+        print(f"[migrations] ERROR: {e}")
+        raise
     app.state.supabase = supa_client
     yield
 

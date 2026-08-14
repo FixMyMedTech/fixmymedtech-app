@@ -46,7 +46,7 @@ jobs:
           username: ${{ secrets.PROD_DEPLOY_USER }}
           key: ${{ secrets.PROD_DEPLOY_KEY }}
           port: ${{ secrets.PROD_DEPLOY_PORT }}
-          source: "backend,frontend,docker-compose.yml"
+          source: "backend,frontend,docker-compose.yml,infrastructure"
           target: ${{ env.APP_DIR }}
 
       - name: Build and deploy containers

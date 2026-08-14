@@ -45,10 +45,28 @@ WHERE category_id IS NOT NULL
 ALTER TABLE fixmymedtech.device_categories
   ALTER COLUMN slug SET NOT NULL;
 
-ALTER TABLE fixmymedtech.device_categories
-  ADD CONSTRAINT device_categories_slug_key UNIQUE (slug);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'device_categories_slug_key'
+          AND conrelid = 'fixmymedtech.device_categories'::regclass
+    ) THEN
+        ALTER TABLE fixmymedtech.device_categories
+            ADD CONSTRAINT device_categories_slug_key UNIQUE (slug);
+    END IF;
+END $$;
 
 -- 8. Re-add FK devices.category_id -> device_categories(slug)
-ALTER TABLE fixmymedtech.devices
-  ADD CONSTRAINT devices_category_id_fkey
-  FOREIGN KEY (category_id) REFERENCES fixmymedtech.device_categories(slug);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'devices_category_id_fkey'
+          AND conrelid = 'fixmymedtech.devices'::regclass
+    ) THEN
+        ALTER TABLE fixmymedtech.devices
+            ADD CONSTRAINT devices_category_id_fkey
+            FOREIGN KEY (category_id) REFERENCES fixmymedtech.device_categories(slug);
+    END IF;
+END $$;

@@ -13,7 +13,21 @@ import features.dashboard.api as dashboard_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
 from components import pub_shell
+from countries import COUNTRIES
 rt = APIRouter()
+
+
+def _country_options(t, selected: str = ""):
+    return [Option(t("signup.select_country"), value="", selected=not selected)] + [
+        Option(c, value=c, selected=(c == selected)) for c in COUNTRIES
+    ]
+
+
+def _org_options(orgs, t, selected: str = ""):
+    return [Option(t("signup.create_org"), value="", selected=not selected)] + [
+        Option(f"{o['name']} ({o['country']})", value=o["id"],
+               selected=(str(o["id"]) == str(selected))) for o in orgs
+    ]
 
 # ══════════════════════════════════════════════════════════════
 # AUTH ROUTES
@@ -162,8 +176,7 @@ async def get(req):
     except Exception:
         orgs = []
 
-    org_options = [Option(_("signup.select_org"), value="")]
-    org_options += [Option(f"{o['name']} ({o['country']})", value=o["id"]) for o in orgs]
+    org_options = _org_options(orgs, _)
 
     content = Div(
         Div(
@@ -216,6 +229,16 @@ async def get(req):
                 ),
                 cls="form-group"
             ),
+            Div(
+                Label(_("signup.org_label"), cls="label", for_="organization_id"),
+                Select(*org_options, id="organization_id", name="organization_id", cls="input"),
+                cls="form-group"
+            ),
+            Div(
+                Label(_("signup.country_label"), cls="label", for_="country"),
+                Select(*_country_options(_), id="country", name="country", cls="input"),
+                cls="form-group"
+            ),
             Button(_("signup.submit"), type="submit", cls="btn btn-primary",
                 style="width:100%;justify-content:center;margin-top:8px;"),
             P(_("signup.login_link"), A(_("signup.login_link_action"), href="/login"),
@@ -259,7 +282,7 @@ async def get(req):
 
 @rt("/signup")
 async def post(req, full_name: str, email: str, password: str,
-            password2: str, role: str, organization_id: str = ""):
+            password2: str, role: str, organization_id: str = "", country: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     errors = []
@@ -272,7 +295,8 @@ async def post(req, full_name: str, email: str, password: str,
         try:
             await auth_api.signup(
                 email=email, password=password, full_name=full_name,
-                role=role, organization_id=organization_id or None
+                role=role, organization_id=organization_id or None,
+                country=country or None
             )
             success = pub_shell(
                 Div(
@@ -295,6 +319,11 @@ async def post(req, full_name: str, email: str, password: str,
 
     if errors:
         error_msg = Div(*[Div(e, cls="alert alert-error") for e in errors])
+
+        try:
+            orgs = await org_api.get_organizations()
+        except Exception:
+            orgs = []
 
         signup_form = Div(
             Div(
@@ -346,6 +375,17 @@ async def post(req, full_name: str, email: str, password: str,
                             _("signup.role_admin")),
                         style="display:flex;flex-direction:column;gap:6px;font-size:0.875rem;"
                     ),
+                    cls="form-group"
+                ),
+                Div(
+                    Label(_("signup.org_label"), cls="label", for_="organization_id"),
+                    Select(*_org_options(orgs, _, organization_id),
+                        id="organization_id", name="organization_id", cls="input"),
+                    cls="form-group"
+                ),
+                Div(
+                    Label(_("signup.country_label"), cls="label", for_="country"),
+                    Select(*_country_options(_, country), id="country", name="country", cls="input"),
                     cls="form-group"
                 ),
                 Button(_("signup.submit"), type="submit", cls="btn btn-primary",

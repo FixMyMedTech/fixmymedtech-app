@@ -26,3 +26,4 @@ docs/venv/
 /resources
 useful_commands.txt
 frontend/.sesskey
+infrastructure/nginx/nginx.conf

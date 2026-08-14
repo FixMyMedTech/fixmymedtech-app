@@ -2,13 +2,17 @@
 
 from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import select
 from typing import Optional
 from models.models import Organization, Profile
 from routers.deps import get_supabase
 from config.supabase_config import AsyncSession,get_db, supa_client as sb
 from utils.profile import get_current_profile
 import uuid
+import logging
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 import os
 
@@ -55,18 +59,28 @@ async def signup(body: SignupRequest, request: Request,
                  db: AsyncSession = Depends(get_db)):
 
     print(body)
-    print(request)
     sb = get_supabase(request)
     try:
-        res = sb.auth.sign_up({"email": body.email, "password": body.password,
-                "options": {
-                        "email_redirect_to": f"{FRONTEND_URL}/login"
-                    }
+        email_redirect_to = f"{FRONTEND_URL}/login" if FRONTEND_URL else None
+        res = sb.auth.sign_up({
+            "email": body.email, "password": body.password,
+            "options": ({"email_redirect_to": email_redirect_to}
+                        if email_redirect_to else None),
         })
         user_id = res.user.id
 
         # Auto-create an organization if the user didn't pick one
         if body.organization_id:
+            try:
+                org_uuid = uuid.UUID(body.organization_id)
+            except (ValueError, TypeError, AttributeError):
+                raise HTTPException(status_code=400, detail="Invalid organization id")
+            res = await db.execute(
+                select(Organization).where(Organization.id == org_uuid)
+            )
+            if not res.scalar_one_or_none():
+                raise HTTPException(status_code=400,
+                                    detail="Selected organization does not exist")
             org_id = body.organization_id
         else:
             org_name = body.organization_name or f"{body.full_name}'s Organization"
@@ -92,11 +106,15 @@ async def signup(body: SignupRequest, request: Request,
             await db.commit()
         except Exception as e:
             await db.rollback()
+            logger.exception("Profile creation failed for %s", body.email)
             raise HTTPException(status_code=400, detail=f"Error creating profile: {str(e)}")
 
         return {"message": "Account created. Check your email to confirm."}
- 
+
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.exception("Signup failed for %s", getattr(body, "email", "?"))
         raise HTTPException(status_code=400, detail=str(e))
 
 

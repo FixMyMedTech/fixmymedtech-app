@@ -203,6 +203,7 @@ tr:hover td { background:var(--c-bg); }
     transform:translateX(-100%);
     transition:transform .22s ease;
     box-shadow:2px 0 18px rgba(0,0,0,.25);
+    z-index:250;
   }
   .sidebar.open { transform:translateX(0); }
   .main { margin-left:0; padding:16px; padding-top:68px; }
@@ -222,7 +223,7 @@ tr:hover td { background:var(--c-bg); }
   }
   .sb-close:active { background:rgba(255,255,255,0.3); }
   .sb-backdrop {
-    display:block; position:fixed; inset:0; z-index:150;
+    display:block; position:fixed; inset:0; z-index:240;
     background:rgba(0,0,0,.45); opacity:0; pointer-events:none;
     transition:opacity .22s ease;
   }

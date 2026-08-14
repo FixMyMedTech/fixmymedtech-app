@@ -80,7 +80,8 @@ a { color: var(--c-primary); text-decoration: none; }
 /* App shell */
 .shell { display: flex; min-height: 100vh; }
 .sidebar { width: 210px; flex-shrink: 0; background: var(--c-primary); display: flex; flex-direction: column; position: fixed; top:0; left:0; bottom:0; z-index:100; }
-.sb-logo { display:flex; align-items:center; gap:8px; padding:20px 16px; border-bottom:1px solid rgba(255,255,255,0.1); }
+.sb-head { display:flex; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); }
+.sb-logo { display:flex; align-items:center; gap:8px; padding:20px 16px; }
 .sb-cross { color:#5eead4; font-size:1.2rem; }
 .sb-name { font-family:var(--font-display); font-size:1.2rem; color:#fff; }
 .sb-nav { flex:1; padding:14px 10px; display:flex; flex-direction:column; gap:3px; }
@@ -192,7 +193,7 @@ tr:hover td { background:var(--c-bg); }
 .overdue-tag { display:inline-block; margin-left:3px; background:var(--c-red-lt); color:var(--c-red); font-size:0.7rem; padding:1px 5px; border-radius:10px; }
 
 /* Mobile: hamburger toggle */
-.sb-toggle, .sb-backdrop { display:none; }
+.sb-toggle, .sb-backdrop, .sb-close { display:none; }
 
 @media (max-width:768px) {
   .shell { flex-direction:column; }
@@ -212,6 +213,14 @@ tr:hover td { background:var(--c-bg); }
     background:var(--c-primary); color:#fff; font-size:1.35rem; cursor:pointer;
     box-shadow:0 2px 10px rgba(0,0,0,.18);
   }
+  .sb-close {
+    display:flex; align-items:center; justify-content:center;
+    margin-left:auto; margin-right:12px;
+    width:36px; height:36px; flex-shrink:0;
+    border:none; border-radius:var(--r-md);
+    background:rgba(255,255,255,0.15); color:#fff; font-size:1.05rem; cursor:pointer;
+  }
+  .sb-close:active { background:rgba(255,255,255,0.3); }
   .sb-backdrop {
     display:block; position:fixed; inset:0; z-index:150;
     background:rgba(0,0,0,.45); opacity:0; pointer-events:none;
@@ -268,7 +277,12 @@ def sidebar(current: str = "", lang: str = "en"):
         ("/logout",   "➜]", _("nav.logout")),
     ]
     return Aside(
-        Div(Span("✚", cls="sb-cross"), Span("FixMyMedTech", cls="sb-name"), cls="sb-logo"),
+        Div(
+            Div(Span("✚", cls="sb-cross"), Span("FixMyMedTech", cls="sb-name"), cls="sb-logo"),
+            Button("✕", id="sb-close", cls="sb-close", aria_label="Close menu",
+                   onclick="toggleSidebar(false)"),
+            cls="sb-head"
+        ),
         Nav(
             *[A(Span(icon), f" {label}", href=href,
                 cls=f"nav-link {'active' if current == href else ''}")
@@ -330,10 +344,12 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
 function toggleSidebar(open){
   var sb = document.getElementById('app-sidebar');
   var bd = document.getElementById('sb-backdrop');
+  var tg = document.getElementById('sb-toggle');
   if(!sb) return;
   var isOpen = (typeof open === 'boolean') ? open : !sb.classList.contains('open');
   sb.classList.toggle('open', isOpen);
   if(bd) bd.classList.toggle('show', isOpen);
+  if(tg) tg.style.display = isOpen ? 'none' : 'flex';
 }
 """)
         )

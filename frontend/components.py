@@ -191,10 +191,33 @@ tr:hover td { background:var(--c-bg); }
 .overdue { color:var(--c-red); font-weight:500; }
 .overdue-tag { display:inline-block; margin-left:3px; background:var(--c-red-lt); color:var(--c-red); font-size:0.7rem; padding:1px 5px; border-radius:10px; }
 
+/* Mobile: hamburger toggle */
+.sb-toggle, .sb-backdrop { display:none; }
+
 @media (max-width:768px) {
   .shell { flex-direction:column; }
-  .sidebar { position:relative; width:100%; height:auto; }
-  .main { margin-left:0; padding:16px; }
+  .sidebar {
+    position:fixed; top:0; left:0; bottom:0;
+    width:260px; height:100vh;
+    transform:translateX(-100%);
+    transition:transform .22s ease;
+    box-shadow:2px 0 18px rgba(0,0,0,.25);
+  }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-left:0; padding:16px; padding-top:68px; }
+  .sb-toggle {
+    display:flex; align-items:center; justify-content:center;
+    position:fixed; top:12px; left:12px; z-index:300;
+    width:44px; height:44px; border:none; border-radius:var(--r-md);
+    background:var(--c-primary); color:#fff; font-size:1.35rem; cursor:pointer;
+    box-shadow:0 2px 10px rgba(0,0,0,.18);
+  }
+  .sb-backdrop {
+    display:block; position:fixed; inset:0; z-index:150;
+    background:rgba(0,0,0,.45); opacity:0; pointer-events:none;
+    transition:opacity .22s ease;
+  }
+  .sb-backdrop.show { opacity:1; pointer-events:auto; }
   .stat-grid { grid-template-columns:1fr 1fr; }
   .two-col { grid-template-columns:1fr; }
   .auth-wrap { grid-template-columns:1fr; }
@@ -252,7 +275,8 @@ def sidebar(current: str = "", lang: str = "en"):
               for href, icon, label in links],
             cls="sb-nav"
         ),
-        cls="sidebar"
+        cls="sidebar",
+        id="app-sidebar"
     )
 
 
@@ -290,6 +314,9 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
         Body(
             Div(
                 Div(language_switcher(lang), cls="lang-fab"),
+                Button("☰", id="sb-toggle", cls="sb-toggle", aria_label="Menu",
+                       onclick="toggleSidebar()"),
+                Div(id="sb-backdrop", cls="sb-backdrop", onclick="toggleSidebar(false)"),
                 Div(
                     sidebar(current, lang),
                     Main(
@@ -298,7 +325,17 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
                     ),
                     cls="shell"
                 ),
-            )
+            ),
+            Script("""
+function toggleSidebar(open){
+  var sb = document.getElementById('app-sidebar');
+  var bd = document.getElementById('sb-backdrop');
+  if(!sb) return;
+  var isOpen = (typeof open === 'boolean') ? open : !sb.classList.contains('open');
+  sb.classList.toggle('open', isOpen);
+  if(bd) bd.classList.toggle('show', isOpen);
+}
+""")
         )
     )
 

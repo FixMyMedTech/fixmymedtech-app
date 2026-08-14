@@ -81,10 +81,20 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
     )
     recent_faults = faults_result.scalars().all()
 
+    logs_result = await db.execute(
+        select(MaintenanceLog)
+        .options(selectinload(MaintenanceLog.performed_by_profile))
+        .where(MaintenanceLog.device_id == device_id)
+        .order_by(MaintenanceLog.performed_at.desc())
+        .limit(5)
+    )
+    recent_logs = logs_result.scalars().all()
+
     return {
         "device": device,
         "documents": docs,
         "recent_faults": recent_faults,
+        "recent_logs": recent_logs,
     }
 
 

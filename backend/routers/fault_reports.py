@@ -28,8 +28,11 @@ class FaultReportCreate(BaseModel):
 
 
 class FaultStatusUpdate(BaseModel):
-    status: str
+    status: Optional[str] = None
+    severity: Optional[str] = None
+    description: Optional[str] = None
     resolution_notes: Optional[str] = None
+    assigned_to: Optional[UUID] = None
 
 
 # ── Público: enviar reporte de falla (sin auth — vía página QR) ──
@@ -76,6 +79,25 @@ async def submit_fault_public(body: FaultReportCreate, db: AsyncSession = Depend
     await db.refresh(fault)
 
     return {"message": "Fault report submitted. A technician will be notified.", "id": fault.id}
+
+
+# ── Público: detalle de falla (sin auth — vía página QR) ─────
+@router.get("/public/{fault_id}")
+async def get_fault_public(fault_id: UUID, db: AsyncSession = Depends(get_db)):
+    """Detalle de un reporte de falla para la página pública (QR). Sin auth."""
+    result = await db.execute(
+        select(FaultReport)
+        .options(
+            selectinload(FaultReport.device),
+            selectinload(FaultReport.assigned_to_profile),
+            selectinload(FaultReport.reported_by_profile),
+        )
+        .where(FaultReport.id == fault_id)
+    )
+    fault = result.scalar_one_or_none()
+    if not fault:
+        raise HTTPException(status_code=404, detail="Fault report not found")
+    return fault
 
 
 # ── Protegido: técnicos/ingenieros de la org de mantenimiento ─
@@ -131,6 +153,28 @@ async def list_faults(
     return result.scalars().all()
 
 
+# ── Protegido: detalle de una falla ────────────────────────────
+@router.get("/{fault_id}")
+async def get_fault(
+    fault_id: UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(FaultReport)
+        .options(
+            selectinload(FaultReport.device),
+            selectinload(FaultReport.assigned_to_profile),
+            selectinload(FaultReport.reported_by_profile),
+        )
+        .where(FaultReport.id == fault_id)
+    )
+    fault = result.scalar_one_or_none()
+    if not fault:
+        raise HTTPException(status_code=404, detail="Fault report not found")
+    return fault
+
+
 # ── Protegido: actualizar status de una falla ───────────────────
 @router.patch("/{fault_id}")
 async def update_fault(
@@ -147,11 +191,40 @@ async def update_fault(
     if not fault:
         raise HTTPException(status_code=404, detail="Fault report not found")
 
-    fault.status = body.status
-    if body.resolution_notes:
+    if body.status is not None:
+        fault.status = body.status
+        if body.status == "resolved":
+            fault.resolved_at = datetime.now(timezone.utc)
+
+    if body.severity is not None:
+        fault.severity = body.severity
+
+    if body.description is not None:
+        fault.description = body.description
+
+    if body.resolution_notes is not None:
         fault.resolution_notes = body.resolution_notes
-    if body.status == "resolved":
-        fault.resolved_at = datetime.now(timezone.utc)
+
+    if body.assigned_to is not None:
+        device_result = await db.execute(select(Device).where(Device.id == fault.device_id))
+        device = device_result.scalar_one_or_none()
+        assignee_result = await db.execute(
+            select(Profile).where(Profile.id == body.assigned_to)
+        )
+        assignee = assignee_result.scalar_one_or_none()
+        if (
+            not device
+            or not assignee
+            or assignee.organization_id != device.organization_maintenance_id
+            or assignee.role not in ASSIGNABLE_ROLES
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Assignee must be a technician or engineer of the maintenance organization",
+            )
+        fault.assigned_to = body.assigned_to
+        if fault.status == "open":
+            fault.status = "assigned"
 
     await db.commit()
     await db.refresh(fault)

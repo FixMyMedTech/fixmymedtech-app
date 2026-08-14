@@ -66,6 +66,8 @@ async def get(req, device_id: str):
             Td(l.get("description",_("common.fallback")), style="font-size:0.875rem;"),
             Td((l.get("performed_by_profile") or {}).get("full_name",_("common.fallback")), style="font-size:0.875rem;"),
             Td(f"${l['cost_usd']}" if l.get("cost_usd") else _("common.fallback"), style="font-size:0.875rem;"),
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/log/{l['id']}",
+                 cls="btn btn-secondary btn-sm")),
         ) for l in logs
     ]
 
@@ -77,6 +79,8 @@ async def get(req, device_id: str):
             Td(f.get("description",""), style="font-size:0.875rem;"),
             Td(status_badge(f.get("severity","medium"), "severity", lang=lang)),
             Td(status_badge(f.get("status","open"), "fault", lang=lang)),
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/fault/{f['id']}",
+                 cls="btn btn-secondary btn-sm")),
         ) for f in faults
     ]
 
@@ -176,9 +180,9 @@ async def get(req, device_id: str):
             H3(_("device_detail.history"), style="margin-bottom:12px;"),
             Div(
                 Table(
-                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_technician")), Th(_("device_detail.col_cost")))),
+                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_technician")), Th(_("device_detail.col_cost")), Th(""))),
                     Tbody(*log_rows) if log_rows else Tbody(
-                        Tr(Td(_("device_detail.no_maint"), colspan="5",
+                        Tr(Td(_("device_detail.no_maint"), colspan="6",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
                 style="border:none;border-radius:0;"
@@ -190,9 +194,9 @@ async def get(req, device_id: str):
             H3(_("device_detail.faults"), style="margin-bottom:12px;"),
             Div(
                 Table(
-                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_reported_by")), Th(_("device_detail.col_description")), Th(_("device_detail.col_severity")), Th(_("device_detail.col_status")))),
+                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_reported_by")), Th(_("device_detail.col_description")), Th(_("device_detail.col_severity")), Th(_("device_detail.col_status")), Th(""))),
                     Tbody(*fault_rows) if fault_rows else Tbody(
-                        Tr(Td(_("device_detail.no_faults"), colspan="5",
+                        Tr(Td(_("device_detail.no_faults"), colspan="6",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
                 style="border:none;border-radius:0;"

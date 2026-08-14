@@ -216,6 +216,10 @@ class MaintenanceLog(Base):
             "type IN ('preventive', 'corrective', 'inspection')",
             name="maintenance_logs_type_check"
         ),
+        CheckConstraint(
+            "status IN ('open', 'in_progress', 'closed')",
+            name="maintenance_logs_status_check"
+        ),
         {"schema": SCHEMA},
     )
 
@@ -229,6 +233,7 @@ class MaintenanceLog(Base):
     parts_replaced  = Column(Text)
     cost_usd        = Column(Numeric(10, 2))
     next_due        = Column(Date)
+    status          = Column(Text, default="open", nullable=False)
 
     # Relationships
     device                  = relationship("Device", back_populates="maintenance_logs")

@@ -227,6 +227,11 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
             "high":     (_("badge.high"),     "badge-red"),
             "critical": (_("badge.critical"), "badge-red"),
         },
+        "log": {
+            "open":        (_("badge.open"),        "badge-red"),
+            "in_progress": (_("badge.in_progress"), "badge-blue"),
+            "closed":      (_("badge.closed"),      "badge-green"),
+        },
     }
     label, cls = m.get(type, m["device"]).get(status, (status, "badge-gray"))
     return Span(label, cls=f"badge {cls}")

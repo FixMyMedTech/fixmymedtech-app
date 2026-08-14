@@ -8,6 +8,7 @@ load_dotenv()
 
 # __ API imports __
 import features.auth.helper as auth_helper
+import features.auth.api as auth_api
 import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api
@@ -45,6 +46,7 @@ async def get(req, device_id: str):
     d = data.get("device", {})
     docs = data.get("documents", [])
     faults = data.get("recent_faults", [])
+    logs = data.get("recent_logs", [])
     cat = d.get("category") or {}
 
     maint_slug = cat.get("slug") or d.get("category_id") or ""
@@ -91,17 +93,45 @@ async def get(req, device_id: str):
     ]
 
     fault_items = [
-        Div(
+        A(
             Div(
-                status_badge(f.get("severity","medium"), "severity", lang=lang),
-                status_badge(f.get("status","open"), "fault", lang=lang),
-                Span(fmt_date(f.get("reported_at","")),
-                     style="font-size:0.72rem;color:var(--c-text-3);"),
-                style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;"
+                Div(
+                    status_badge(f.get("severity","medium"), "severity", lang=lang),
+                    status_badge(f.get("status","open"), "fault", lang=lang),
+                    Span(fmt_date(f.get("reported_at","")),
+                         style="font-size:0.72rem;color:var(--c-text-3);"),
+                    style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;"
+                ),
+                P(f.get("description",""), style="font-size:0.875rem;margin:0 0 10px;"),
+                Div(_("public_qr.view_fault") + " →", cls="btn btn-secondary btn-sm",
+                    style="justify-content:center;"),
+                style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:12px;"
             ),
-            P(f.get("description",""), style="font-size:0.875rem;margin:0;"),
-            style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:12px;margin-bottom:8px;"
+            href=f"/d/{device_id}/fault/{f['id']}",
+            style="text-decoration:none;color:var(--c-text);display:block;margin-bottom:8px;"
         ) for f in faults
+    ]
+
+    log_items = [
+        A(
+            Div(
+                Div(
+                    status_badge(l.get("status", "open"), "log", lang=lang),
+                    Span(_(f"maintenance_log.type_{l.get('type', 'preventive')}"),
+                         cls="badge badge-blue"),
+                    Span(fmt_date(l.get("performed_at","")),
+                         style="font-size:0.72rem;color:var(--c-text-3);"),
+                    style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;"
+                ),
+                P(l.get("description","") or _("log_detail.no_description"),
+                  style="font-size:0.875rem;margin:0 0 10px;"),
+                Div(_("public_qr.view_log") + " →", cls="btn btn-secondary btn-sm",
+                    style="justify-content:center;"),
+                style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:12px;"
+            ),
+            href=f"/d/{device_id}/log/{l['id']}",
+            style="text-decoration:none;color:var(--c-text);display:block;margin-bottom:8px;"
+        ) for l in logs
     ]
 
     content = Div(
@@ -203,9 +233,507 @@ async def get(req, device_id: str):
             *fault_items if fault_items else [P(_("public_qr.no_faults"), style="color:var(--c-text-3);font-size:0.875rem;")],
             cls="pub-section"
         ),
+        # Recent maintenance logs
+        Div(
+            H3(_("public_qr.logs"),
+               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
+            *log_items if log_items else [P(_("public_qr.no_logs"), style="color:var(--c-text-3);font-size:0.875rem;")],
+            cls="pub-section"
+        ),
         # Footer
         Div(_("brand_footer"), cls="pub-footer"),
         cls="pub-page"
     )
 
     return pub_shell(content, title=f"{d.get('name', _('common.device'))} — {_('brand')}", lang=lang)
+
+
+# ══════════════════════════════════════════════════════════════
+# PUBLIC FAULT REPORT DETAIL
+# ══════════════════════════════════════════════════════════════
+
+@rt("/d/{device_id}/fault/{fault_id}", methods=["get"])
+async def get_fault_public(req, device_id: str, fault_id: str):
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+    try:
+        fault = await faults_api.get_fault_public(fault_id)
+    except Exception:
+        return pub_shell(
+            Div(
+                Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
+                H2(_("public_qr.not_found")),
+                P(_("public_qr.not_found_msg")),
+                A(_("public_qr.back"), href=f"/d/{device_id}", cls="btn btn-primary",
+                  style="margin-top:20px;"),
+                style="text-align:center;padding:60px 24px;"
+            ),
+            lang=lang
+        )
+
+    device = fault.get("device") or {}
+    assigned = fault.get("assigned_to_profile") or {}
+    reported_by = fault.get("reported_by_profile") or {}
+
+    sec_head = lambda t: H3(t,
+        style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;")
+
+    rows = [
+        (_("fault_detail.status"),      status_badge(fault.get("status", "open"), "fault", lang=lang)),
+        (_("fault_detail.severity"),    status_badge(fault.get("severity", "medium"), "severity", lang=lang)),
+        (_("fault_detail.reported_at"), fmt_date(fault.get("reported_at", ""))),
+        (_("fault_detail.reported_by"), reported_by.get("full_name") or fault.get("reporter_name", _("common.fallback"))),
+        (_("fault_detail.assigned_to"), assigned.get("full_name", _("common.fallback"))),
+        (_("fault_detail.resolved_at"), fmt_date(fault.get("resolved_at", ""))),
+    ]
+
+    # Botón editar solo si hay sesión con rol técnico/admin
+    edit_btn = ""
+    token = auth_helper.get_token(req)
+    if token:
+        try:
+            me = await auth_api.get_me(token)
+        except Exception:
+            me = {}
+        if me.get("role") in ("admin", "technician"):
+            edit_btn = Div(
+                A(_("fault_detail.edit"), href=f"/d/{device_id}/fault/{fault['id']}/edit",
+                  cls="btn btn-primary", style="width:100%;justify-content:center;"),
+                cls="pub-section"
+            )
+
+    content = Div(
+        # Header
+        Div(
+            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
+            cls="pub-header"
+        ),
+        # Title
+        Div(
+            A(_("public_qr.back"), href=f"/d/{device_id}",
+              style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:10px;display:inline-block;"),
+            Div(f"{device.get('name','')}",
+                style="font-size:0.78rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;"),
+            H1(_("fault_detail.heading"), style="font-family:var(--font-display);font-size:1.25rem;margin:2px 0 0;"),
+            cls="pub-section"
+        ),
+        # Details
+        Div(
+            sec_head(_("fault_detail.info")),
+            Dl(
+                *[Div(Dt(k), Dd(v), cls="info-row") for k, v in rows],
+                cls="info-list", style="padding:0;"
+            ),
+            cls="pub-section"
+        ),
+        # Description
+        Div(
+            sec_head(_("fault_detail.description")),
+            P(fault.get("description", ""), style="font-size:0.9rem;white-space:pre-wrap;"),
+            cls="pub-section"
+        ),
+        # Resolution
+        Div(
+            sec_head(_("fault_detail.resolution")),
+            P(fault.get("resolution_notes", _("fault_detail.no_resolution")),
+              style="font-size:0.9rem;white-space:pre-wrap;color:var(--c-text-2);"),
+            cls="pub-section"
+        ) if fault.get("resolution_notes") else "",
+        edit_btn,
+        # Footer
+        Div(_("brand_footer"), cls="pub-footer"),
+        cls="pub-page"
+    )
+
+    return pub_shell(content, title=f"{_('fault_detail.heading')} — {_('brand')}", lang=lang)
+
+
+# ══════════════════════════════════════════════════════════════
+# PUBLIC FAULT EDIT
+# ══════════════════════════════════════════════════════════════
+
+@rt("/d/{device_id}/fault/{fault_id}/edit", methods=["get"])
+async def get_fault_edit(req, device_id: str, fault_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return RedirectResponse(f"/login?next=/d/{device_id}/fault/{fault_id}/edit", status_code=302)
+
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+
+    try:
+        me = await auth_api.get_me(token)
+    except Exception:
+        me = {}
+    if me.get("role") not in ("admin", "technician"):
+        return RedirectResponse(f"/d/{device_id}/fault/{fault_id}", status_code=302)
+
+    try:
+        fault = await faults_api.get_fault_public(fault_id)
+    except Exception:
+        return RedirectResponse(f"/d/{device_id}", status_code=302)
+
+    device = fault.get("device") or {}
+    assignees = []
+    try:
+        assignees = await faults_api.get_fault_assignees(token, device_id)
+    except Exception:
+        assignees = []
+
+    content = Div(
+        # Header
+        Div(
+            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
+            cls="pub-header"
+        ),
+        # Title
+        Div(
+            A(_("public_qr.back"), href=f"/d/{device_id}/fault/{fault_id}",
+              style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:10px;display:inline-block;"),
+            Div(f"{device.get('name','')}",
+                style="font-size:0.78rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;"),
+            H1(_("fault_detail.edit"), style="font-family:var(--font-display);font-size:1.25rem;margin:2px 0 0;"),
+            cls="pub-section"
+        ),
+        _fault_edit_form(fault, device_id, assignees, lang),
+        # Footer
+        Div(_("brand_footer"), cls="pub-footer"),
+        cls="pub-page"
+    )
+
+    return pub_shell(content, title=f"{_('fault_detail.edit')} — {_('brand')}", lang=lang)
+
+
+@rt("/d/{device_id}/fault/{fault_id}/edit", methods=["post"])
+async def post_fault_edit(req, device_id: str, fault_id: str, status: str = "",
+                          severity: str = "", assigned_to: str = "",
+                          description: str = "", resolution_notes: str = ""):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return RedirectResponse(f"/login?next=/d/{device_id}/fault/{fault_id}/edit", status_code=302)
+
+    data = {}
+    if status:
+        data["status"] = status
+    if severity:
+        data["severity"] = severity
+    if assigned_to:
+        data["assigned_to"] = assigned_to
+    data["description"] = description
+    data["resolution_notes"] = resolution_notes
+    try:
+        await faults_api.update_fault(token, fault_id, data)
+    except Exception:
+        pass
+
+    return RedirectResponse(f"/d/{device_id}/fault/{fault_id}", status_code=303)
+
+
+# ══════════════════════════════════════════════════════════════
+# PUBLIC MAINTENANCE LOG DETAIL
+# ══════════════════════════════════════════════════════════════
+
+@rt("/d/{device_id}/log/{log_id}", methods=["get"])
+async def get_log_public(req, device_id: str, log_id: str):
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+    try:
+        log = await devices_api.get_maintenance_log_public(log_id)
+    except Exception:
+        return pub_shell(
+            Div(
+                Div("⚠", style="font-size:2rem;display:block;margin-bottom:10px;"),
+                H2(_("public_qr.not_found")),
+                P(_("public_qr.not_found_msg")),
+                A(_("public_qr.back"), href=f"/d/{device_id}", cls="btn btn-primary",
+                  style="margin-top:20px;"),
+                style="text-align:center;padding:60px 24px;"
+            ),
+            lang=lang
+        )
+
+    device = log.get("device") or {}
+    performed_by = log.get("performed_by_profile") or {}
+    assigned = log.get("assigned_to_profile") or {}
+
+    sec_head = lambda t: H3(t,
+        style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;")
+
+    rows = [
+        (_("log_detail.status"),       status_badge(log.get("status", "open"), "log", lang=lang)),
+        (_("log_detail.type"),         _(f"maintenance_log.type_{log.get('type', 'preventive')}")),
+        (_("log_detail.performed_at"), fmt_date(log.get("performed_at", ""))),
+        (_("log_detail.technician"),   performed_by.get("full_name", _("common.fallback"))),
+        (_("log_detail.assigned_to"),  assigned.get("full_name", _("common.fallback"))),
+        (_("log_detail.parts_replaced"), log.get("parts_replaced", _("common.fallback"))),
+        (_("log_detail.cost"),         f"${log['cost_usd']}" if log.get("cost_usd") else _("common.fallback")),
+        (_("log_detail.next_due"),     fmt_date(log.get("next_due", ""))),
+    ]
+
+    # Botón editar solo si hay sesión con rol técnico/admin
+    edit_btn = ""
+    token = auth_helper.get_token(req)
+    if token:
+        try:
+            me = await auth_api.get_me(token)
+        except Exception:
+            me = {}
+        if me.get("role") in ("admin", "technician"):
+            edit_btn = Div(
+                A(_("log_detail.edit"), href=f"/d/{device_id}/log/{log['id']}/edit",
+                  cls="btn btn-primary", style="width:100%;justify-content:center;"),
+                cls="pub-section"
+            )
+
+    content = Div(
+        # Header
+        Div(
+            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
+            cls="pub-header"
+        ),
+        # Title
+        Div(
+            A(_("public_qr.back"), href=f"/d/{device_id}",
+              style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:10px;display:inline-block;"),
+            Div(f"{device.get('name','')}",
+                style="font-size:0.78rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;"),
+            H1(_("log_detail.heading"), style="font-family:var(--font-display);font-size:1.25rem;margin:2px 0 0;"),
+            cls="pub-section"
+        ),
+        # Details
+        Div(
+            sec_head(_("log_detail.info")),
+            Dl(
+                *[Div(Dt(k), Dd(v), cls="info-row") for k, v in rows],
+                cls="info-list", style="padding:0;"
+            ),
+            cls="pub-section"
+        ),
+        # Description
+        Div(
+            sec_head(_("log_detail.description")),
+            P(log.get("description", _("log_detail.no_description")),
+              style="font-size:0.9rem;white-space:pre-wrap;color:var(--c-text-2);"),
+            cls="pub-section"
+        ),
+        edit_btn,
+        # Footer
+        Div(_("brand_footer"), cls="pub-footer"),
+        cls="pub-page"
+    )
+
+    return pub_shell(content, title=f"{_('log_detail.heading')} — {_('brand')}", lang=lang)
+
+
+# ══════════════════════════════════════════════════════════════
+# PUBLIC MAINTENANCE LOG EDIT
+# ══════════════════════════════════════════════════════════════
+
+@rt("/d/{device_id}/log/{log_id}/edit", methods=["get"])
+async def get_log_edit(req, device_id: str, log_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return RedirectResponse(f"/login?next=/d/{device_id}/log/{log_id}/edit", status_code=302)
+
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+
+    try:
+        me = await auth_api.get_me(token)
+    except Exception:
+        me = {}
+    if me.get("role") not in ("admin", "technician"):
+        return RedirectResponse(f"/d/{device_id}/log/{log_id}", status_code=302)
+
+    try:
+        log = await devices_api.get_maintenance_log_public(log_id)
+    except Exception:
+        return RedirectResponse(f"/d/{device_id}", status_code=302)
+
+    device = log.get("device") or {}
+    assignees = []
+    try:
+        assignees = await faults_api.get_fault_assignees(token, device_id)
+    except Exception:
+        assignees = []
+
+    content = Div(
+        # Header
+        Div(
+            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
+            cls="pub-header"
+        ),
+        # Title
+        Div(
+            A(_("public_qr.back"), href=f"/d/{device_id}/log/{log_id}",
+              style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:10px;display:inline-block;"),
+            Div(f"{device.get('name','')}",
+                style="font-size:0.78rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;"),
+            H1(_("log_detail.edit"), style="font-family:var(--font-display);font-size:1.25rem;margin:2px 0 0;"),
+            cls="pub-section"
+        ),
+        _log_edit_form(log, device_id, assignees, lang),
+        # Footer
+        Div(_("brand_footer"), cls="pub-footer"),
+        cls="pub-page"
+    )
+
+    return pub_shell(content, title=f"{_('log_detail.edit')} — {_('brand')}", lang=lang)
+
+
+@rt("/d/{device_id}/log/{log_id}/edit", methods=["post"])
+async def post_log_edit(req, device_id: str, log_id: str, type: str = "",
+                        status: str = "", assigned_to: str = "", description: str = "",
+                        parts_replaced: str = "", cost_usd: str = "",
+                        next_due: str = ""):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return RedirectResponse(f"/login?next=/d/{device_id}/log/{log_id}/edit", status_code=302)
+
+    data = {}
+    if type:
+        data["type"] = type
+    if status:
+        data["status"] = status
+    if assigned_to:
+        data["assigned_to"] = assigned_to
+    if description is not None:
+        data["description"] = description
+    if parts_replaced is not None:
+        data["parts_replaced"] = parts_replaced
+    if cost_usd:
+        data["cost_usd"] = cost_usd
+    if next_due:
+        data["next_due"] = next_due
+    try:
+        await devices_api.update_maintenance_log(token, log_id, data)
+    except Exception:
+        pass
+
+    return RedirectResponse(f"/d/{device_id}/log/{log_id}", status_code=303)
+
+
+# ══════════════════════════════════════════════════════════════
+# HELPERS: formularios de edición
+# ══════════════════════════════════════════════════════════════
+
+def _assignee_options(assignees, current: str = "", lang: str = "en"):
+    _ = make_t(lang)
+    opts = [Option(_("maintenance_log.assignee_none"), value="",
+                   selected=(not current))]
+    for a in assignees:
+        role_label = _("role." + (a.get("role") or "technician"))
+        opts.append(Option(
+            f"{a.get('full_name','')} — {role_label}",
+            value=a["id"],
+            selected=(str(a["id"]) == str(current)),
+        ))
+    return opts
+
+
+def _fault_edit_form(fault, device_id, assignees, lang):
+    _ = make_t(lang)
+    sec_head = lambda t: H3(t,
+        style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;")
+    return Form(
+        Div(
+            sec_head(_("fault_detail.edit")),
+            Div(
+                Label(_("fault_detail.status"), cls="label"),
+                Select(*[Option(_(f"badge.{v}"), value=v,
+                                selected=(fault.get("status") == v))
+                         for v in ["open", "assigned", "in_progress", "resolved"]],
+                       name="status", cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("fault_detail.severity"), cls="label"),
+                Select(*[Option(_(f"badge.{v}"), value=v,
+                                selected=(fault.get("severity") == v))
+                         for v in ["low", "medium", "high", "critical"]],
+                       name="severity", cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("fault_detail.assigned_to"), cls="label"),
+                Select(*_assignee_options(assignees, fault.get("assigned_to") or "", lang),
+                       name="assigned_to", cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("fault_detail.description"), cls="label"),
+                Textarea(fault.get("description", ""), name="description", rows="3",
+                         cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("fault_detail.resolution"), cls="label"),
+                Textarea(fault.get("resolution_notes", ""), name="resolution_notes", rows="3",
+                         cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Button(_("common.save"), type="submit", cls="btn btn-primary",
+                   style="width:100%;justify-content:center;margin-top:14px;"),
+        ),
+        method="post", action=f"/d/{device_id}/fault/{fault['id']}/edit",
+    )
+
+
+def _log_edit_form(log, device_id, assignees, lang):
+    _ = make_t(lang)
+    sec_head = lambda t: H3(t,
+        style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;")
+    return Form(
+        Div(
+            sec_head(_("log_detail.edit")),
+            Div(
+                Label(_("log_detail.status"), cls="label"),
+                Select(*[Option(_(f"badge.{v}"), value=v,
+                                selected=(log.get("status", "open") == v))
+                         for v in ["open", "in_progress", "closed"]],
+                       name="status", cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("log_detail.type"), cls="label"),
+                Select(*[Option(_(f"maintenance_log.type_{v}"), value=v,
+                                selected=(log.get("type") == v))
+                         for v in ["preventive", "corrective", "inspection"]],
+                       name="type", cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("log_detail.assigned_to"), cls="label"),
+                Select(*_assignee_options(assignees, log.get("assigned_to") or "", lang),
+                       name="assigned_to", cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("log_detail.description"), cls="label"),
+                Textarea(log.get("description", ""), name="description", rows="3",
+                         cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("log_detail.parts_replaced"), cls="label"),
+                Input(type="text", name="parts_replaced", value=log.get("parts_replaced", ""),
+                      cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("log_detail.cost"), cls="label"),
+                Input(type="number", step="0.01", name="cost_usd",
+                      value=log.get("cost_usd", ""), cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Div(
+                Label(_("log_detail.next_due"), cls="label"),
+                Input(type="date", name="next_due",
+                      value=str(log.get("next_due", ""))[:10], cls="input"),
+                cls="form-group", style="margin-top:10px;"
+            ),
+            Button(_("common.save"), type="submit", cls="btn btn-primary",
+                   style="width:100%;justify-content:center;margin-top:14px;"),
+        ),
+        method="post", action=f"/d/{device_id}/log/{log['id']}/edit",
+    )

@@ -10,7 +10,7 @@ from fasthtml.common import *
 load_dotenv()
 
 from features.dashboard import pages as dashboard
-from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,maintenance_log
+from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,maintenance_log,fault_detail,maintenance_log_detail
 from features.auth.pages import login as auth
 from features.faults.pages import report_page
 from i18n import LANGUAGES
@@ -47,6 +47,8 @@ public_qr_page.rt.to_app(app)
 new_device.rt.to_app(app)
 report_page.rt.to_app(app)
 maintenance_log.rt.to_app(app)
+fault_detail.rt.to_app(app)
+maintenance_log_detail.rt.to_app(app)
 guides.rt.to_app(app)
 
 serve()

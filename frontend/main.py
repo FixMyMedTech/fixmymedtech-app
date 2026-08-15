@@ -11,7 +11,8 @@ load_dotenv()
 
 from features.dashboard import pages as dashboard
 from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,maintenance_log,fault_detail,maintenance_log_detail
-from features.auth.pages import login as auth
+from features.auth.pages import login as auth_login
+from features.auth.pages import signup as auth_signup
 from features.faults.pages import report_page
 from i18n import LANGUAGES
 
@@ -39,7 +40,8 @@ async def post(req):
     referer = req.headers.get("Referer", "/")
     return RedirectResponse(referer, status_code=302)
 
-auth.rt.to_app(app)
+auth_login.rt.to_app(app)
+auth_signup.rt.to_app(app)
 device_detail.rt.to_app(app)
 device_list.rt.to_app(app)
 dashboard.rt.to_app(app)

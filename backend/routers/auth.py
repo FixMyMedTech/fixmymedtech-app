@@ -61,7 +61,7 @@ async def signup(body: SignupRequest, request: Request,
     print(body)
     sb = get_supabase(request)
     try:
-        email_redirect_to = f"{FRONTEND_URL}/login" if FRONTEND_URL else None
+        email_redirect_to = f"{FRONTEND_URL.rstrip('/')}/login" if FRONTEND_URL else None
         res = sb.auth.sign_up({
             "email": body.email, "password": body.password,
             "options": ({"email_redirect_to": email_redirect_to}

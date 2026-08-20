@@ -106,7 +106,9 @@ async def post(req, email: str, password: str, next: str = ""):
             error_detail = e.response.json().get("detail", "")
         except Exception:
             pass
-        if e.response.status_code == 403 and error_detail == "email_not_confirmed":
+        if e.response.status_code == 404 and error_detail == "user_not_found":
+            error_key = _("login.error_not_found")
+        elif e.response.status_code == 403 and error_detail == "email_not_confirmed":
             error_key = _("login.error_not_confirmed")
         elif e.response.status_code == 401 and error_detail == "invalid_credentials":
             error_key = _("login.error")

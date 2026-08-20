@@ -1,5 +1,6 @@
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
+import httpx
 import os
 from dotenv import load_dotenv
 
@@ -136,6 +137,29 @@ async def post(req, full_name: str, email: str, password: str, password2: str):
                 ),
                 title=_("title.signup"), lang=lang
             )
+        except httpx.HTTPStatusError as e:
+            error_detail = ""
+            try:
+                error_detail = e.response.json().get("detail", "")
+            except Exception:
+                pass
+            if e.response.status_code == 409 and error_detail == "user_already_exists":
+                return pub_shell(
+                    Div(
+                        Div(
+                            Div("📧", style="width:56px;height:56px;background:var(--c-orange-lt,#fff3e0);color:var(--c-orange,#e65100);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
+                            H2(_("signup.already_heading")),
+                            P(_("signup.already_msg"), Strong(email),
+                              _("signup.already_msg2")),
+                            A(_("signup.already_btn"), href="/login", cls="btn btn-primary",
+                              style="margin-top:20px;"),
+                            style="text-align:center;padding:60px 40px;"
+                        ),
+                        style="max-width:440px;margin:80px auto;"
+                    ),
+                    title=_("title.signup"), lang=lang
+                )
+            errors.append(str(e))
         except Exception as e:
             errors.append(str(e))
 

@@ -45,6 +45,15 @@ class ProfileUpdate(BaseModel):
 async def login(body: LoginRequest, request: Request,
                 db: AsyncSession = Depends(get_db)):
     sb = get_supabase(request)
+
+    # Check if user exists in auth.users before attempting login
+    db_user = await db.execute(
+        text("SELECT id FROM auth.users WHERE email = :email"),
+        {"email": body.email},
+    )
+    if not db_user.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="user_not_found")
+
     try:
         res = sb.auth.sign_in_with_password({"email": body.email, "password": body.password})
         return {
@@ -73,6 +82,10 @@ async def signup(body: SignupRequest, request: Request,
             "options": ({"email_redirect_to": email_redirect_to}
                         if email_redirect_to else None),
         })
+
+        if res.user and res.user.confirmed_at:
+            raise HTTPException(status_code=409, detail="user_already_exists")
+
         user_id = res.user.id
 
         db_user = await db.execute(

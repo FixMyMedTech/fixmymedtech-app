@@ -45,10 +45,26 @@ if [ -z "$USER_ID" ]; then
   exit 1
 fi
 
-# Insert into local DB
+# Insert auth user into local DB
 docker compose exec -T db psql -U postgres -d fixmymedtech -c \
   "INSERT INTO auth.users (id, email) VALUES ('$USER_ID', '$EMAIL') ON CONFLICT (id) DO NOTHING;"
 
-echo "✓ User $EMAIL synced (ID: $USER_ID)"
-echo "  Now insert the profile:"
-echo "  docker compose exec db psql -U postgres -d fixmymedtech -c \"INSERT INTO fixmymedtech.profiles (id, organization_id, full_name, role) VALUES ('$USER_ID', '00000000-0000-0000-0000-000000000001', 'Admin User', 'admin');\""
+# Generate a username from the email prefix
+USERNAME=$(echo "$EMAIL" | python3 -c "
+import sys, re, random
+email = sys.stdin.read().strip()
+name = email.split('@')[0]
+slug = re.sub(r'[^a-z0-9]+', '.', name.lower()).strip('.')
+slug = re.sub(r'\.{2,}', '.', slug) or 'user'
+print(slug + str(random.randint(1000, 9999)))
+")
+
+# Insert profile
+docker compose exec -T db psql -U postgres -d fixmymedtech -c \
+  "INSERT INTO fixmymedtech.profiles (id, username, full_name) VALUES ('$USER_ID', '$USERNAME', 'Admin User') ON CONFLICT (id) DO NOTHING;"
+
+# Insert org membership (default: Mulago Foundation, admin role)
+docker compose exec -T db psql -U postgres -d fixmymedtech -c \
+  "INSERT INTO fixmymedtech.org_users (profile_id, organization_id, role) VALUES ('$USER_ID', '00000000-0000-0000-0000-000000000001', 'admin') ON CONFLICT (profile_id, organization_id) DO NOTHING;"
+
+echo "✓ User $EMAIL synced (ID: $USER_ID) — profile + org_users created"

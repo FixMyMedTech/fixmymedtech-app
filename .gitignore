@@ -27,3 +27,5 @@ docs/venv/
 useful_commands.txt
 frontend/.sesskey
 infrastructure/nginx/nginx.conf
+/backend/utils/qr_dom_codes
+/backend/utils/Batch_001

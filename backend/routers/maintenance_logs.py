@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 
 from config.supabase_config import get_db
 from utils.profile import get_current_profile
-from models.models import Device, MaintenanceLog, Profile
+from models.models import Device, MaintenanceLog, Profile, OrgUser
 
 router = APIRouter()
 
@@ -42,7 +42,6 @@ async def get_maintenance_log(
     return log
 
 
-# ── Público: detalle de log (sin auth — vía página QR) ───────
 @router.get("/public/{log_id}")
 async def get_maintenance_log_public(
     log_id: UUID,
@@ -80,6 +79,23 @@ class MaintenanceLogUpdate(BaseModel):
     next_due: Optional[date] = None
 
 
+async def _validate_assignee(db: AsyncSession, assignee_id: UUID, org_id: UUID):
+    assignee_result = await db.execute(
+        select(Profile).where(Profile.id == assignee_id)
+    )
+    assignee = assignee_result.scalar_one_or_none()
+    if not assignee:
+        raise HTTPException(status_code=400, detail="Assignee not found")
+
+    assignee_role = assignee.get_role_for_org(org_id)
+    if not assignee_role or assignee_role not in ASSIGNABLE_ROLES:
+        raise HTTPException(
+            status_code=400,
+            detail="Assignee must be a technician or engineer of the maintenance organization",
+        )
+    return assignee
+
+
 @router.patch("/{log_id}")
 async def update_maintenance_log(
     log_id: UUID,
@@ -87,13 +103,19 @@ async def update_maintenance_log(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    if profile.role not in ("admin", "technician"):
-        raise HTTPException(status_code=403, detail="Not authorized")
-
     result = await db.execute(select(MaintenanceLog).where(MaintenanceLog.id == log_id))
     log = result.scalar_one_or_none()
     if not log:
         raise HTTPException(status_code=404, detail="Maintenance log not found")
+
+    device_result = await db.execute(select(Device).where(Device.id == log.device_id))
+    device = device_result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    role = profile.get_role_for_org(device.organization_id)
+    if role not in ("admin", "technician"):
+        raise HTTPException(status_code=403, detail="Not authorized")
 
     if body.type is not None:
         if body.type not in LOG_TYPES:
@@ -118,22 +140,7 @@ async def update_maintenance_log(
         log.next_due = body.next_due
 
     if body.assigned_to is not None:
-        device_result = await db.execute(select(Device).where(Device.id == log.device_id))
-        device = device_result.scalar_one_or_none()
-        assignee_result = await db.execute(
-            select(Profile).where(Profile.id == body.assigned_to)
-        )
-        assignee = assignee_result.scalar_one_or_none()
-        if (
-            not device
-            or not assignee
-            or assignee.organization_id != device.organization_maintenance_id
-            or assignee.role not in ASSIGNABLE_ROLES
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="Assignee must be a technician or engineer of the maintenance organization",
-            )
+        await _validate_assignee(db, body.assigned_to, device.organization_maintenance_id)
         log.assigned_to = body.assigned_to
 
     await db.commit()
@@ -147,9 +154,6 @@ async def create_maintenance_log(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    """Inicia un registro de mantenimiento para un dispositivo.
-    Puede asignarse a un técnico/ingeniero de la org de mantenimiento."""
-
     if body.type not in LOG_TYPES:
         raise HTTPException(status_code=400, detail=f"Type must be one of {LOG_TYPES}")
 
@@ -159,19 +163,7 @@ async def create_maintenance_log(
         raise HTTPException(status_code=404, detail="Device not found")
 
     if body.assigned_to:
-        assignee_result = await db.execute(
-            select(Profile).where(Profile.id == body.assigned_to)
-        )
-        assignee = assignee_result.scalar_one_or_none()
-        if (
-            not assignee
-            or assignee.organization_id != device.organization_maintenance_id
-            or assignee.role not in ASSIGNABLE_ROLES
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="Assignee must be a technician or engineer of the maintenance organization",
-            )
+        await _validate_assignee(db, body.assigned_to, device.organization_maintenance_id)
 
     log = MaintenanceLog(
         device_id=body.device_id,
@@ -183,7 +175,6 @@ async def create_maintenance_log(
     )
     db.add(log)
 
-    # La actividad de mantenimiento empieza: el device pasa a maintenance
     if device.status == "operational":
         device.status = "maintenance"
 

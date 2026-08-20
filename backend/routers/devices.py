@@ -16,7 +16,7 @@ from models.models import Device, DeviceCategory, Document, MaintenanceLog, Faul
 
 router = APIRouter()
 
-# TODO: Add Pydantic models for request/response schemas
+
 class DeviceCreate(BaseModel):
     id: Optional[UUID] = None
     name: str
@@ -48,14 +48,8 @@ class LocationUpdate(BaseModel):
     longitude: float
 
 
-# ── Endpoint público: escaneado vía QR (sin auth) ──────────────
 @router.get("/public/{device_id}")
 async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db)):
-    """
-    Se llama cuando alguien escanea el QR del dispositivo.
-    Devuelve info del device + documentos + fallas recientes.
-    No requiere autenticación.
-    """
     result = await db.execute(
         select(Device)
         .options(
@@ -98,13 +92,13 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
     }
 
 
-# ── Endpoints protegidos (requieren auth) ──────────────────────
 @router.get("/")
 async def list_devices(
     status: Optional[str] = None,
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
+    org_ids = profile.org_ids()
     query = (
         select(Device)
         .options(
@@ -112,8 +106,8 @@ async def list_devices(
             selectinload(Device.organization_maintenance),
         )
         .where(or_(
-            Device.organization_id == profile.organization_id,
-            Device.organization_maintenance_id == profile.organization_id,
+            Device.organization_id.in_(org_ids),
+            Device.organization_maintenance_id.in_(org_ids),
         ))
         .order_by(Device.name)
     )
@@ -123,6 +117,7 @@ async def list_devices(
 
     result = await db.execute(query)
     return result.scalars().all()
+
 
 @router.get("/categories")
 async def get_categories(
@@ -183,20 +178,24 @@ async def get_device(
         "documents": docs,
     }
 
-# TODO: Add endpoints for creating, updating, and deleting devices, with proper role-based access control (admin/technician).
-# TODO: Handle category_id validation when creating/updating devices (ensure it belongs to the same organization).
+
 @router.post("/")
 async def create_device(
     body: DeviceCreate,
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    if profile.role not in ("admin", "technician"):
+    if not profile.org_memberships:
+        raise HTTPException(status_code=403, detail="No organization membership")
+
+    primary_org = profile.org_memberships[0].organization_id
+    primary_role = profile.org_memberships[0].role
+
+    if primary_role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = body.model_dump(exclude_none=True)
-    device = Device(**payload, organization_id=profile.organization_id,organization_maintenance_id=profile.organization_id)
-    print(device) 
+    device = Device(**payload, organization_id=primary_org, organization_maintenance_id=primary_org)
     db.add(device)
     await db.commit()
     await db.refresh(device)
@@ -210,16 +209,17 @@ async def update_device(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    if profile.role not in ("admin", "technician"):
-        raise HTTPException(status_code=403, detail="Not authorized")
-
     result = await db.execute(select(Device).where(Device.id == device_id))
     device = result.scalar_one_or_none()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
+    role = profile.get_role_for_org(device.organization_id)
+    if role not in ("admin", "technician"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     if body.organization_maintenance_id is not None:
-        if profile.role != "admin" or device.organization_id != profile.organization_id:
+        if role != "admin" or device.organization_id not in profile.org_ids():
             raise HTTPException(status_code=403, detail="Only the admin of the organization owning the device can change the maintenance organization")
 
     payload = body.model_dump(exclude_none=True)
@@ -256,13 +256,14 @@ async def delete_device(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    if profile.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can delete devices")
-
     result = await db.execute(select(Device).where(Device.id == device_id))
     device = result.scalar_one_or_none()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
+
+    role = profile.get_role_for_org(device.organization_id)
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can delete devices")
 
     await db.delete(device)
     await db.commit()

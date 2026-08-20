@@ -18,6 +18,14 @@ from components import *
 from components import page_shell, status_badge, fmt_date, pub_shell, map_component
 from features.devices.static.guides import category_label, GUIDE_INDEX
 from i18n import t as make_t
+
+
+def _user_can_edit(me, device_org_id):
+    """Check if user has admin/technician role in the device's organization."""
+    for org in me.get("organizations", []):
+        if org["id"] == device_org_id and org.get("role") in ("admin", "technician"):
+            return True
+    return False
 rt = APIRouter()
 
 # ══════════════════════════════════════════════════════════════
@@ -295,7 +303,7 @@ async def get_fault_public(req, device_id: str, fault_id: str):
             me = await auth_api.get_me(token)
         except Exception:
             me = {}
-        if me.get("role") in ("admin", "technician"):
+        if _user_can_edit(me, device.get("organization_id")):
             edit_btn = Div(
                 A(_("fault_detail.edit"), href=f"/d/{device_id}/fault/{fault['id']}/edit",
                   cls="btn btn-primary", style="width:100%;justify-content:center;"),
@@ -365,7 +373,9 @@ async def get_fault_edit(req, device_id: str, fault_id: str):
         me = await auth_api.get_me(token)
     except Exception:
         me = {}
-    if me.get("role") not in ("admin", "technician"):
+    fault_obj = await faults_api.get_fault_public(fault_id)
+    fault_device = (fault_obj.get("device") or {}) if isinstance(fault_obj, dict) else {}
+    if not _user_can_edit(me, fault_device.get("organization_id")):
         return RedirectResponse(f"/d/{device_id}/fault/{fault_id}", status_code=302)
 
     try:
@@ -478,7 +488,7 @@ async def get_log_public(req, device_id: str, log_id: str):
             me = await auth_api.get_me(token)
         except Exception:
             me = {}
-        if me.get("role") in ("admin", "technician"):
+        if _user_can_edit(me, device.get("organization_id")):
             edit_btn = Div(
                 A(_("log_detail.edit"), href=f"/d/{device_id}/log/{log['id']}/edit",
                   cls="btn btn-primary", style="width:100%;justify-content:center;"),
@@ -542,7 +552,9 @@ async def get_log_edit(req, device_id: str, log_id: str):
         me = await auth_api.get_me(token)
     except Exception:
         me = {}
-    if me.get("role") not in ("admin", "technician"):
+    log_obj = await devices_api.get_maintenance_log_public(log_id)
+    log_device = (log_obj.get("device") or {}) if isinstance(log_obj, dict) else {}
+    if not _user_can_edit(me, log_device.get("organization_id")):
         return RedirectResponse(f"/d/{device_id}/log/{log_id}", status_code=302)
 
     try:

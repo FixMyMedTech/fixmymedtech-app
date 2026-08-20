@@ -29,10 +29,22 @@ CREATE TABLE fixmymedtech.organizations (
 -- ============================================================
 CREATE TABLE fixmymedtech.profiles (
   id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  organization_id UUID REFERENCES fixmymedtech.organizations(id),
+  username        TEXT NOT NULL UNIQUE,
   full_name       TEXT,
-  role            TEXT CHECK (role IN ('admin', 'technician', 'clinical_staff', 'engineering_staff')) NOT NULL DEFAULT 'clinical_staff',
   created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
+-- ORG-USERS (junction: profile ↔ organization + role)
+-- ============================================================
+CREATE TABLE fixmymedtech.org_users (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profile_id      UUID NOT NULL REFERENCES fixmymedtech.profiles(id) ON DELETE CASCADE,
+  organization_id UUID NOT NULL REFERENCES fixmymedtech.organizations(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL DEFAULT 'admin'
+                  CHECK (role IN ('admin', 'technician', 'clinical_staff', 'engineering_staff')),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (profile_id, organization_id)
 );
 
 -- ============================================================
@@ -150,6 +162,7 @@ CREATE TABLE fixmymedtech.fault_reports (
 
 ALTER TABLE fixmymedtech.organizations    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fixmymedtech.profiles         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fixmymedtech.org_users        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fixmymedtech.devices          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fixmymedtech.documents        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fixmymedtech.maintenance_logs ENABLE ROW LEVEL SECURITY;
@@ -159,28 +172,45 @@ ALTER TABLE fixmymedtech.fault_reports    ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "profiles_own" ON fixmymedtech.profiles
   FOR ALL USING (auth.uid() = id);
 
--- Devices: users see only their organization's devices
+-- Org-users: users see their own memberships
+CREATE POLICY "org_users_own" ON fixmymedtech.org_users
+  FOR ALL USING (profile_id = auth.uid());
+
+-- Devices: users see devices from any of their orgs (owned or maintained)
 CREATE POLICY "devices_org" ON fixmymedtech.devices
   FOR ALL USING (
-    organization_id = (SELECT organization_id FROM fixmymedtech.profiles WHERE id = auth.uid())
+    organization_id IN (
+      SELECT organization_id FROM fixmymedtech.org_users WHERE profile_id = auth.uid()
+    )
+    OR organization_maintenance_id IN (
+      SELECT organization_id FROM fixmymedtech.org_users WHERE profile_id = auth.uid()
+    )
   );
 
--- Same for maintenance logs and fault reports
+-- Maintenance logs: user sees logs on devices belonging to any of their orgs
 CREATE POLICY "maintenance_org" ON fixmymedtech.maintenance_logs
   FOR ALL USING (
     device_id IN (
-      SELECT id FROM fixmymedtech.devices WHERE organization_id = (
-        SELECT organization_id FROM fixmymedtech.profiles WHERE id = auth.uid()
-      )
+      SELECT id FROM fixmymedtech.devices WHERE
+        organization_id IN (
+          SELECT organization_id FROM fixmymedtech.org_users WHERE profile_id = auth.uid()
+        )
+        OR organization_maintenance_id IN (
+          SELECT organization_id FROM fixmymedtech.org_users WHERE profile_id = auth.uid()
+        )
     )
   );
 
 CREATE POLICY "faults_org" ON fixmymedtech.fault_reports
   FOR ALL USING (
     device_id IN (
-      SELECT id FROM fixmymedtech.devices WHERE organization_id = (
-        SELECT organization_id FROM fixmymedtech.profiles WHERE id = auth.uid()
-      )
+      SELECT id FROM fixmymedtech.devices WHERE
+        organization_id IN (
+          SELECT organization_id FROM fixmymedtech.org_users WHERE profile_id = auth.uid()
+        )
+        OR organization_maintenance_id IN (
+          SELECT organization_id FROM fixmymedtech.org_users WHERE profile_id = auth.uid()
+        )
     )
   );
 

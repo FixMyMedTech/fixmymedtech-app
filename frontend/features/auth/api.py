@@ -5,16 +5,10 @@ from config.api import _get, _post, _patch
 async def login(email: str, password: str):
     return await _post("/api/auth/login", {"email": email, "password": password})
 
-async def signup(email: str, password: str, full_name: str, role: str, organization_id: str = None, country: str = None):
-    data = {"email": email, "password": password, "full_name": full_name, "role": role}
-    if organization_id:
-        data["organization_id"] = organization_id
-    if country:
-        data["country"] = country
-    return await _post("/api/auth/signup", data)
-
-async def get_organizations():
-    return await _get("/api/organizations/")
+async def signup(email: str, password: str, full_name: str):
+    return await _post("/api/auth/signup", {
+        "email": email, "password": password, "full_name": full_name,
+    })
 
 async def get_me(token: str):
     return await _get("/api/auth/me", token)

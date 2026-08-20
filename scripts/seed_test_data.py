@@ -143,14 +143,22 @@ async def seed():
             # Insert into profiles
             await db.execute(
                 text("""
-                    INSERT INTO fixmymedtech.profiles (id, organization_id, full_name, role)
-                    VALUES (:id, :org_id, :full_name, :role)
+                    INSERT INTO fixmymedtech.profiles (id, full_name)
+                    VALUES (:id, :full_name)
                     ON CONFLICT (id) DO UPDATE SET
-                        organization_id=EXCLUDED.organization_id,
-                        full_name=EXCLUDED.full_name,
-                        role=EXCLUDED.role
+                        full_name=EXCLUDED.full_name
                 """),
-                {"id": user_id, "org_id": org_id, "full_name": full_name, "role": role},
+                {"id": user_id, "full_name": full_name},
+            )
+
+            # Insert into org_users (junction table)
+            await db.execute(
+                text("""
+                    INSERT INTO fixmymedtech.org_users (profile_id, organization_id, role)
+                    VALUES (:profile_id, :org_id, :role)
+                    ON CONFLICT (profile_id, organization_id) DO UPDATE SET role=EXCLUDED.role
+                """),
+                {"profile_id": user_id, "org_id": org_id, "role": role},
             )
 
         await db.commit()

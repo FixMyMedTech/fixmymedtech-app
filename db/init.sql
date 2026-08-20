@@ -27,10 +27,19 @@ CREATE TABLE fixmymedtech.organizations (
 
 CREATE TABLE fixmymedtech.profiles (
   id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  organization_id UUID REFERENCES fixmymedtech.organizations(id),
+  username        TEXT NOT NULL UNIQUE,
   full_name       TEXT,
-  role            TEXT CHECK (role IN ('admin', 'technician', 'clinical_staff', 'engineering_staff')) NOT NULL DEFAULT 'clinical_staff',
   created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE fixmymedtech.org_users (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profile_id      UUID NOT NULL REFERENCES fixmymedtech.profiles(id) ON DELETE CASCADE,
+  organization_id UUID NOT NULL REFERENCES fixmymedtech.organizations(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL DEFAULT 'admin'
+                  CHECK (role IN ('admin', 'technician', 'clinical_staff', 'engineering_staff')),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (profile_id, organization_id)
 );
 
 CREATE TABLE fixmymedtech.device_categories (
@@ -146,7 +155,8 @@ INSERT INTO fixmymedtech.organizations (id, name, country, region, type) VALUES
 
 -- Seed demo user (you'll create a real account via Supabase Auth, then insert your user ID here)
 -- For demo: INSERT INTO auth.users (id, email) VALUES ('your-uuid-here', 'demo@hospital.org');
--- For demo: INSERT INTO fixmymedtech.profiles (id, organization_id, full_name, role) VALUES ('your-uuid-here', '00000000-0000-0000-0000-000000000001', 'Demo User', 'admin');
+-- For demo: INSERT INTO fixmymedtech.profiles (id, full_name) VALUES ('your-uuid-here', 'Demo User');
+-- For demo: INSERT INTO fixmymedtech.org_users (profile_id, organization_id, role) VALUES ('your-uuid-here', '00000000-0000-0000-0000-000000000001', 'admin');
 
 -- Seed devices
 INSERT INTO fixmymedtech.devices (organization_id, organization_maintenance_id, name, manufacturer, model, serial_number, status, location, next_maintenance) VALUES

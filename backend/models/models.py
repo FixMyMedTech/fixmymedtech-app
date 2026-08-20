@@ -8,7 +8,7 @@ load_dotenv()
 
 from sqlalchemy import (
     Column, String, Text, Integer, Numeric, Float, Date, DateTime,
-    ForeignKey, CheckConstraint, MetaData, event
+    ForeignKey, CheckConstraint, UniqueConstraint, MetaData, event
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
@@ -63,7 +63,7 @@ class Organization(Base):
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    profiles        = relationship("Profile", back_populates="organization", foreign_keys="Profile.organization_id")
+    org_users       = relationship("OrgUser", back_populates="organization")
     devices         = relationship("Device", back_populates="organization", foreign_keys="Device.organization_id")
     devices_maintained = relationship("Device", back_populates="organization_maintenance", foreign_keys="Device.organization_maintenance_id")
 
@@ -77,28 +77,73 @@ class Organization(Base):
 
 class Profile(Base):
     __tablename__ = "profiles"
-    __table_args__ = (
-        CheckConstraint(
-            "role IN ('admin', 'technician', 'clinical_staff', 'engineering_staff')",
-            name="profiles_role_check"
-        ),
-        {"schema": SCHEMA},
-    )
+    __table_args__ = {"schema": SCHEMA}
 
-    id              = Column(UUID(as_uuid=True), ForeignKey(f"auth.users.id", ondelete="CASCADE"), primary_key=True)  # References auth.users
-    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"),nullable=False)
+    id              = Column(UUID(as_uuid=True), ForeignKey(f"auth.users.id", ondelete="CASCADE"), primary_key=True)
+    username        = Column(Text, unique=True, nullable=False)
     full_name       = Column(Text)
-    role            = Column(Text, nullable=False, default="clinical_staff")
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    organization    = relationship("Organization", back_populates="profiles", foreign_keys=[organization_id])
+    org_memberships = relationship("OrgUser", back_populates="profile", cascade="all, delete-orphan")
     maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile", foreign_keys="MaintenanceLog.performed_by")
     fault_reports   = relationship("FaultReport", back_populates="reported_by_profile", foreign_keys="FaultReport.reported_by")
     auth_user = relationship("AuthUser", backref="profile", lazy="selectin")
 
+    def get_role_for_org(self, org_id):
+        for m in self.org_memberships:
+            if m.organization_id == org_id:
+                return m.role
+        return None
+
+    def org_ids(self):
+        return [m.organization_id for m in self.org_memberships]
+
+    @property
+    def role(self):
+        """Return role from first org membership (for display/serialization)."""
+        if self.org_memberships:
+            return self.org_memberships[0].role
+        return None
+
+    @property
+    def organization_id(self):
+        """Return first org membership's org_id (for display/serialization)."""
+        if self.org_memberships:
+            return self.org_memberships[0].organization_id
+        return None
+
     def __repr__(self):
-        return f"<Profile {self.full_name} ({self.role})>"
+        return f"<Profile {self.full_name}>"
+
+
+# ══════════════════════════════════════════════════════════════
+# ORG-USERS (junction: profile ↔ organization + role)
+# ══════════════════════════════════════════════════════════════
+
+class OrgUser(Base):
+    __tablename__ = "org_users"
+    __table_args__ = (
+        UniqueConstraint("profile_id", "organization_id", name="uq_org_user_profile_org"),
+        CheckConstraint(
+            "role IN ('admin', 'technician', 'clinical_staff', 'engineering_staff')",
+            name="org_users_role_check"
+        ),
+        {"schema": SCHEMA},
+    )
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="CASCADE"), nullable=False)
+    role            = Column(Text, nullable=False, default="admin")
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    profile      = relationship("Profile", back_populates="org_memberships")
+    organization = relationship("Organization", back_populates="org_users")
+
+    def __repr__(self):
+        return f"<OrgUser {self.profile_id} → {self.organization_id} ({self.role})>"
 
 
 # ══════════════════════════════════════════════════════════════

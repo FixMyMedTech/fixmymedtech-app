@@ -28,8 +28,8 @@ from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
 from PIL import Image, ImageDraw, ImageFont
 
 
-BASE_URL = "https://fixmymedtech-dev.careagain.org"
-OUTPUT_DIR = "qr_codes"
+BASE_URL = "https://qr.fixmymedtech.org"
+OUTPUT_DIR = "qr_dom_codes"
 
 
 def generate_qr(device_id: str, base_url: str = BASE_URL) -> str:
@@ -70,6 +70,7 @@ def generate_qr(device_id: str, base_url: str = BASE_URL) -> str:
     filename = f"{OUTPUT_DIR}/qr_{device_id}.png"
     img.save(filename)
     print(f"✓ Saved: {filename}")
+    print(f"  Device: {device_id}")
     print(f"  URL:    {url}")
     return filename
 
@@ -77,7 +78,7 @@ def generate_qr(device_id: str, base_url: str = BASE_URL) -> str:
 def add_label(img: Image.Image, device_id: str, url: str) -> Image.Image:
     """Add device ID label below the QR code."""
     qr_width, qr_height = img.size
-    label_height = 60
+    label_height = 84
     padding = 10
 
     # Create new image with space for label
@@ -103,9 +104,13 @@ def add_label(img: Image.Image, device_id: str, url: str) -> Image.Image:
     draw.text((qr_width // 2, qr_height + padding), header,
               fill="#104f84", font=font_large, anchor="mt")
 
-    # Draw short device ID
-    short_id = device_id[:8] + "..."
-    draw.text((qr_width // 2, qr_height + padding + 22), short_id,
+    # # Draw short device ID
+    # short_id = device_id[:8] + "..."
+    # draw.text((qr_width // 2, qr_height + padding + 20), short_id,
+    #           fill="#8a8780", font=font_small, anchor="mt")
+
+    # Draw full device UID
+    draw.text((qr_width // 2, qr_height + padding + 20), device_id,
               fill="#8a8780", font=font_small, anchor="mt")
 
     return new_img

@@ -95,10 +95,7 @@ async def signup(body: SignupRequest, request: Request,
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "User was created in Supabase Auth, but is not present in "
-                    "this database's auth.users. SUPABASE_URL and SUPABASE_DB_URI "
-                    "point to different Supabase projects — use the same project "
-                    "for both."
+                    "User already exists. Please log in."
                 ),
             )
 

@@ -15,7 +15,7 @@ def _raise(r: httpx.Response):
         detail = r.text
     if isinstance(detail, list):
         detail = "; ".join(str(d.get("msg", d)) for d in detail if isinstance(d, dict))
-    raise RuntimeError(detail)
+    raise httpx.HTTPStatusError(detail, request=r.request, response=r)
 
 
 async def _get(path: str, token: str = None):

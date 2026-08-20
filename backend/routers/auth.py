@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select, text
 from typing import Optional
-from models.models import Organization, Profile, OrgUser
+from models.models import Organization, Profile, OrgUser, FaultReport, MaintenanceLog, Device
 from routers.deps import get_supabase
 from config.supabase_config import AsyncSession, get_db, supa_client as sb
 from utils.profile import get_current_profile
@@ -36,6 +36,11 @@ class SignupRequest(BaseModel):
     role: str = "admin"
 
 
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    username: Optional[str] = None
+
+
 @router.post("/login")
 async def login(body: LoginRequest, request: Request,
                 db: AsyncSession = Depends(get_db)):
@@ -50,7 +55,10 @@ async def login(body: LoginRequest, request: Request,
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        msg = str(e).lower()
+        if "email not confirmed" in msg or "not confirmed" in msg:
+            raise HTTPException(status_code=403, detail="email_not_confirmed")
+        raise HTTPException(status_code=401, detail="invalid_credentials")
 
 
 @router.post("/signup")
@@ -166,3 +174,84 @@ async def me(profile: Profile = Depends(get_current_profile)):
             for m in profile.org_memberships
         ],
     }
+
+
+@router.patch("/me")
+async def update_me(
+    body: ProfileUpdate,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.full_name is not None:
+        profile.full_name = body.full_name
+    if body.username is not None:
+        candidate = body.username.strip()
+        if not candidate:
+            raise HTTPException(status_code=400, detail="Username cannot be empty")
+        existing = await db.execute(
+            text("SELECT 1 FROM fixmymedtech.profiles WHERE username = :u AND id != :id"),
+            {"u": candidate, "id": str(profile.id)},
+        )
+        if existing.scalar():
+            raise HTTPException(status_code=400, detail="Username already taken")
+        profile.username = candidate
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    return {
+        "id": profile.id,
+        "username": profile.username,
+        "full_name": profile.full_name,
+    }
+
+
+@router.get("/tasks")
+async def my_tasks(
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    uid = profile.id
+
+    faults_result = await db.execute(
+        select(FaultReport)
+        .options(selectinload(FaultReport.device))
+        .where(FaultReport.assigned_to == uid)
+        .order_by(FaultReport.reported_at.desc())
+    )
+    faults = [
+        {
+            "id": str(f.id),
+            "type": "fault",
+            "title": f.device.name if f.device else "Unknown device",
+            "description": f.description,
+            "severity": f.severity,
+            "status": f.status,
+            "date": f.reported_at.isoformat() if f.reported_at else None,
+            "device_id": str(f.device_id),
+        }
+        for f in faults_result.scalars().all()
+    ]
+
+    logs_result = await db.execute(
+        select(MaintenanceLog)
+        .options(selectinload(MaintenanceLog.device))
+        .where(MaintenanceLog.assigned_to == uid)
+        .order_by(MaintenanceLog.performed_at.desc())
+    )
+    logs = [
+        {
+            "id": str(l.id),
+            "type": "maintenance",
+            "title": l.device.name if l.device else "Unknown device",
+            "description": l.description,
+            "severity": l.type,
+            "status": l.status,
+            "date": l.performed_at.isoformat() if l.performed_at else None,
+            "device_id": str(l.device_id),
+        }
+        for l in logs_result.scalars().all()
+    ]
+
+    return faults + logs

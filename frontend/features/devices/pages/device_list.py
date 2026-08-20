@@ -14,7 +14,7 @@ import features.auth.api as auth_api
 import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api
-import features.organizations.api as org_api
+import features.groups.api as org_api
 
 from components import page_shell, status_badge, fmt_date
 from features.devices.static.guides import category_label

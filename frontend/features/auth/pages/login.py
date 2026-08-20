@@ -99,7 +99,18 @@ async def post(req, email: str, password: str, next: str = ""):
         req.session["user_email"] = res["user"]["email"]
         target = next if next.startswith("/") else "/dashboard"
         return RedirectResponse(target, status_code=302)
-    except httpx.HTTPStatusError:
+    except httpx.HTTPStatusError as e:
+        error_key = _("login.error")
+        error_detail = ""
+        try:
+            error_detail = e.response.json().get("detail", "")
+        except Exception:
+            pass
+        if e.response.status_code == 403 and error_detail == "email_not_confirmed":
+            error_key = _("login.error_not_confirmed")
+        elif e.response.status_code == 401 and error_detail == "invalid_credentials":
+            error_key = _("login.error")
+
         form_error = Div(
             Div(
                 Input(type="hidden", name="next", value=next),
@@ -113,7 +124,7 @@ async def post(req, email: str, password: str, next: str = ""):
                     P(_("login.subtitle")),
                     cls="auth-brand"
                 ),
-                Div(_("login.error"), cls="alert alert-error"),
+                Div(error_key, cls="alert alert-error"),
                 Div(
                     Label(_("login.email_label"), cls="label", for_="email"),
                     Input(id="email", name="email", type="email",

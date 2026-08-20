@@ -13,7 +13,7 @@ import features.auth.helper as auth_helper
 import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api
-import features.organizations.api as organizations_api
+import features.groups.api as org_api
 
 from components import *
 
@@ -35,7 +35,7 @@ async def get(req):
     _ = make_t(lang)
 
     try:
-        org = await organizations_api.get_my_organizations(token)
+        org = await org_api.get_my_organizations(token)
 
         content = Div(
                 Div(

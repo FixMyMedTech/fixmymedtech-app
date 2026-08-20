@@ -12,3 +12,9 @@ async def signup(email: str, password: str, full_name: str):
 
 async def get_me(token: str):
     return await _get("/api/auth/me", token)
+
+async def update_profile(token: str, data: dict):
+    return await _patch("/api/auth/me", data, token=token)
+
+async def get_my_tasks(token: str):
+    return await _get("/api/auth/tasks", token)

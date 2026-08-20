@@ -275,6 +275,9 @@ def sidebar(current: str = "", lang: str = "en"):
     links = [
         ("/dashboard", "◈", _("nav.dashboard")),
         ("/devices",   "⊞", _("nav.devices")),
+        ("/tasks",     "☐", _("nav.tasks")),
+        ("/groups",    "⊞", _("nav.groups")),
+        ("/profile",   "◉", _("nav.profile")),
         ("/logout",   "➜]", _("nav.logout")),
     ]
     return Aside(

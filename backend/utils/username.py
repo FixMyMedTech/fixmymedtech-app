@@ -1,7 +1,7 @@
 import re
 import random
 import string
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -21,7 +21,8 @@ async def generate_username(full_name: str, db: AsyncSession) -> str:
         suffix = "".join(random.choices(string.digits, k=4))
         candidate = f"{base}{suffix}"
         exists = await db.execute(
-            select(text("1")).where(text("username = :u")).bindparams(u=candidate)
+            text("SELECT 1 FROM fixmymedtech.profiles WHERE username = :u"),
+            {"u": candidate},
         )
         if not exists.scalar():
             return candidate

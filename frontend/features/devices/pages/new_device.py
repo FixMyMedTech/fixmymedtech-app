@@ -166,7 +166,13 @@ async def get(req,device_id: str):
     other_label = CATEGORY_FALLBACKS.get("other", {}).get(lang, "Other")
     cat_options.append(Option(f"🏥 {other_label}", value="other"))
 
-    orgs = await org_api.get_my_organizations(token)
+    try:
+        orgs = await org_api.get_my_organizations(token)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            auth_helper.clear_session(req)
+            return RedirectResponse("/login?expired=1", status_code=302)
+        raise
     org_options = [Option(o["name"], value=o["id"]) for o in orgs]
 
     form = Form(

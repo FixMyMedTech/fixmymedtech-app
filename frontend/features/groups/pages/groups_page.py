@@ -1,5 +1,6 @@
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
+import httpx
 import features.groups.api as groups_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
@@ -19,11 +20,21 @@ async def get(req):
 
     try:
         me_raw = await _get_me_data(token)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            auth_helper.clear_session(req)
+            return RedirectResponse("/login?expired=1", status_code=302)
+        me_raw = {}
     except Exception:
         me_raw = {}
 
     try:
         orgs = await groups_api.get_my_organizations(token)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            auth_helper.clear_session(req)
+            return RedirectResponse("/login?expired=1", status_code=302)
+        orgs = []
     except Exception:
         orgs = []
 

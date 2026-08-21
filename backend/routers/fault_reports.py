@@ -37,7 +37,9 @@ class FaultStatusUpdate(BaseModel):
 
 async def _validate_assignee(db: AsyncSession, assignee_id: UUID, org_id: UUID):
     assignee_result = await db.execute(
-        select(Profile).where(Profile.id == assignee_id)
+        select(Profile)
+        .options(selectinload(Profile.org_memberships))
+        .where(Profile.id == assignee_id)
     )
     assignee = assignee_result.scalar_one_or_none()
     if not assignee:
@@ -215,5 +217,15 @@ async def update_fault(
             fault.status = "assigned"
 
     await db.commit()
-    await db.refresh(fault)
-    return fault
+
+    # Re-fetch with eager-loaded relationships for safe serialization
+    result = await db.execute(
+        select(FaultReport)
+        .options(
+            selectinload(FaultReport.device),
+            selectinload(FaultReport.assigned_to_profile),
+            selectinload(FaultReport.reported_by_profile),
+        )
+        .where(FaultReport.id == fault_id)
+    )
+    return result.scalar_one()

@@ -20,6 +20,7 @@ router = APIRouter()
 class DeviceCreate(BaseModel):
     id: Optional[UUID] = None
     name: str
+    organization_id: Optional[UUID] = None
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
@@ -188,14 +189,20 @@ async def create_device(
     if not profile.org_memberships:
         raise HTTPException(status_code=403, detail="No organization membership")
 
-    primary_org = profile.org_memberships[0].organization_id
-    primary_role = profile.org_memberships[0].role
+    org_id = body.organization_id or profile.org_memberships[0].organization_id
+    role = profile.get_role_for_org(org_id)
 
-    if primary_role not in ("admin", "technician"):
+    if role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = body.model_dump(exclude_none=True)
-    device = Device(**payload, organization_id=primary_org, organization_maintenance_id=primary_org)
+    payload.pop("organization_id", None)
+    device = Device(
+        **payload,
+        organization_id=org_id,
+        organization_maintenance_id=org_id,
+        registered_by=profile.id,
+    )
     db.add(device)
     await db.commit()
     await db.refresh(device)

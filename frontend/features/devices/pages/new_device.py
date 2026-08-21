@@ -156,14 +156,18 @@ async def get(req,device_id: str):
     except Exception:
         pass
 
-    from features.devices.static.guides import GUIDES, CATEGORY_ICONS
+    from features.devices.static.guides import GUIDES, CATEGORY_ICONS, CATEGORY_FALLBACKS
 
     cat_options = [Option(_("new_device.category_placeholder"), value="")]
     for g in GUIDES:
         content = g.get(lang) or g
         icon = CATEGORY_ICONS.get(g["slug"], "🏥")
         cat_options.append(Option(f"{icon} {content.get('title')}", value=g["slug"]))
+    other_label = CATEGORY_FALLBACKS.get("other", {}).get(lang, "Other")
+    cat_options.append(Option(f"🏥 {other_label}", value="other"))
 
+    orgs = await org_api.get_my_organizations(token)
+    org_options = [Option(o["name"], value=o["id"]) for o in orgs]
 
     form = Form(
         A(_("new_device.back"), href="/devices",
@@ -173,11 +177,17 @@ async def get(req,device_id: str):
         Div(
             H3(_("new_device.basic_info"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
             Div(
-                Div(Label(_("new_device.name_label"), cls="label", for_="name"),
-                    Input(id="name", name="name", cls="input", placeholder=_("new_device.name_placeholder")),
+                Div(Label(_("new_device.org_label"), cls="label", for_="organization_id"),
+                    Select(*org_options, id="organization_id", name="organization_id", cls="input"),
                     cls="form-group"),
                 Div(Label(_("new_device.category_label"), cls="label", for_="category"),
                     Select(*cat_options, id="category", name="category_id", cls="input"),
+                    cls="form-group"),
+                cls="form-row"
+            ),
+            Div(
+                Div(Label(_("new_device.name_label"), cls="label", for_="name"),
+                    Input(id="name", name="name", cls="input", placeholder=_("new_device.name_placeholder")),
                     cls="form-group"),
                 cls="form-row"
             ),
@@ -360,7 +370,8 @@ async def get(req,device_id: str):
 
 
 @rt("/device/{device_id}/new")
-async def post(req, device_id: str, name: str, manufacturer: str = "", model: str = "",
+async def post(req, device_id: str, name: str, organization_id: str = "",
+            manufacturer: str = "", model: str = "",
             serial_number: str = "", category_id: str = "", location: str = "",
             acquisition_type: str = "purchased", acquisition_date: str = "",
             manufacture_year: str = "", next_maintenance: str = "", notes: str = "",
@@ -373,6 +384,7 @@ async def post(req, device_id: str, name: str, manufacturer: str = "", model: st
 
     payload = {"name": name}
     if device_id:         payload["id"]        = device_id
+    if organization_id:   payload["organization_id"]  = organization_id
     if manufacturer:      payload["manufacturer"]     = manufacturer
     if model:             payload["model"]            = model
     if serial_number:     payload["serial_number"]    = serial_number

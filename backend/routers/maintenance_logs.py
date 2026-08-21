@@ -81,7 +81,9 @@ class MaintenanceLogUpdate(BaseModel):
 
 async def _validate_assignee(db: AsyncSession, assignee_id: UUID, org_id: UUID):
     assignee_result = await db.execute(
-        select(Profile).where(Profile.id == assignee_id)
+        select(Profile)
+        .options(selectinload(Profile.org_memberships))
+        .where(Profile.id == assignee_id)
     )
     assignee = assignee_result.scalar_one_or_none()
     if not assignee:
@@ -144,8 +146,18 @@ async def update_maintenance_log(
         log.assigned_to = body.assigned_to
 
     await db.commit()
-    await db.refresh(log)
-    return log
+
+    # Re-fetch with eager-loaded relationships for safe serialization
+    result = await db.execute(
+        select(MaintenanceLog)
+        .options(
+            selectinload(MaintenanceLog.device),
+            selectinload(MaintenanceLog.assigned_to_profile),
+            selectinload(MaintenanceLog.performed_by_profile),
+        )
+        .where(MaintenanceLog.id == log_id)
+    )
+    return result.scalar_one()
 
 
 @router.post("/")
@@ -179,5 +191,15 @@ async def create_maintenance_log(
         device.status = "maintenance"
 
     await db.commit()
-    await db.refresh(log)
-    return log
+
+    # Re-fetch with eager-loaded relationships for safe serialization
+    result = await db.execute(
+        select(MaintenanceLog)
+        .options(
+            selectinload(MaintenanceLog.device),
+            selectinload(MaintenanceLog.assigned_to_profile),
+            selectinload(MaintenanceLog.performed_by_profile),
+        )
+        .where(MaintenanceLog.id == log.id)
+    )
+    return result.scalar_one()

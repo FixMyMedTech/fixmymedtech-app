@@ -18,3 +18,9 @@ async def update_profile(token: str, data: dict):
 
 async def get_my_tasks(token: str):
     return await _get("/api/auth/tasks", token)
+
+async def forgot_password(email: str):
+    return await _post("/api/auth/forgot-password", {"email": email})
+
+async def reset_password(token: str, password: str):
+    return await _post(f"/api/auth/reset-password?token={token}&password={password}", data={})

@@ -1,24 +1,39 @@
-# routers/auth.py
+# routers/auth.py — Auth endpoints backed by FastAPI-Users + fastapi-mail
+#
+# Keeps the same frontend contract:
+#   POST /api/auth/login    → {access_token, user: {id, email}}
+#   POST /api/auth/signup   → {message}
+#   POST /api/auth/logout   → {message}
+#   GET  /api/auth/me       → {id, username, full_name, organizations}
+#   PATCH /api/auth/me      → {id, username, full_name}
+#   GET  /api/auth/tasks    → [...]
 
 from fastapi import APIRouter, HTTPException, Request, Depends
+from starlette.responses import RedirectResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select, text
-from typing import Optional
-from models.models import Organization, Profile, OrgUser, FaultReport, MaintenanceLog, Device
-from routers.deps import get_supabase
-from config.supabase_config import AsyncSession, get_db, supa_client as sb
-from utils.profile import get_current_profile
-from utils.username import generate_username
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from typing import Optional
 import uuid
 import logging
+
+from models.models import Organization, Profile, OrgUser, User, FaultReport, MaintenanceLog
+from config.db_config import get_db
+from config.users import (
+    get_user_manager,
+    UserManager,
+    fastapi_users,
+    current_active_user,
+    auth_backend,
+)
+from fastapi_users.exceptions import UserAlreadyExists, UserNotExists
+from utils.username import generate_username
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-import os
-
-FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONTEND_URL = Optional[str]
 
 
 class LoginRequest(BaseModel):
@@ -41,135 +56,140 @@ class ProfileUpdate(BaseModel):
     username: Optional[str] = None
 
 
-@router.post("/login")
-async def login(body: LoginRequest, request: Request,
-                db: AsyncSession = Depends(get_db)):
-    sb = get_supabase(request)
+# ── Login ──────────────────────────────────────────────────────────────────────
 
-    # Check if user exists in auth.users before attempting login
-    db_user = await db.execute(
-        text("SELECT id FROM auth.users WHERE email = :email"),
-        {"email": body.email},
-    )
-    if not db_user.scalar_one_or_none():
+@router.post("/login")
+async def login(
+    body: LoginRequest,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    import os
+    from fastapi_users.authentication import JWTStrategy
+    from config.users import get_jwt_strategy
+
+    # 1. Fetch user by email
+    try:
+        user = await user_manager.get_by_email(body.email.lower())
+    except UserNotExists:
+        raise HTTPException(status_code=404, detail="user_not_found")
+    except Exception:
         raise HTTPException(status_code=404, detail="user_not_found")
 
-    try:
-        res = sb.auth.sign_in_with_password({"email": body.email, "password": body.password})
-        return {
-            "access_token": res.session.access_token,
-            "user": {
-                "id": res.user.id,
-                "email": res.user.email,
-            }
-        }
-    except Exception as e:
-        msg = str(e).lower()
-        if "email not confirmed" in msg or "not confirmed" in msg:
-            raise HTTPException(status_code=403, detail="email_not_confirmed")
+    # 2. Verify password via FastAPI-Users' password helper (bcrypt, argon2, …)
+    valid, new_hash = user_manager.password_helper.verify_and_update(
+        body.password, user.hashed_password
+    )
+    if not valid:
         raise HTTPException(status_code=401, detail="invalid_credentials")
 
+    # Rotate hash if the hasher format changed (e.g. argon2→bcrypt migration)
+    if new_hash is not None:
+        user.hashed_password = new_hash
+        # user_manager.update is async but we don't await — it's optional here
+
+    # 3. Mint JWT via FastAPI-Users' strategy
+    strategy = get_jwt_strategy()
+    token = await strategy.write_token(user)
+
+    return {
+        "access_token": token,
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+        },
+    }
+
+
+# ── Signup ─────────────────────────────────────────────────────────────────────
 
 @router.post("/signup")
-async def signup(body: SignupRequest, request: Request,
-                 db: AsyncSession = Depends(get_db)):
+async def signup(
+    body: SignupRequest,
+    request: Request,
+    user_manager: UserManager = Depends(get_user_manager),
+    db: AsyncSession = Depends(get_db),
+):
+    from fastapi_users.schemas import BaseUserCreate
 
-    sb = get_supabase(request)
+    email = body.email.lower()
+
+    # 1. Create user via FastAPI-Users (hashes password, fires on_after_register hook)
     try:
-        email_redirect_to = f"{FRONTEND_URL.rstrip('/')}/login" if FRONTEND_URL else None
-        res = sb.auth.sign_up({
-            "email": body.email, "password": body.password,
-            "options": ({"email_redirect_to": email_redirect_to}
-                        if email_redirect_to else None),
-        })
-
-        if res.user and res.user.confirmed_at:
-            raise HTTPException(status_code=409, detail="user_already_exists")
-
-        user_id = res.user.id
-
-        db_user = await db.execute(
-            text("SELECT id FROM auth.users WHERE id = :uid"), {"uid": user_id}
+        user_create = BaseUserCreate(
+            email=email,
+            password=body.password,
         )
-        if not db_user.scalar_one_or_none():
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "User already exists. Please log in."
-                ),
-            )
+        user = await user_manager.create(user_create, safe=False, request=request)
+    except UserAlreadyExists:
+        raise HTTPException(status_code=409, detail="user_already_exists")
+    except Exception as exc:
+        logger.exception("UserManager.create failed for %s", email)
+        raise HTTPException(status_code=400, detail=f"Signup failed: {exc}")
 
-        username = await generate_username(body.full_name, db)
+    # 2. Create Profile (1:1 with user)
+    username = await generate_username(body.full_name, db)
+    profile = Profile(
+        id=user.id,
+        username=username,
+        full_name=body.full_name,
+    )
+    db.add(profile)
+    await db.flush()
 
-        profile = Profile(
-            id=user_id,
-            username=username,
-            full_name=body.full_name,
-        )
-        db.add(profile)
-        await db.flush()
-
-        if body.organization_id:
-            try:
-                org_uuid = uuid.UUID(body.organization_id)
-            except (ValueError, TypeError, AttributeError):
-                raise HTTPException(status_code=400, detail="Invalid organization id")
-            res = await db.execute(
-                select(Organization).where(Organization.id == org_uuid)
-            )
-            if not res.scalar_one_or_none():
-                raise HTTPException(status_code=400,
-                                    detail="Selected organization does not exist")
-            org_id = body.organization_id
-        else:
-            org = Organization(
-                name=body.full_name,
-                country=body.country or "",
-                type="hospital",
-            )
-            db.add(org)
-            await db.flush()
-            org_id = str(org.id)
-
-        org_user = OrgUser(
-            profile_id=user_id,
-            organization_id=org_id,
-            role=body.role,
-        )
-        db.add(org_user)
-
+    # 3. Create or link Organization
+    if body.organization_id:
         try:
-            await db.commit()
-        except Exception as e:
-            await db.rollback()
-            logger.exception("Profile creation failed for %s", body.email)
-            raise HTTPException(status_code=400, detail=f"Error creating profile: {str(e)}")
+            org_uuid = uuid.UUID(body.organization_id)
+        except (ValueError, TypeError, AttributeError):
+            raise HTTPException(status_code=400, detail="Invalid organization id")
+        res = await db.execute(
+            select(Organization).where(Organization.id == org_uuid)
+        )
+        if not res.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Selected organization does not exist")
+        org_id = str(org_uuid)
+    else:
+        org = Organization(
+            name=body.full_name,
+            country=body.country or "",
+            type="hospital",
+        )
+        db.add(org)
+        await db.flush()
+        org_id = str(org.id)
 
-        return {"message": "Account created. Check your email to confirm."}
+    db.add(OrgUser(
+        profile_id=user.id,
+        organization_id=org_id,
+        role=body.role,
+    ))
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception("Signup failed for %s", getattr(body, "email", "?"))
-        detail = str(e)
-        resp = getattr(e, "response", None)
-        if resp is not None:
-            try:
-                detail = resp.text or detail
-            except Exception:
-                pass
-        raise HTTPException(status_code=400, detail=detail)
+    await db.commit()
+    return {"message": "Account created."}
 
+
+# ── Logout (stateless — client discards token) ─────────────────────────────────
 
 @router.post("/logout")
-async def logout(request: Request):
-    sb = get_supabase(request)
-    sb.auth.sign_out()
+async def logout():
     return {"message": "Logged out"}
 
 
+# ── Me ─────────────────────────────────────────────────────────────────────────
+
 @router.get("/me")
-async def me(profile: Profile = Depends(get_current_profile)):
+async def me(
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Profile)
+        .options(selectinload(Profile.org_memberships).selectinload(OrgUser.organization))
+        .where(Profile.id == user.id)
+    )
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
     return {
         "id": profile.id,
         "username": profile.username,
@@ -189,9 +209,14 @@ async def me(profile: Profile = Depends(get_current_profile)):
 @router.patch("/me")
 async def update_me(
     body: ProfileUpdate,
-    profile: Profile = Depends(get_current_profile),
+    user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
+    result = await db.execute(select(Profile).where(Profile.id == user.id))
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
     if body.full_name is not None:
         profile.full_name = body.full_name
     if body.username is not None:
@@ -217,12 +242,14 @@ async def update_me(
     }
 
 
+# ── Tasks ──────────────────────────────────────────────────────────────────────
+
 @router.get("/tasks")
 async def my_tasks(
-    profile: Profile = Depends(get_current_profile),
+    user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    uid = profile.id
+    uid = user.id
 
     faults_result = await db.execute(
         select(FaultReport)
@@ -265,3 +292,70 @@ async def my_tasks(
     ]
 
     return faults + logs
+
+
+# ── Verify (email confirmation) ───────────────────────────────────────────────
+
+@router.get("/verify")
+async def verify_email(
+    token: str,
+    request: Request,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    import os
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5001").rstrip("/")
+    try:
+        await user_manager.verify(token)
+        return RedirectResponse(f"{frontend_url}/login?verified=1", status_code=302)
+    except Exception:
+        return RedirectResponse(f"{frontend_url}/login?verified=0", status_code=302)
+
+
+# ── Request verification (resend) ─────────────────────────────────────────────
+
+@router.post("/request-verification")
+async def request_verification(
+    body: LoginRequest,
+    request: Request,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    try:
+        user = await user_manager.get_by_email(body.email.lower())
+    except Exception:
+        # Silently return to avoid leaking email existence
+        return {"message": "If your email is registered, a verification link has been sent."}
+
+    if user.is_verified:
+        return {"message": "Account is already verified."}
+
+    await user_manager.request_verify(user, request=request)
+    return {"message": "If your email is registered, a verification link has been sent."}
+
+
+# ── Forgot / reset password ───────────────────────────────────────────────────
+
+@router.post("/forgot-password")
+async def forgot_password(
+    body: LoginRequest,
+    request: Request,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    try:
+        user = await user_manager.get_by_email(body.email.lower())
+        await user_manager.forgot_password(user, request=request)
+    except Exception:
+        pass  # Always return the same response to avoid leaking
+    return {"message": "If your email is registered, a password reset link has been sent."}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    token: str,
+    password: str,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    try:
+        await user_manager.reset_password(token, password)
+        return {"message": "Password has been reset."}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Reset failed: {exc}")

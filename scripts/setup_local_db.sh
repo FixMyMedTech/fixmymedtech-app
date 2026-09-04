@@ -17,14 +17,10 @@ echo "[2/4] Applying schema..."
 docker compose exec -T db psql -U postgres -d fixmymedtech < ./db/init.sql
 echo " Schema applied."
 
-# Prompt user to create a Supabase Auth account
+# Users now live in the local DB. Seed test data directly:
+echo "[3/4] Seed test users (optional):"
+echo "  - Run:  python scripts/seed_test_data.py"
 echo ""
-echo "[3/4] Create a Supabase Auth account for the demo:"
-echo "  - Go to http://localhost:5173/signup"
-echo "  - Register a new account"
-echo "  - Then run:  ./scripts/sync_user.sh <your-email>"
-echo ""
-echo "  Or use the setup script with an existing Firebase user."
 
 # .env check
 if [ ! -f .env ]; then

@@ -9,11 +9,8 @@ services:
     ports:
       - "127.0.0.1:8889:8888"
     environment:
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_API_SECRET_KEY: ${SUPABASE_API_SECRET_KEY}
-      SUPABASE_API_ANON_KEY: ${SUPABASE_API_ANON_KEY}
-      SUPABASE_DB_URI: ${SUPABASE_DB_URI}
-      SUPABASE_DB_SCHEMA: fixmymedtech
+      DATABASE_URL: ${DATABASE_URL}
+      DB_SCHEMA: ${DB_SCHEMA:-fixmymedtech}
       FRONTEND_URL: ${FRONTEND_URL:-https://dev.example.org}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]

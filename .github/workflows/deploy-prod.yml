@@ -30,11 +30,8 @@ jobs:
           script: |
             mkdir -p ${{ env.APP_DIR }}
             cat > ${{ env.APP_DIR }}/.env <<'EOF'
-            SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL }}
-            SUPABASE_API_ANON_KEY=${{ secrets.PROD_SUPABASE_API_ANON_KEY }}
-            SUPABASE_API_SECRET_KEY=${{ secrets.PROD_SUPABASE_API_SECRET_KEY }}
-            SUPABASE_DB_URI=${{ secrets.PROD_SUPABASE_DB_URI }}
-            SUPABASE_DB_SCHEMA=fixmymedtech
+            DATABASE_URL=${{ secrets.PROD_SUPABASE_DB_URI }}
+            DB_SCHEMA=fixmymedtech
             FRONTEND_URL=${{ secrets.PROD_FRONTEND_URL }}
             API_URL=http://backend:8888
             EOF

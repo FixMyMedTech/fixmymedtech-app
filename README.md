@@ -220,12 +220,14 @@ Services will be available at:
 | `DB_SCHEMA` | Schema the app tables live in (e.g. `fixmymedtech`) |
 | `FRONTEND_URL` | Backend URL used for email links + redirects (e.g. `http://localhost:8888`) |
 
-### Frontend (`frontend/.env`)
+### Frontend
+
+No `.env` file is needed — both variables have working defaults:
 
 | Variable | Description |
 |----------|-------------|
-| `API_URL` | FastAPI URL (e.g. `http://localhost:8000`) |
-| `SESSION_SECRET` | Random string for encrypting session cookies |
+| `API_URL` | FastAPI URL (default `http://localhost:8888`) |
+| `SESSION_SECRET` | Random string for encrypting session cookies (default `dev-secret-change-in-production`) |
 
 ---
 

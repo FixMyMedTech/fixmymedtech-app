@@ -14,12 +14,27 @@ from i18n import t as make_t
 from components import pub_shell
 rt = APIRouter()
 
+
+def _oauth_buttons(_):
+    """Render 'continue with Google/GitHub' links into the login card."""
+    return Div(
+        Div(_("login.oauth_divider"), cls="oauth-divider"),
+        A(_("login.oauth_google"), href="/api/auth/oauth/google",
+          cls="btn btn-outline", style="width:100%;justify-content:center;"),
+        A(_("login.oauth_github"), href="/api/auth/oauth/github",
+          cls="btn btn-outline", style="width:100%;justify-content:center;margin-top:8px;"),
+        A(_("login.oauth_discord"), href="/api/auth/oauth/discord",
+                  cls="btn btn-outline", style="width:100%;justify-content:center;margin-top:8px;"),
+        cls="oauth-buttons", style="margin-top:16px;"
+    )
+
+
 # ══════════════════════════════════════════════════════════════
 # LOGIN ROUTES
 # ══════════════════════════════════════════════════════════════
 
 @rt("/login")
-async def get(req, expired: str = "", next: str = ""):
+async def get(req, expired: str = "", next: str = "", verified: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     # Only redirect if token is actually still valid
@@ -37,6 +52,14 @@ async def get(req, expired: str = "", next: str = ""):
 
     expired_msg = Div(_("login.expired"),
                     cls="alert alert-warning") if expired else ""
+    if verified == "1":
+        verified_msg = Div(_("login.verified_ok"),
+                        cls="alert alert-success", style="margin-bottom:10px;")
+    elif verified == "0":
+        verified_msg = Div(_("login.verified_fail"),
+                        cls="alert alert-error", style="margin-bottom:10px;")
+    else:
+        verified_msg = ""
     form = Form(
         Div(
             Input(type="hidden", name="next", value=next),
@@ -52,6 +75,7 @@ async def get(req, expired: str = "", next: str = ""):
                     cls="auth-brand"
                 ),
                 expired_msg,
+                verified_msg,
                 Div(
                     Label(_("login.email_label"), cls="label", for_="email"),
                     Input(id="email", name="email", type="email",
@@ -70,6 +94,7 @@ async def get(req, expired: str = "", next: str = ""):
                     _("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
                     cls="auth-link", style="margin-top:12px;"
                 ),
+                _oauth_buttons(_),
                 cls="auth-card"
             ),
             Div(
@@ -143,6 +168,7 @@ async def post(req, email: str, password: str, next: str = ""):
                     style="width:100%;justify-content:center;margin-top:4px;"),
                 P(_("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
                 cls="auth-link", style="margin-top:12px;"),
+                # _oauth_buttons(_),
                 cls="auth-card"
             ),
             Div(
@@ -154,6 +180,15 @@ async def post(req, email: str, password: str, next: str = ""):
         )
         return pub_shell(Form(form_error, method="post", action="/login"),
                         title=_("title.login"), lang=lang)
+
+
+@rt("/oauth-callback")
+async def get(req, access_token: str = "", user_email: str = ""):
+    if access_token:
+        req.session["token"] = access_token
+        if user_email:
+            req.session["user_email"] = user_email
+    return RedirectResponse("/dashboard", status_code=302)
 
 
 @rt("/logout")

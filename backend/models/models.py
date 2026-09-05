@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from sqlalchemy import (
-    Column, String, Text, Integer, Numeric, Float, Date, DateTime,
+    Column, String, Text, Integer, Numeric, Float, Date, DateTime, Boolean,
     ForeignKey, CheckConstraint, UniqueConstraint, MetaData, event
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -16,7 +16,7 @@ from sqlalchemy.sql import func
 import uuid
 
 
-SCHEMA = os.getenv("SUPABASE_DB_SCHEMA", "fixmymedtech")
+SCHEMA = os.getenv("DB_SCHEMA", "fixmymedtech")
 metadata = MetaData(schema=SCHEMA)
 
 
@@ -24,19 +24,28 @@ class Base(DeclarativeBase):
     metadata = metadata
 
 # ══════════════════════════════════════════════════════════════
-# AUTH USERS (from Supabase auth.users table) - only add columns I actually need
+# USERS (local auth — identity replaces Supabase auth.users)
 # ══════════════════════════════════════════════════════════════
 
-
-class AuthUser(Base):
+class User(Base):
     __tablename__ = "users"
-    __table_args__ = {
-        "schema": "auth",
-        "extend_existing": True,  # don't try to redefine if already reflected elsewhere
-    }
+    __table_args__ = {"schema": SCHEMA}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    email = Column(String)
+    id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email          = Column(Text, unique=True, nullable=False)
+    hashed_password = Column(Text)
+    is_active      = Column(Boolean, default=True, nullable=False)
+    is_superuser   = Column(Boolean, default=False, nullable=False)
+    is_verified    = Column(Boolean, default=False, nullable=False)
+    full_name      = Column(Text)
+    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at     = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User {self.email}>"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -79,16 +88,16 @@ class Profile(Base):
     __tablename__ = "profiles"
     __table_args__ = {"schema": SCHEMA}
 
-    id              = Column(UUID(as_uuid=True), ForeignKey(f"auth.users.id", ondelete="CASCADE"), primary_key=True)
+    id              = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.users.id", ondelete="CASCADE"), primary_key=True)
     username        = Column(Text, unique=True, nullable=False)
     full_name       = Column(Text)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
+    user            = relationship("User", back_populates="profile", lazy="selectin")
     org_memberships = relationship("OrgUser", back_populates="profile", cascade="all, delete-orphan")
     maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile", foreign_keys="MaintenanceLog.performed_by")
     fault_reports   = relationship("FaultReport", back_populates="reported_by_profile", foreign_keys="FaultReport.reported_by")
-    auth_user = relationship("AuthUser", backref="profile", lazy="selectin")
 
     def get_role_for_org(self, org_id):
         for m in self.org_memberships:
@@ -199,6 +208,8 @@ class Device(Base):
     location                    = Column(Text)
     latitude                    = Column(Float)
     longitude                   = Column(Float)
+    photo_key                   = Column(Text)
+    photo_processed_key         = Column(Text)
     status                      = Column(Text, default="operational")
     registered_by               = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"), nullable=True)
     last_maintenance            = Column(Date)

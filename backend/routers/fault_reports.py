@@ -10,7 +10,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from config.supabase_config import get_db
+from config.db_config import get_db
 from utils.profile import get_current_profile
 from models.models import Device, FaultReport, Profile, OrgUser
 

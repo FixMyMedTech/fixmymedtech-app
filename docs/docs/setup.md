@@ -18,7 +18,7 @@
 ```bash
 cd backend
 cp .env.example .env
-# Fill in SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_ANON_KEY
+# Fill in DATABASE_URL (and DB_SCHEMA)
 
 pip install -r requirements.txt
 uvicorn main:app --reload

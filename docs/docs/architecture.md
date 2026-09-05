@@ -150,10 +150,9 @@ Supabase provides PostgreSQL, authentication, file storage, and row-level securi
 cd backend
 cp .env.example .env
 # Edit .env:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_SERVICE_KEY=sb_secret_xxx
-# SUPABASE_ANON_KEY=sb_publishable_xxx
-# FRONTEND_URL=http://localhost:5001
+# DATABASE_URL=postgresql+asyncpg://postgres:xxx@db.your-project.supabase.co:5432/postgres
+# DB_SCHEMA=fixmymedtech
+# FRONTEND_URL=http://localhost:8888
 
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8888
@@ -217,17 +216,18 @@ Services will be available at:
 
 | Variable | Description |
 |----------|-------------|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_SERVICE_KEY` | `sb_secret_xxx` — bypasses RLS, backend only |
-| `SUPABASE_ANON_KEY` | `sb_publishable_xxx` — for token validation |
-| `FRONTEND_URL` | FastHTML URL for CORS (e.g. `http://localhost:5000`) |
+| `DATABASE_URL` | PostgreSQL connection string (asyncpg driver) |
+| `DB_SCHEMA` | Schema the app tables live in (e.g. `fixmymedtech`) |
+| `FRONTEND_URL` | Backend URL used for email links + redirects (e.g. `http://localhost:8888`) |
 
-### Frontend (`frontend/.env`)
+### Frontend
+
+No `.env` file is needed — both variables have working defaults:
 
 | Variable | Description |
 |----------|-------------|
-| `API_URL` | FastAPI URL (e.g. `http://localhost:8000`) |
-| `SESSION_SECRET` | Random string for encrypting session cookies |
+| `API_URL` | FastAPI URL (default `http://localhost:8888`) |
+| `SESSION_SECRET` | Random string for encrypting session cookies (default `dev-secret-change-in-production`) |
 
 ---
 

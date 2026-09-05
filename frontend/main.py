@@ -13,6 +13,7 @@ from features.dashboard import pages as dashboard
 from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,maintenance_log,fault_detail,maintenance_log_detail
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
+from features.auth.pages import reset_password as auth_reset
 from features.profile import pages as profile_pages
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page
@@ -45,6 +46,7 @@ async def post(req):
 
 auth_login.rt.to_app(app)
 auth_signup.rt.to_app(app)
+auth_reset.rt.to_app(app)
 profile_pages.rt.to_app(app)
 tasks_pages.rt.to_app(app)
 groups_page.rt.to_app(app)

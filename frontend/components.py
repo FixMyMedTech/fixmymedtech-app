@@ -98,6 +98,12 @@ a { color: var(--c-primary); text-decoration: none; }
 .btn-secondary { background:var(--c-bg-2); color:var(--c-text); border:1px solid var(--c-border); }
 .btn-danger { background:var(--c-red-lt); color:var(--c-red); border:1px solid #fca5a5; }
 .btn-sm { padding:5px 12px; font-size:0.8rem; }
+.btn-outline { background:var(--c-surface); color:var(--c-text); border:1px solid var(--c-border); }
+.btn-outline:hover { background:var(--c-bg-2); border-color:var(--c-primary); color:var(--c-primary); }
+.oauth-divider { text-align:center; font-size:0.78rem; color:var(--c-text-3); margin:6px 0 10px; position:relative; }
+.oauth-divider::before, .oauth-divider::after { content:""; position:absolute; top:50%; width:34%; height:1px; background:var(--c-border); }
+.oauth-divider::before { left:0; }
+.oauth-divider::after { right:0; }
 
 /* Cards */
 .card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:18px 20px; }

@@ -30,6 +30,12 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-fixmymedtech}
+      AUTO_PROCESS_PHOTO: ${AUTO_PROCESS_PHOTO:-on}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_PHOTO_MODEL: ${GEMINI_PHOTO_MODEL:-gemini-2.5-flash-image}
+      PHOTO_MAX_DIMENSION: ${PHOTO_MAX_DIMENSION:-1600}
+      PHOTO_JPEG_QUALITY: ${PHOTO_JPEG_QUALITY:-85}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 30s

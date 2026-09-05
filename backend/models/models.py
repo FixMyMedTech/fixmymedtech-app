@@ -208,6 +208,8 @@ class Device(Base):
     location                    = Column(Text)
     latitude                    = Column(Float)
     longitude                   = Column(Float)
+    photo_key                   = Column(Text)
+    photo_processed_key         = Column(Text)
     status                      = Column(Text, default="operational")
     registered_by               = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"), nullable=True)
     last_maintenance            = Column(Date)

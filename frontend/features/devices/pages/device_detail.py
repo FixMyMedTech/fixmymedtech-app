@@ -1,6 +1,6 @@
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 import os, httpx
 from dotenv import load_dotenv
 
@@ -29,6 +29,17 @@ async def post_location(req, device_id: str, latitude: float = 0, longitude: flo
     except Exception:
         pass
     return RedirectResponse(f"/device/{device_id}", status_code=303)
+
+
+@rt("/device/{device_id}/photo")
+async def get_photo(req, device_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect: return redirect
+    try:
+        content, ctype = await devices_api.get_device_photo(token, device_id)
+        return Response(content=content, media_type=ctype)
+    except Exception:
+        return Response(status_code=404)
 
 
 @rt("/device/{device_id}")
@@ -109,6 +120,12 @@ async def get(req, device_id: str):
             ),
             style="display:flex;align-items:center;gap:12px;background:var(--c-primary-lt);border:1px solid #a7d9ce;border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;"
         ),
+        # Photo
+        Div(
+            Img(src=f"/device/{device_id}/photo?v={d.get('photo_processed_key') or 'original'}", alt=d.get("name", ""),
+                style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
+            cls="card", style="padding:6px;margin-bottom:16px;",
+        ) if d.get("photo_key") else "",
         # Device info
         Div(
             Div(

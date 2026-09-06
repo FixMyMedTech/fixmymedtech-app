@@ -35,6 +35,8 @@ jobs:
             FRONTEND_URL=${{ secrets.DEV_FRONTEND_URL }}
             API_URL=http://backend:8888
             AUTH_JWT_SECRET=${{ secrets.DEV_AUTH_JWT_SECRET }}
+            SUPERUSER_EMAIL=${{ secrets.DEV_SUPERUSER_EMAIL }}
+            SUPERUSER_PASSWORD=${{ secrets.DEV_SUPERUSER_PASSWORD }}
             MAIL_SERVER=${{ secrets.DEV_MAIL_SERVER }}
             MAIL_PORT=${{ secrets.DEV_MAIL_PORT }}
             MAIL_USERNAME=${{ secrets.DEV_MAIL_USERNAME }}

@@ -18,6 +18,7 @@ from config.db_config import engine
 from routers import devices, fault_reports, maintenance_logs, dashboard, auth, organizations, oauth
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
+from utils.create_superuser import bootstrap_superuser_from_env
 
 load_dotenv()
 
@@ -30,6 +31,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[migrations] ERROR: {e}")
         raise
+    # Optionally ensure a superuser exists (env-driven, no-op by default)
+    try:
+        await bootstrap_superuser_from_env()
+    except Exception as e:
+        print(f"[bootstrap] ERROR: {e}")
     yield
 
 app = FastAPI(

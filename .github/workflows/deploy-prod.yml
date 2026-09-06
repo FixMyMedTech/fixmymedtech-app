@@ -34,6 +34,8 @@ jobs:
             DB_SCHEMA=fixmymedtech
             FRONTEND_URL=${{ secrets.PROD_FRONTEND_URL }}
             API_URL=http://backend:8888
+            SUPERUSER_EMAIL=${{ secrets.PROD_SUPERUSER_EMAIL }}
+            SUPERUSER_PASSWORD=${{ secrets.PROD_SUPERUSER_PASSWORD }}
             EOF
 
       - name: Copy code to server

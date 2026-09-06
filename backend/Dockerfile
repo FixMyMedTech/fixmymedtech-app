@@ -11,4 +11,4 @@ COPY infrastructure/migrations /app/infrastructure/migrations
 
 EXPOSE 8888
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8888"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8888", "--forwarded-allow-ips", "*"]

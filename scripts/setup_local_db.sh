@@ -16,7 +16,7 @@ echo " PostgreSQL is ready."
 
 # Schema is auto-applied by the init.sql volume mount, but re-run to be safe
 echo "[2/4] Applying schema..."
-$COMPOSE exec -T db psql -U postgres -d fixmymedtech < ./db/init.sql
+$COMPOSE exec -T db psql -U postgres -d fixmymedtech < ./infrastructure/db/init.sql
 echo " Schema applied."
 
 # Users now live in the local DB. Seed test data directly:

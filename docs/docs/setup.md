@@ -5,7 +5,8 @@
 ## 1. Supabase setup
 
 1. Create a project at https://supabase.com
-2. Go to **SQL Editor** → paste and run `supabase/schema.sql`
+2. The schema is applied automatically — backend startup runs the migrations in
+   `infrastructure/migrations/` (tracked in `fixmymedtech.schema_migrations`).
 3. Go to **Project Settings → API** → copy:
    - Project URL
    - `anon` public key

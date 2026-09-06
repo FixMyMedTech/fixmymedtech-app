@@ -53,9 +53,6 @@ fixmymedtech/
 │       ├── styles.css              ← All CSS — edit this to change the design
 │       └── *.png / *.svg           ← Images and icons
 │
-├── supabase/
-│   └── schema.sql                  ← Run once in Supabase SQL Editor
-│
 ├── docs/                           ← MkDocs documentation
 │   ├── mkdocs.yml
 │   └── docs/*.md
@@ -140,9 +137,9 @@ Supabase provides PostgreSQL, authentication, file storage, and row-level securi
 ### 1. Supabase
 
 1. Create a project at https://supabase.com
-2. Go to **SQL Editor** → paste and run `supabase/schema.sql`
-3. Go to **Authentication → Settings** → disable email confirmation for development
-4. Go to **Project Settings → API** → copy your keys
+2. The schema is applied automatically: backend startup runs the migrations in
+   `infrastructure/migrations/` (tracked in `fixmymedtech.schema_migrations`).
+3. Go to **Project Settings → API** → copy your keys
 
 ### 2. Backend (FastAPI)
 

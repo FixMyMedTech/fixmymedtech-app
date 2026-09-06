@@ -1,7 +1,7 @@
 -- ============================================================
 -- Migration 001: add device coordinates
 -- Aligns the Supabase schema with the SQLAlchemy model
--- (latitude/longitude were present in db/init.sql but missing here).
+-- (latitude/longitude were present in infrastructure/db/init.sql but missing here).
 -- ============================================================
 
 ALTER TABLE fixmymedtech.devices

@@ -242,6 +242,18 @@ tr:hover td { background:var(--c-bg); }
   .form-row { grid-template-columns:1fr; }
 }
 
+/* Top-right avatar menu (logged-in app pages) */
+.avatar-wrap { position:fixed; top:14px; right:14px; z-index:300; }
+.avatar-btn { width:40px; height:40px; border-radius:50%; background:var(--c-primary); color:#fff; border:none; cursor:pointer; font-size:1.05rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+.avatar-btn:hover { background:var(--c-primary-mid); }
+.avatar-menu { position:absolute; top:48px; right:0; min-width:180px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-md); box-shadow:0 8px 24px rgba(0,0,0,.12); display:none; flex-direction:column; padding:6px; }
+.avatar-menu.open { display:flex; }
+.avatar-menu-user { padding:10px 12px 9px; border-bottom:1px solid var(--c-border); margin-bottom:6px; display:flex; flex-direction:column; gap:2px; }
+.avatar-menu-name { font-size:0.875rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }
+.avatar-menu-email { font-size:0.75rem; color:var(--c-text-3); overflow-wrap:anywhere; }
+.avatar-menu a { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r-md); font-size:0.875rem; font-weight:500; color:var(--c-text-2); text-decoration:none; }
+.avatar-menu a:hover { background:var(--c-bg-2); color:var(--c-primary); }
+
 """
 
 
@@ -317,6 +329,24 @@ def language_switcher(current_lang: str):
     )
 
 
+def avatar_menu(lang: str = "en"):
+    _ = make_t(lang)
+    return Div(
+        Button("◉", id="avatar-btn", cls="avatar-btn", aria_label="Account menu",
+               onclick="toggleAvatarMenu()"),
+        Div(
+            Div(
+                Div(_("profile.me_heading"), cls="avatar-menu-name"),
+                cls="avatar-menu-user",
+            ),
+            A("◉ " + _("nav.profile"), href="/profile"),
+            A("➜] " + _("nav.logout"), href="/logout"),
+            id="avatar-menu", cls="avatar-menu",
+        ),
+        cls="avatar-wrap",
+    )
+
+
 def page_shell(content, current: str = "", title: str = "FixMyMedTech",
                lang: str = "en"):
     _ = make_t(lang)
@@ -339,6 +369,7 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
         Body(
             Div(
                 Div(language_switcher(lang), cls="lang-fab"),
+                avatar_menu(lang),
                 Button("☰", id="sb-toggle", cls="sb-toggle", aria_label="Menu",
                        onclick="toggleSidebar()"),
                 Div(id="sb-backdrop", cls="sb-backdrop", onclick="toggleSidebar(false)"),
@@ -362,6 +393,19 @@ function toggleSidebar(open){
   if(bd) bd.classList.toggle('show', isOpen);
   if(tg) tg.style.display = isOpen ? 'none' : 'flex';
 }
+function toggleAvatarMenu(open){
+  var m = document.getElementById('avatar-menu');
+  if(!m) return;
+  var isOpen = (typeof open === 'boolean') ? open : !m.classList.contains('open');
+  m.classList.toggle('open', isOpen);
+}
+document.addEventListener('click', function(e){
+  var wrap = document.getElementById('avatar-wrap');
+  var menu = document.getElementById('avatar-menu');
+  if(wrap && menu && menu.classList.contains('open') && !wrap.contains(e.target)){
+    menu.classList.remove('open');
+  }
+});
 """)
         )
     )

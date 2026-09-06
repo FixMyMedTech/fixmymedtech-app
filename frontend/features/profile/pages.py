@@ -87,6 +87,11 @@ async def post(req, username: str = "", full_name: str = ""):
     except Exception:
         me = {"username": username, "full_name": full_name, "organizations": []}
 
+    if saved and "token" in req.session:
+        name = me.get("full_name") or me.get("username") or req.session.get("user_email", "")
+        req.session["user_name"] = name
+        req.session["user_username"] = me.get("username") or name
+
     if not saved:
         me["username"] = username
         me["full_name"] = full_name

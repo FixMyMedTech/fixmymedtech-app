@@ -1,7 +1,21 @@
 # components.py — reusable FastHTML UI components
 
+from contextvars import ContextVar
+
 from fasthtml.common import *
 from i18n import LANGUAGES, t as make_t
+
+_user_ctx: ContextVar[dict] = ContextVar("current_user_ctx", default={})
+
+
+def set_current_user(data: dict) -> None:
+    """Store the current request's user display info (set per request)."""
+    _user_ctx.set(data)
+
+
+def current_user_ctx() -> dict:
+    """Return the current user display info: name, username, email, avatar."""
+    return _user_ctx.get()
 
 
 # ── Design tokens ────────────────────────────────────────────
@@ -88,7 +102,7 @@ a { color: var(--c-primary); text-decoration: none; }
 .nav-link { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--r-md); font-size:0.875rem; font-weight:500; color:rgba(255,255,255,0.6); text-decoration:none; transition:all .15s; }
 .nav-link:hover,.nav-link.active { background:rgba(255,255,255,0.15); color:#fff; }
 .sb-foot { padding:12px 10px; border-top:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:rgba(255,255,255,0.5); }
-.main { margin-left:210px; flex:1; padding:28px 32px; }
+.main { margin-left:210px; flex:1; padding:56px 32px 28px; }
 .lang-fab { position:fixed; bottom:16px; left:16px; z-index:200; }
 
 /* Buttons */
@@ -107,6 +121,11 @@ a { color: var(--c-primary); text-decoration: none; }
 
 /* Cards */
 .card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:18px 20px; }
+.card-title { font-size:1.05rem; font-weight:600; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--c-border); }
+.profile-basic { display:flex; gap:24px; align-items:flex-start; }
+.profile-photo-side { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-start; }
+.profile-photo-side input[type="file"] { max-width:170px; font-size:0.78rem; }
+.profile-fields { flex:1 1 auto; min-width:0; }
 
 /* Badges */
 .badge { display:inline-flex; align-items:center; padding:2px 9px; border-radius:20px; font-size:0.75rem; font-weight:500; }
@@ -212,7 +231,7 @@ tr:hover td { background:var(--c-bg); }
     z-index:250;
   }
   .sidebar.open { transform:translateX(0); }
-  .main { margin-left:0; padding:16px; padding-top:68px; }
+  .main { margin-left:0; padding:16px; padding-top:128px; }
   .sb-toggle {
     display:flex; align-items:center; justify-content:center;
     position:fixed; top:12px; left:12px; z-index:300;
@@ -240,6 +259,7 @@ tr:hover td { background:var(--c-bg); }
   .auth-bg { display:none; }
   .auth-card { padding:32px 20px; }
   .form-row { grid-template-columns:1fr; }
+  .profile-basic { flex-direction:column; gap:8px; }
 }
 
 /* Top-right avatar menu (logged-in app pages) */
@@ -331,12 +351,27 @@ def language_switcher(current_lang: str):
 
 def avatar_menu(lang: str = "en"):
     _ = make_t(lang)
+    user = current_user_ctx()
+    name = user.get("name") or ""
+    username = user.get("username") or ""
+    email = user.get("email") or ""
+    avatar_src = f"/profile/photo?v={user.get('avatar')}" if user.get("avatar") else ""
+
+    btn_content = (
+        Img(src=avatar_src, alt="",
+            style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;")
+        if avatar_src else "◉"
+    )
+    second_row = username or email
+
     return Div(
-        Button("◉", id="avatar-btn", cls="avatar-btn", aria_label="Account menu",
+        Button(btn_content, id="avatar-btn", cls="avatar-btn", aria_label="Account menu",
+               style="overflow:hidden;padding:0;" if avatar_src else None,
                onclick="toggleAvatarMenu()"),
         Div(
             Div(
-                Div(_("profile.me_heading"), cls="avatar-menu-name"),
+                Div(name or _("profile.me_heading"), cls="avatar-menu-name"),
+                Div(second_row, cls="avatar-menu-email"),
                 cls="avatar-menu-user",
             ),
             A("◉ " + _("nav.profile"), href="/profile"),

@@ -4,19 +4,20 @@
 #   POST /api/auth/login    → {access_token, user: {id, email}}
 #   POST /api/auth/signup   → {message}
 #   POST /api/auth/logout   → {message}
-#   GET  /api/auth/me       → {id, username, full_name, organizations}
-#   PATCH /api/auth/me      → {id, username, full_name}
 #   GET  /api/auth/tasks    → [...]
+#   GET  /api/auth/verify   → redirect with ?verified=1|0
+#   POST /api/auth/request-verification, /forgot-password, /reset-password
+# Profile endpoints (/me, /me/photo, /me/stats) live in routers/profile.py.
 
 from fastapi import APIRouter, HTTPException, Request, Depends
 from starlette.responses import RedirectResponse
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import Optional
-import uuid
 import logging
+import uuid
 
 from models.models import Organization, Profile, OrgUser, User, FaultReport, MaintenanceLog
 from config.db_config import get_db
@@ -25,7 +26,6 @@ from config.users import (
     UserManager,
     fastapi_users,
     current_active_user,
-    auth_backend,
 )
 from fastapi_users.exceptions import UserAlreadyExists, UserNotExists
 from utils.username import generate_username
@@ -49,11 +49,6 @@ class SignupRequest(BaseModel):
     organization_name: Optional[str] = None
     country: Optional[str] = None
     role: str = "admin"
-
-
-class ProfileUpdate(BaseModel):
-    full_name: Optional[str] = None
-    username: Optional[str] = None
 
 
 # ── Login ──────────────────────────────────────────────────────────────────────
@@ -173,73 +168,6 @@ async def signup(
 @router.post("/logout")
 async def logout():
     return {"message": "Logged out"}
-
-
-# ── Me ─────────────────────────────────────────────────────────────────────────
-
-@router.get("/me")
-async def me(
-    user: User = Depends(current_active_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(Profile)
-        .options(selectinload(Profile.org_memberships).selectinload(OrgUser.organization))
-        .where(Profile.id == user.id)
-    )
-    profile = result.scalar_one_or_none()
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-    return {
-        "id": profile.id,
-        "username": profile.username,
-        "full_name": profile.full_name,
-        "organizations": [
-            {
-                "id": m.organization_id,
-                "name": m.organization.name if m.organization else None,
-                "country": m.organization.country if m.organization else None,
-                "role": m.role,
-            }
-            for m in profile.org_memberships
-        ],
-    }
-
-
-@router.patch("/me")
-async def update_me(
-    body: ProfileUpdate,
-    user: User = Depends(current_active_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(select(Profile).where(Profile.id == user.id))
-    profile = result.scalar_one_or_none()
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-
-    if body.full_name is not None:
-        profile.full_name = body.full_name
-    if body.username is not None:
-        candidate = body.username.strip()
-        if not candidate:
-            raise HTTPException(status_code=400, detail="Username cannot be empty")
-        existing = await db.execute(
-            text("SELECT 1 FROM fixmymedtech.profiles WHERE username = :u AND id != :id"),
-            {"u": candidate, "id": str(profile.id)},
-        )
-        if existing.scalar():
-            raise HTTPException(status_code=400, detail="Username already taken")
-        profile.username = candidate
-    try:
-        await db.commit()
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
-    return {
-        "id": profile.id,
-        "username": profile.username,
-        "full_name": profile.full_name,
-    }
 
 
 # ── Tasks ──────────────────────────────────────────────────────────────────────

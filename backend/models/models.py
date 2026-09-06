@@ -91,6 +91,8 @@ class Profile(Base):
     id              = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.users.id", ondelete="CASCADE"), primary_key=True)
     username        = Column(Text, unique=True, nullable=False)
     full_name       = Column(Text)
+    avatar_key      = Column(Text)
+    country         = Column(Text)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

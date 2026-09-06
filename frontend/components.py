@@ -1,7 +1,21 @@
 # components.py — reusable FastHTML UI components
 
+from contextvars import ContextVar
+
 from fasthtml.common import *
 from i18n import LANGUAGES, t as make_t
+
+_user_ctx: ContextVar[dict] = ContextVar("current_user_ctx", default={})
+
+
+def set_current_user(data: dict) -> None:
+    """Store the current request's user display info (set per request)."""
+    _user_ctx.set(data)
+
+
+def current_user_ctx() -> dict:
+    """Return the current user display info: name, username, email, avatar."""
+    return _user_ctx.get()
 
 
 # ── Design tokens ────────────────────────────────────────────
@@ -88,7 +102,7 @@ a { color: var(--c-primary); text-decoration: none; }
 .nav-link { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--r-md); font-size:0.875rem; font-weight:500; color:rgba(255,255,255,0.6); text-decoration:none; transition:all .15s; }
 .nav-link:hover,.nav-link.active { background:rgba(255,255,255,0.15); color:#fff; }
 .sb-foot { padding:12px 10px; border-top:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:rgba(255,255,255,0.5); }
-.main { margin-left:210px; flex:1; padding:28px 32px; }
+.main { margin-left:210px; flex:1; padding:56px 32px 28px; }
 .lang-fab { position:fixed; bottom:16px; left:16px; z-index:200; }
 
 /* Buttons */
@@ -107,6 +121,11 @@ a { color: var(--c-primary); text-decoration: none; }
 
 /* Cards */
 .card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:18px 20px; }
+.card-title { font-size:1.05rem; font-weight:600; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--c-border); }
+.profile-basic { display:flex; gap:24px; align-items:flex-start; }
+.profile-photo-side { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-start; }
+.profile-photo-side input[type="file"] { max-width:170px; font-size:0.78rem; }
+.profile-fields { flex:1 1 auto; min-width:0; }
 
 /* Badges */
 .badge { display:inline-flex; align-items:center; padding:2px 9px; border-radius:20px; font-size:0.75rem; font-weight:500; }
@@ -212,7 +231,7 @@ tr:hover td { background:var(--c-bg); }
     z-index:250;
   }
   .sidebar.open { transform:translateX(0); }
-  .main { margin-left:0; padding:16px; padding-top:68px; }
+  .main { margin-left:0; padding:16px; padding-top:128px; }
   .sb-toggle {
     display:flex; align-items:center; justify-content:center;
     position:fixed; top:12px; left:12px; z-index:300;
@@ -240,7 +259,20 @@ tr:hover td { background:var(--c-bg); }
   .auth-bg { display:none; }
   .auth-card { padding:32px 20px; }
   .form-row { grid-template-columns:1fr; }
+  .profile-basic { flex-direction:column; gap:8px; }
 }
+
+/* Top-right avatar menu (logged-in app pages) */
+.avatar-wrap { position:fixed; top:14px; right:14px; z-index:300; }
+.avatar-btn { width:40px; height:40px; border-radius:50%; background:var(--c-primary); color:#fff; border:none; cursor:pointer; font-size:1.05rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+.avatar-btn:hover { background:var(--c-primary-mid); }
+.avatar-menu { position:absolute; top:48px; right:0; min-width:180px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-md); box-shadow:0 8px 24px rgba(0,0,0,.12); display:none; flex-direction:column; padding:6px; }
+.avatar-menu.open { display:flex; }
+.avatar-menu-user { padding:10px 12px 9px; border-bottom:1px solid var(--c-border); margin-bottom:6px; display:flex; flex-direction:column; gap:2px; }
+.avatar-menu-name { font-size:0.875rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }
+.avatar-menu-email { font-size:0.75rem; color:var(--c-text-3); overflow-wrap:anywhere; }
+.avatar-menu a { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r-md); font-size:0.875rem; font-weight:500; color:var(--c-text-2); text-decoration:none; }
+.avatar-menu a:hover { background:var(--c-bg-2); color:var(--c-primary); }
 
 """
 
@@ -279,6 +311,7 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
 def sidebar(current: str = "", lang: str = "en"):
     _ = make_t(lang)
     links = [
+        ("/home",     "⌂", _("nav.home")),
         ("/dashboard", "◈", _("nav.dashboard")),
         ("/devices",   "⊞", _("nav.devices")),
         ("/tasks",     "☐", _("nav.tasks")),
@@ -316,6 +349,39 @@ def language_switcher(current_lang: str):
     )
 
 
+def avatar_menu(lang: str = "en"):
+    _ = make_t(lang)
+    user = current_user_ctx()
+    name = user.get("name") or ""
+    username = user.get("username") or ""
+    email = user.get("email") or ""
+    avatar_src = f"/profile/photo?v={user.get('avatar')}" if user.get("avatar") else ""
+
+    btn_content = (
+        Img(src=avatar_src, alt="",
+            style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;")
+        if avatar_src else "◉"
+    )
+    second_row = username or email
+
+    return Div(
+        Button(btn_content, id="avatar-btn", cls="avatar-btn", aria_label="Account menu",
+               style="overflow:hidden;padding:0;" if avatar_src else None,
+               onclick="toggleAvatarMenu()"),
+        Div(
+            Div(
+                Div(name or _("profile.me_heading"), cls="avatar-menu-name"),
+                Div(second_row, cls="avatar-menu-email"),
+                cls="avatar-menu-user",
+            ),
+            A("◉ " + _("nav.profile"), href="/profile"),
+            A("➜] " + _("nav.logout"), href="/logout"),
+            id="avatar-menu", cls="avatar-menu",
+        ),
+        cls="avatar-wrap",
+    )
+
+
 def page_shell(content, current: str = "", title: str = "FixMyMedTech",
                lang: str = "en"):
     _ = make_t(lang)
@@ -338,6 +404,7 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
         Body(
             Div(
                 Div(language_switcher(lang), cls="lang-fab"),
+                avatar_menu(lang),
                 Button("☰", id="sb-toggle", cls="sb-toggle", aria_label="Menu",
                        onclick="toggleSidebar()"),
                 Div(id="sb-backdrop", cls="sb-backdrop", onclick="toggleSidebar(false)"),
@@ -361,6 +428,19 @@ function toggleSidebar(open){
   if(bd) bd.classList.toggle('show', isOpen);
   if(tg) tg.style.display = isOpen ? 'none' : 'flex';
 }
+function toggleAvatarMenu(open){
+  var m = document.getElementById('avatar-menu');
+  if(!m) return;
+  var isOpen = (typeof open === 'boolean') ? open : !m.classList.contains('open');
+  m.classList.toggle('open', isOpen);
+}
+document.addEventListener('click', function(e){
+  var wrap = document.getElementById('avatar-wrap');
+  var menu = document.getElementById('avatar-menu');
+  if(wrap && menu && menu.classList.contains('open') && !wrap.contains(e.target)){
+    menu.classList.remove('open');
+  }
+});
 """)
         )
     )
@@ -452,10 +532,11 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False
         cls="card"
     )
 
-def qr_scanner_component(target_url="/devices/scan-result"):
+def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en"):
+    _ = make_t(lang)
     return Div(
         Button(
-            "📷 Scan QR code",
+            _("qr.scan"),
             id="btn-open-scanner",
             cls="btn btn-primary",
             onclick="openScanner()"
@@ -463,16 +544,16 @@ def qr_scanner_component(target_url="/devices/scan-result"):
         # Scanner container, hidden until opened
         Div(
             Div(id="qr-reader", style="width:100%;max-width:400px;margin:16px auto;"),
-            Button("Cancel", id="btn-close-scanner", cls="btn btn-secondary",
+            Button(_("qr.cancel"), id="btn-close-scanner", cls="btn btn-secondary",
                    onclick="closeScanner()"),
             id="scanner-wrapper",
             style="display:none;text-align:center;"
         ),
         # Fallback manual entry
         Div(
-            Label("Or enter code manually:", cls="label"),
-            Input(id="manual-code", cls="input", placeholder="e.g. MT-00123"),
-            Button("Submit", cls="btn btn-secondary", onclick="submitManualCode()"),
+            Label(_("qr.manual_label"), cls="label"),
+            Input(id="manual-code", cls="input", placeholder=_("qr.manual_placeholder")),
+            Button(_("qr.manual_submit"), cls="btn btn-secondary", onclick="submitManualCode()"),
             style="margin-top:12px;"
         ),
         Script(f"""
@@ -498,7 +579,7 @@ def qr_scanner_component(target_url="/devices/scan-result"):
                     // Ignore per-frame decode errors (fires constantly while scanning)
                 }}
             ).catch((err) => {{
-                alert("Could not access camera: " + err);
+                alert("{_('qr.camera_error')} " + err);
                 closeScanner();
             }});
         }}

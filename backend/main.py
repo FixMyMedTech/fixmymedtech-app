@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, organizations, oauth
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
 from utils.create_superuser import bootstrap_superuser_from_env
@@ -66,6 +66,7 @@ from config.oauth import register_oauth
 register_oauth(app)
 
 app.include_router(auth.router,             prefix="/api/auth",              tags=["auth"])
+app.include_router(profile.router,          prefix="/api/auth",              tags=["profile"])
 app.include_router(oauth.router,            prefix="/api/auth",              tags=["auth"])
 app.include_router(devices.router,          prefix="/api/devices",           tags=["devices"])
 app.include_router(fault_reports.router,    prefix="/api/faults",            tags=["faults"])

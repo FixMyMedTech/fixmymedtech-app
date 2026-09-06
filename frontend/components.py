@@ -279,6 +279,7 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
 def sidebar(current: str = "", lang: str = "en"):
     _ = make_t(lang)
     links = [
+        ("/home",     "⌂", _("nav.home")),
         ("/dashboard", "◈", _("nav.dashboard")),
         ("/devices",   "⊞", _("nav.devices")),
         ("/tasks",     "☐", _("nav.tasks")),
@@ -452,10 +453,11 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False
         cls="card"
     )
 
-def qr_scanner_component(target_url="/devices/scan-result"):
+def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en"):
+    _ = make_t(lang)
     return Div(
         Button(
-            "📷 Scan QR code",
+            _("qr.scan"),
             id="btn-open-scanner",
             cls="btn btn-primary",
             onclick="openScanner()"
@@ -463,16 +465,16 @@ def qr_scanner_component(target_url="/devices/scan-result"):
         # Scanner container, hidden until opened
         Div(
             Div(id="qr-reader", style="width:100%;max-width:400px;margin:16px auto;"),
-            Button("Cancel", id="btn-close-scanner", cls="btn btn-secondary",
+            Button(_("qr.cancel"), id="btn-close-scanner", cls="btn btn-secondary",
                    onclick="closeScanner()"),
             id="scanner-wrapper",
             style="display:none;text-align:center;"
         ),
         # Fallback manual entry
         Div(
-            Label("Or enter code manually:", cls="label"),
-            Input(id="manual-code", cls="input", placeholder="e.g. MT-00123"),
-            Button("Submit", cls="btn btn-secondary", onclick="submitManualCode()"),
+            Label(_("qr.manual_label"), cls="label"),
+            Input(id="manual-code", cls="input", placeholder=_("qr.manual_placeholder")),
+            Button(_("qr.manual_submit"), cls="btn btn-secondary", onclick="submitManualCode()"),
             style="margin-top:12px;"
         ),
         Script(f"""
@@ -498,7 +500,7 @@ def qr_scanner_component(target_url="/devices/scan-result"):
                     // Ignore per-frame decode errors (fires constantly while scanning)
                 }}
             ).catch((err) => {{
-                alert("Could not access camera: " + err);
+                alert("{_('qr.camera_error')} " + err);
                 closeScanner();
             }});
         }}

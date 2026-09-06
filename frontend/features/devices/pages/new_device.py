@@ -43,7 +43,7 @@ async def get(req):
                     Div("📸", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
                     H2(_("new_device.scan_heading")),
                     P(_("new_device.scan_desc"), style="margin-top:8px;"),
-                    qr_scanner_component(target_url="/scan-result"),
+                    qr_scanner_component(target_url="/scan-result", lang=lang),
                     style="text-align:center;padding:60px 40px;"
                 ),
                 style="max-width:440px;margin:80px auto;"

@@ -142,12 +142,3 @@ async def get(req):
     )
 
     return page_shell(content, current="/dashboard", title=_("title.dashboard"), lang=lang)
-
-
-# ── Root redirect ─────────────────────────────────────────────
-@rt("/")
-async def get(req):
-    return RedirectResponse(
-        "/dashboard" if auth_helper.get_token(req) else "/login",
-        status_code=302
-    )

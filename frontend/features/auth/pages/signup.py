@@ -99,7 +99,7 @@ async def get(req):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     if auth_helper.get_token(req):
-        return RedirectResponse("/dashboard", status_code=302)
+        return RedirectResponse("/home", status_code=302)
 
     return pub_shell(
         Form(_signup_form(_), method="post", action="/signup"),

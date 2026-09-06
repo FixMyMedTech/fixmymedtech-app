@@ -42,13 +42,13 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
     if token:
         try:
             await dashboard_api.get_dashboard_stats(token)
-            target = next if next.startswith("/") else "/dashboard"
+            target = next if next.startswith("/") else "/home"
             return RedirectResponse(target, status_code=302)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 auth_helper.clear_session(req)  # clear expired token, show login
         except Exception:
-            return RedirectResponse("/dashboard", status_code=302)
+            return RedirectResponse("/home", status_code=302)
 
     expired_msg = Div(_("login.expired"),
                     cls="alert alert-warning") if expired else ""
@@ -122,7 +122,7 @@ async def post(req, email: str, password: str, next: str = ""):
         res = await auth_api.login(email, password)
         req.session["token"] = res["access_token"]
         req.session["user_email"] = res["user"]["email"]
-        target = next if next.startswith("/") else "/dashboard"
+        target = next if next.startswith("/") else "/home"
         return RedirectResponse(target, status_code=302)
     except httpx.HTTPStatusError as e:
         error_key = _("login.error")
@@ -188,7 +188,7 @@ async def get(req, access_token: str = "", user_email: str = ""):
         req.session["token"] = access_token
         if user_email:
             req.session["user_email"] = user_email
-    return RedirectResponse("/dashboard", status_code=302)
+    return RedirectResponse("/home", status_code=302)
 
 
 @rt("/logout")

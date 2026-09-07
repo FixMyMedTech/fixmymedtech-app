@@ -12,6 +12,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       DB_SCHEMA: ${DB_SCHEMA:-fixmymedtech}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
       MAIL_SERVER: ${MAIL_SERVER}
       MAIL_PORT: ${MAIL_PORT}
       MAIL_USERNAME: ${MAIL_USERNAME}

@@ -34,8 +34,31 @@ jobs:
             DB_SCHEMA=fixmymedtech
             FRONTEND_URL=${{ secrets.PROD_FRONTEND_URL }}
             API_URL=http://backend:8888
+            PUBLIC_API_URL=${{ secrets.PROD_PUBLIC_API_URL }}
+            SESSION_SECRET=${{ secrets.PROD_SESSION_SECRET }}
+            AUTH_JWT_SECRET=${{ secrets.PROD_AUTH_JWT_SECRET }}
+            MINIO_ROOT_USER=${{ secrets.PROD_MINIO_ROOT_USER }}
+            MINIO_ROOT_PASSWORD=${{ secrets.PROD_MINIO_ROOT_PASSWORD }}
+            MINIO_BUCKET=${{ secrets.PROD_MINIO_BUCKET }}
             SUPERUSER_EMAIL=${{ secrets.PROD_SUPERUSER_EMAIL }}
             SUPERUSER_PASSWORD=${{ secrets.PROD_SUPERUSER_PASSWORD }}
+            SUPERUSER_NAME=${{ secrets.PROD_SUPERUSER_NAME }}
+            MAIL_SERVER=${{ secrets.PROD_MAIL_SERVER }}
+            MAIL_PORT=${{ secrets.PROD_MAIL_PORT || '587' }}
+            MAIL_USERNAME=${{ secrets.PROD_MAIL_USERNAME }}
+            MAIL_PASSWORD=${{ secrets.PROD_MAIL_PASSWORD }}
+            MAIL_FROM=${{ secrets.PROD_MAIL_FROM }}
+            MAIL_FROM_NAME=${{ secrets.PROD_MAIL_FROM_NAME }}
+            MAIL_STARTTLS=true
+            MAIL_SSL_TLS=false
+            GOOGLE_CLIENT_ID=${{ secrets.PROD_GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
+            GITHUB_CLIENT_ID=${{ secrets.PROD_GITHUB_CLIENT_ID }}
+            GITHUB_CLIENT_SECRET=${{ secrets.PROD_GITHUB_CLIENT_SECRET }}
+            DISCORD_CLIENT_ID=${{ secrets.PROD_DISCORD_CLIENT_ID }}
+            DISCORD_CLIENT_SECRET=${{ secrets.PROD_DISCORD_CLIENT_SECRET }}
+            GEMINI_API_KEY=${{ secrets.PROD_GEMINI_API_KEY }}
+            AUTO_PROCESS_PHOTO=${{ secrets.PROD_AUTO_PROCESS_PHOTO }}
             EOF
 
       - name: Copy code to server

@@ -149,6 +149,12 @@ async def get(req):
     if isinstance(stats, Exception):
         stats = {}
 
+    if "token" in req.session:
+        name = me.get("full_name") or me.get("username") or req.session.get("user_email", "")
+        req.session["user_name"] = name
+        req.session["user_username"] = me.get("username") or name
+        req.session["user_avatar"] = me.get("avatar_key") or ""
+
     return page_shell(_content(me, _, stats=stats), current="/profile", title=_("title.profile"), lang=lang)
 
 

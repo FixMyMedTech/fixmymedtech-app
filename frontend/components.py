@@ -355,18 +355,22 @@ def avatar_menu(lang: str = "en"):
     name = user.get("name") or ""
     username = user.get("username") or ""
     email = user.get("email") or ""
-    avatar_src = f"/profile/photo?v={user.get('avatar')}" if user.get("avatar") else ""
 
-    btn_content = (
-        Img(src=avatar_src, alt="",
-            style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;")
-        if avatar_src else "◉"
+    # Always point at /profile/photo, which serves the *current* avatar from
+    # the backend (ignoring any cached session value), so a photo uploaded
+    # from another device shows up here. If the user has no avatar, the
+    # onerror fallback swaps in the "◉" placeholder.
+    btn_content = Img(
+        src="/profile/photo",
+        alt=name or "◉",
+        style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;",
+        onerror="this.onerror=null;this.outerHTML='\u25c9';",
     )
     second_row = username or email
 
     return Div(
         Button(btn_content, id="avatar-btn", cls="avatar-btn", aria_label="Account menu",
-               style="overflow:hidden;padding:0;" if avatar_src else None,
+               style="overflow:hidden;padding:0;",
                onclick="toggleAvatarMenu()"),
         Div(
             Div(

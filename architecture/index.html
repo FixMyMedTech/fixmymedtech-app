@@ -15,10 +15,6 @@
         <link rel="canonical" href="https://fixmymedtech.github.io/fixmymedtech-app/architecture/">
       
       
-        <link rel="prev" href="../getting_started/">
-      
-      
-        <link rel="next" href="../database/">
       
       
         
@@ -29,7 +25,7 @@
     
     
       
-        <title>Arquitecture - FixMyMedTech Documentation</title>
+        <title>FixMyMedTech — Architecture Guide - FixMyMedTech Documentation</title>
       
     
     
@@ -115,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Arquitecture
+              FixMyMedTech — Architecture Guide
             
           </span>
         </div>
@@ -284,20 +280,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -318,7 +312,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -352,336 +346,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Arquitecture
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Arquitecture
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#architecture-overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Architecture overview
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#project-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Project structure
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-design-decisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key design decisions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Key design decisions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#why-two-servers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why two servers?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-server-side-sessions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why server-side sessions?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-supabase" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why Supabase?
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#user-roles" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        User roles
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#page-map" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Page map
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data-flow-qr-scan-no-login" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Data flow — QR scan (no login)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data-flow-admin-login" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Data flow — admin login
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#local-development-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Local development setup
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Local development setup">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-supabase" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Supabase
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-backend-fastapi" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Backend (FastAPI)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-frontend-fasthtml" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Frontend (FastHTML)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-documentation-mkdocs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Documentation (MkDocs)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#production-deploy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Production deploy
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Production deploy">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#with-docker-compose-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        With Docker Compose (recommended)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#environment-variables" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Environment variables
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Environment variables">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#backend-backendenv" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backend (backend/.env)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#frontend" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Frontend
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#qr-codes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        QR codes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 

@@ -1,0 +1,1086 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Medical equipment management for LMICs.">
+      
+      
+        <meta name="author" content="Care Again">
+      
+      
+        <link rel="canonical" href="https://fixmymedtech.github.io/fixmymedtech-app/deployment/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Deployment Guide - FixMyMedTech Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#deployment-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FixMyMedTech Documentation" class="md-header__button md-logo" aria-label="FixMyMedTech Documentation" data-md-component="logo">
+      
+  <img src="../images/favicon.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FixMyMedTech Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Deployment Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FixMyMedTech/fixmymedtech-app" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FixMyMedTech/fixmymedtech-app/
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FixMyMedTech Documentation" class="md-nav__button md-logo" aria-label="FixMyMedTech Documentation" data-md-component="logo">
+      
+  <img src="../images/favicon.svg" alt="logo">
+
+    </a>
+    FixMyMedTech Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FixMyMedTech/fixmymedtech-app" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FixMyMedTech/fixmymedtech-app/
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collaboration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collaboration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LICENSE" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-architecture-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Architecture overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-dns-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. DNS records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-server-setup-one-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Server setup (one time)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-nginx-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. nginx setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-supabase-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Supabase projects
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-github-actions-secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. GitHub Actions secrets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-what-a-deploy-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. What a deploy does
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-shipping-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Shipping a release
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="deployment-guide">Deployment Guide<a class="headerlink" href="#deployment-guide" title="Permanent link">&para;</a></h1>
+<p>This guide walks through deploying FixMyMedTech from scratch: provisioning the
+server, configuring nginx, and setting up the GitHub Actions deployment
+workflows for both <strong>development</strong> and <strong>production</strong> environments.</p>
+<hr />
+<h2 id="1-architecture-overview">1. Architecture overview<a class="headerlink" href="#1-architecture-overview" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>                          ┌────────────────────────────────────────────┐
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  browser / QR scan ─────▶│  nginx (host, :80/:443)                    │
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                          │                                            │
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                          │   prod.fixmymedtech.org ─▶ 127.0.0.1:5001  │  frontend (FastHTML)
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                          │   dev.fixmymedtech.org  ─▶ 127.0.0.1:5002  │  frontend (FastHTML)
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                          │   qr.fixmymedtech.org   ─▶ 301 ─▶ dev.fixmymedtech.org
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                          │                                            │
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                          └────────────────────────────────────────────┘
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                                      │                │
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                                      ▼                ▼
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                              frontend container   backend container (FastAPI :8888)
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>                                      │                │
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>                                      └───── HTTP ─────┘
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>                                              │   │
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                       Supabase Postgres ◀────┘   │   (DB only, fixmymedtech schema)
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>                                                  ▼
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                                     minio container (internal minio:9000)
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>                                       volumes: minio-data (per environment)
+</span></code></pre></div>
+<ul>
+<li>The <strong>frontend</strong> (FastHTML) runs on port <code>5001</code> inside the container
+  (<code>fasthtml.serve()</code> default) and talks to the backend over Docker's network.</li>
+<li>The <strong>backend</strong> (FastAPI) runs on port <code>8888</code> inside the container.</li>
+<li>The <strong>MinIO</strong> container serves every stored object (<code>minio:9000</code> internally)
+  and keeps its data in the named <code>minio-data</code> volume.</li>
+<li>On the host, <code>docker compose</code> publishes the services <strong>only to <code>127.0.0.1</code></strong>,
+  so nothing is exposed publicly except through nginx. MinIO is never exposed
+  by nginx — the frontend proxies image routes (e.g. <code>/profile/photo</code>) to the
+  backend, which reads MinIO on the internal network.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Env</th>
+<th>App dir</th>
+<th>Compose file</th>
+<th>Frontend (host)</th>
+<th>Backend (host)</th>
+<th>MinIO (host)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prod</td>
+<td><code>/opt/fixmymedtech</code></td>
+<td><code>docker-compose.yml</code></td>
+<td><code>127.0.0.1:5001</code></td>
+<td><code>127.0.0.1:8888</code></td>
+<td><code>127.0.0.1:9000/9001</code></td>
+</tr>
+<tr>
+<td>Dev</td>
+<td><code>/opt/fixmymedtech-dev</code></td>
+<td><code>docker-compose.dev.yml</code></td>
+<td><code>127.0.0.1:5002</code></td>
+<td><code>127.0.0.1:8889</code></td>
+<td><code>127.0.0.1:9002/9003</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>MinIO on a shared server.</strong> Each environment runs its <strong>own</strong> MinIO
+container and its own <code>minio-data</code> volume, so dev and prod never share
+objects. Both backends reach MinIO as <code>minio:9000</code> on their <em>internal</em>
+compose network; only the host-published ports differ (prod <code>9000/9001</code>,
+dev <code>9002/9003</code>) — they must stay different when both stacks run on the
+same host, otherwise the second one fails to bind its ports. The bucket name
+defaults to <code>fixmymedtech</code> (override with <code>MINIO_BUCKET</code>), scoped to each
+stack's own MinIO. Set <code>MINIO_ROOT_USER</code> / <code>MINIO_ROOT_PASSWORD</code> <strong>once</strong>,
+before any upload (see Troubleshooting).</p>
+</blockquote>
+<hr />
+<h2 id="2-dns-records">2. DNS records<a class="headerlink" href="#2-dns-records" title="Permanent link">&para;</a></h2>
+<p>Create <strong>A records</strong> pointing all three subdomains to your server IP
+(one record per hostname):</p>
+<table>
+<thead>
+<tr>
+<th>Hostname</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prod.fixmymedtech.org</code></td>
+<td>A</td>
+<td><server IP></td>
+</tr>
+<tr>
+<td><code>dev.fixmymedtech.org</code></td>
+<td>A</td>
+<td><server IP></td>
+</tr>
+<tr>
+<td><code>qr.fixmymedtech.org</code></td>
+<td>A</td>
+<td><server IP></td>
+</tr>
+</tbody>
+</table>
+<p>naming Note: nginx cannot redirect <code>qr</code> → <code>dev</code> if DNS does not resolve the domain to
+the server. Verify with <code>dig qr.fixmymedtech.org</code>.</p>
+<hr />
+<h2 id="3-server-setup-one-time">3. Server setup (one time)<a class="headerlink" href="#3-server-setup-one-time" title="Permanent link">&para;</a></h2>
+<p>Tested on <strong>Ubuntu 22.04 (arm64)</strong>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>upgrade<span class="w"> </span>-y
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Docker + compose plugin</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://get.docker.com<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>sh
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>docker<span class="w"> </span><span class="nv">$USER</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># nginx + certbot</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nginx<span class="w"> </span>certbot<span class="w"> </span>python3-certbot-nginx
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># (optional) firewall — allow only SSH, 80, 443</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span>OpenSSH
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">80</span>/tcp
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">443</span>/tcp
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>sudo<span class="w"> </span>ufw<span class="w"> </span><span class="nb">enable</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># app directories used by the deploy workflows</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/opt/fixmymedtech<span class="w"> </span>/opt/fixmymedtech-dev
+</span></code></pre></div>
+<p>Log out and back in so the <code>docker</code> group takes effect, then confirm:
+<code>docker run --rm hello-world</code>.</p>
+<hr />
+<h2 id="4-nginx-setup">4. nginx setup<a class="headerlink" href="#4-nginx-setup" title="Permanent link">&para;</a></h2>
+<p>The nginx config lives in the repo at <code>infrastructure/nginx/nginx.conf</code> and is
+<strong>not</strong> deployed automatically — copy it manually:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>cp<span class="w"> </span>infrastructure/nginx/nginx.conf<span class="w"> </span>/etc/nginx/sites-available/fixmymedtech
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>sudo<span class="w"> </span>ln<span class="w"> </span>-s<span class="w"> </span>/etc/nginx/sites-available/fixmymedtech<span class="w"> </span>/etc/nginx/sites-enabled/fixmymedtech
+</span></code></pre></div>
+<p>The file contains four server blocks:</p>
+<ol>
+<li><code>prod.fixmymedtech.org</code> → proxy to <code>127.0.0.1:5001</code> (SSL).</li>
+<li><code>qr.fixmymedtech.org</code> on <code>:80</code> → <code>301 https://dev.fixmymedtech.org$request_uri</code>.</li>
+<li><code>qr.fixmymedtech.org</code> on <code>:443</code> (SSL) → same <code>301</code> redirect.</li>
+<li><code>dev.fixmymedtech.org</code> → proxy to <code>127.0.0.1:5002</code> (SSL), plus Certbot's
+   <code>:80</code> → <code>:443</code> redirect block.</li>
+</ol>
+<blockquote>
+<p><strong>Important — conflicting server names.</strong> If you previously had a <code>qr</code>
+block in <code>/etc/nginx/sites-available/default</code> (or another file), nginx loads
+the first one it finds and <em>ignores</em> the rest, so the redirect silently
+stops working. Remove the duplicate <code>qr.fixmymedtech.org</code> server blocks from
+<code>default</code>, keeping only the ones in <code>fixmymedtech</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>sudo<span class="w"> </span>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">"qr.fixmymedtech.org"</span><span class="w"> </span>/etc/nginx/
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># then edit /etc/nginx/sites-available/default and delete the qr blocks</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>sudo<span class="w"> </span>nginx<span class="w"> </span>-t
+</span></code></pre></div>
+</blockquote>
+<p>Issue certificates (must match the <code>ssl_certificate</code> paths in the config):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sudo<span class="w"> </span>certbot<span class="w"> </span>certonly<span class="w"> </span>--nginx<span class="w"> </span>-d<span class="w"> </span>prod.fixmymedtech.org
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>sudo<span class="w"> </span>certbot<span class="w"> </span>certonly<span class="w"> </span>--nginx<span class="w"> </span>-d<span class="w"> </span>dev.fixmymedtech.org
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>sudo<span class="w"> </span>certbot<span class="w"> </span>certonly<span class="w"> </span>--nginx<span class="w"> </span>-d<span class="w"> </span>qr.fixmymedtech.org
+</span></code></pre></div>
+<p>Check and reload:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>nginx<span class="w"> </span>-t<span class="w">          </span><span class="c1"># expect NO "conflicting server name" warnings</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>reload<span class="w"> </span>nginx
+</span></code></pre></div>
+<hr />
+<h2 id="5-supabase-projects">5. Supabase projects<a class="headerlink" href="#5-supabase-projects" title="Permanent link">&para;</a></h2>
+<p>Create <strong>two</strong> projects (one for dev, one for prod) at https://supabase.com.</p>
+<p>Only <strong>PostgreSQL</strong> is used from Supabase:</p>
+<ul>
+<li>Authentication runs against our <strong>own</strong> <code>fixmymedtech.users</code> table
+  (FastAPI-Users + JWTs signed with <code>AUTH_JWT_SECRET</code>) — no Supabase Auth or
+  GoTrue dependency.</li>
+<li>File storage (avatars, device photos, documents) runs on <strong>MinIO</strong>, not
+  Supabase Storage.</li>
+</ul>
+<p>Setup:</p>
+<ol>
+<li><strong>No manual schema step needed</strong> — the backend creates the <code>fixmymedtech</code>
+   schema and applies every migration from <code>infrastructure/migrations/*.sql</code> at
+   startup (tracked in <code>fixmymedtech.schema_migrations</code>).</li>
+<li><strong>Project Settings → Database → Connection string</strong> → copy the <strong>URI</strong>
+   (use the pooler for remote access, <code>DATABASE_URL</code>).</li>
+</ol>
+<hr />
+<h2 id="6-github-actions-secrets">6. GitHub Actions secrets<a class="headerlink" href="#6-github-actions-secrets" title="Permanent link">&para;</a></h2>
+<p>In the repo <strong>Settings → Environments</strong> create two environments:</p>
+<ul>
+<li><code>development</code> — deployed from the <code>dev</code> branch.</li>
+<li><code>production</code> — deployed from the <code>main</code> branch.</li>
+</ul>
+<p>Add these secrets <strong>per environment</strong> (replace <code>*_</code> with <code>DEV_</code> or <code>PROD_</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Secret (required unless noted)</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>*_DEPLOY_HOST</code> / <code>*_DEPLOY_USER</code></td>
+<td>SSH host and user</td>
+</tr>
+<tr>
+<td><code>*_DEPLOY_KEY</code></td>
+<td>SSH private key</td>
+</tr>
+<tr>
+<td><code>*_DEPLOY_PORT</code></td>
+<td>SSH port (defaults to <code>22</code> if unset)</td>
+</tr>
+<tr>
+<td><code>*_SUPABASE_DB_URI</code></td>
+<td>Postgres URI → <code>DATABASE_URL</code></td>
+</tr>
+<tr>
+<td><code>*_FRONTEND_URL</code></td>
+<td>Public frontend URL, e.g. <code>https://dev.fixmymedtech.org</code></td>
+</tr>
+<tr>
+<td><code>*_PUBLIC_API_URL</code></td>
+<td>Public backend URL — base for email verification links</td>
+</tr>
+<tr>
+<td><code>*_SESSION_SECRET</code></td>
+<td>Signs the frontend session cookies (random, e.g. <code>openssl rand -hex 32</code>)</td>
+</tr>
+<tr>
+<td><code>*_AUTH_JWT_SECRET</code></td>
+<td>Signs API JWTs (random long string)</td>
+</tr>
+<tr>
+<td><code>*_MINIO_ROOT_USER</code> / <code>*_MINIO_ROOT_PASSWORD</code></td>
+<td>MinIO admin credentials (shared by backend + minio container)</td>
+</tr>
+<tr>
+<td><code>*_MINIO_BUCKET</code> <em>(optional)</em></td>
+<td>Bucket name (default <code>fixmymedtech</code>)</td>
+</tr>
+<tr>
+<td><code>*_SUPERUSER_EMAIL</code> / <code>*_SUPERUSER_PASSWORD</code> / <code>*_SUPERUSER_NAME</code> <em>(optional)</em></td>
+<td>Auto-created admin on first deploy</td>
+</tr>
+<tr>
+<td><code>*_MAIL_SERVER</code> / <code>*_MAIL_PORT</code> / <code>*_MAIL_USERNAME</code> / <code>*_MAIL_PASSWORD</code> / <code>*_MAIL_FROM</code> / <code>*_MAIL_FROM_NAME</code> <em>(optional)</em></td>
+<td>SMTP — verification &amp; password-reset emails</td>
+</tr>
+<tr>
+<td><code>*_GOOGLE_CLIENT_ID</code> / <code>*_GOOGLE_CLIENT_SECRET</code> / <code>*_GITHUB_*</code> / <code>*_DISCORD_*</code> <em>(optional)</em></td>
+<td>OAuth sign-in (disabled when absent)</td>
+</tr>
+<tr>
+<td><code>*_GEMINI_API_KEY</code> / <code>*_AUTO_PROCESS_PHOTO</code> <em>(optional)</em></td>
+<td>Photo white-background processing</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li><code>AUTH_JWT_SECRET</code> and <code>SESSION_SECRET</code> are <strong>different</strong> secrets — one signs
+  JWTs in the backend, the other signs session cookies in the frontend. Never
+  leave them at their dev defaults in production.</li>
+<li>OAuth and <code>GEMINI_API_KEY</code> map to empty values when the secret is absent, so
+  leaving them unset simply disables the feature (no <code>.env</code> corruption).</li>
+</ul>
+<p>Secrets are mapped by the workflows:</p>
+<ul>
+<li><code>.github/workflows/deploy-dev.yml</code> → <code>DEV_*</code> secrets, <code>development</code> env, app
+  dir <code>/opt/fixmymedtech-dev</code>, uses <code>docker-compose.dev.yml</code>.</li>
+<li><code>.github/workflows/deploy-prod.yml</code> → <code>PROD_*</code> secrets, <code>production</code> env,
+  app dir <code>/opt/fixmymedtech</code>, uses <code>docker-compose.yml</code>.</li>
+</ul>
+<hr />
+<h2 id="7-what-a-deploy-does">7. What a deploy does<a class="headerlink" href="#7-what-a-deploy-does" title="Permanent link">&para;</a></h2>
+<p>Each workflow runs three steps on a GitHub runner:</p>
+<ol>
+<li><strong>Write <code>.env</code> on the server</strong> (via SSH) — expands the secrets into
+   <code>/opt/fixmymedtech[-dev]/.env</code> (used by docker compose). It contains the
+   full set: <code>DATABASE_URL</code>, <code>DB_SCHEMA</code>, <code>FRONTEND_URL</code>, <code>PUBLIC_API_URL</code>,
+   <code>SESSION_SECRET</code>, <code>AUTH_JWT_SECRET</code>, <code>MINIO_*</code> credentials + bucket,
+   <code>SUPERUSER_*</code>, the SMTP <code>MAIL_*</code> block, and the optional OAuth / <code>GEMINI_API_KEY</code>
+   entries. <code>API_URL</code> is fixed to <code>http://backend:8888</code> (internal network).</li>
+<li><strong>Copy the code</strong> (via scp) — <code>backend</code>, <code>frontend</code>, the compose file, and
+   <code>infrastructure</code> (so migrations ship with the image).</li>
+<li><strong>Build and deploy</strong> — <code>docker compose up -d --build --remove-orphans</code>.
+   This also builds/starts the <code>minio</code> service; its <code>minio-data</code> volume
+   survives redeploys, so previously uploaded objects are preserved.</li>
+</ol>
+<p>At container startup, the backend runs <code>backend/migrations.py</code>, which applies
+any pending SQL migrations from <code>infrastructure/migrations/</code> before serving
+traffic.</p>
+<p><strong>Superuser auto-creation:</strong> if <code>SUPERUSER_EMAIL</code> / <code>SUPERUSER_PASSWORD</code> are
+present in the server's <code>.env</code>, the backend also creates (or promotes) that
+admin right after migrations — no manual SSH step needed. The workflows already
+map these from <code>DEV_SUPERUSER_*</code> and <code>PROD_SUPERUSER_*</code> GitHub secrets
+(<code>SUPERUSER_NAME</code> sets the display name).</p>
+<p><strong>Email links:</strong> verification emails are built from <code>PUBLIC_API_URL</code> (set it
+to the public URL where the API is reachable, e.g. <code>https://dev.fixmymedtech.org</code>),
+and password-reset links from <code>FRONTEND_URL</code>.</p>
+<hr />
+<h2 id="8-shipping-a-release">8. Shipping a release<a class="headerlink" href="#8-shipping-a-release" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Dev</strong>: push to <code>dev</code> → auto-deploys to <code>/opt/fixmymedtech-dev</code>.</li>
+<li><strong>Prod</strong>: push to <code>main</code> → auto-deploys to <code>/opt/fixmymedtech</code>.</li>
+<li><strong>Manual</strong>: both workflows support <code>workflow_dispatch</code> — run them from the
+  Actions tab.</li>
+</ul>
+<p>After a deploy, verify:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># on the server, per environment</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">cd</span><span class="w"> </span>/opt/fixmymedtech<span class="o">[</span>-dev<span class="o">]</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>ps
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8888/health<span class="w">   </span><span class="c1"># backend (prod 8888, dev 8889)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>curl<span class="w"> </span>-sI<span class="w"> </span>https://dev.fixmymedtech.org<span class="w">  </span><span class="c1"># or prod.fixmymedtech.org</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>curl<span class="w"> </span>-sI<span class="w"> </span>https://qr.fixmymedtech.org<span class="w">   </span><span class="c1"># expect a 301 to dev</span>
+</span></code></pre></div>
+<hr />
+<h2 id="9-troubleshooting">9. Troubleshooting<a class="headerlink" href="#9-troubleshooting" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>conflicting server name "qr..." ignored</code></td>
+<td>Duplicate <code>qr</code> block in <code>sites-available/default</code> — remove it, keep only the one in <code>fixmymedtech</code>, <code>nginx -t</code> + reload.</td>
+</tr>
+<tr>
+<td><code>qr.fixmymedtech.org</code> not redirecting</td>
+<td>DNS A record missing; or the <code>listen 443;</code> block lacks the <code>ssl</code> flag / options-ssl includes.</td>
+</tr>
+<tr>
+<td>Signup returns <code>400 Bad Request</code></td>
+<td>Check <code>docker compose logs backend</code> for the traceback; most often the email is already registered or the SMTP settings (<code>MAIL_*</code>) are missing/invalid.</td>
+</tr>
+<tr>
+<td>Migrations not applied</td>
+<td><code>docker compose logs backend | grep -i migration</code> — migrations run on backend startup against <code>DATABASE_URL</code>.</td>
+</tr>
+<tr>
+<td>App up but browser shows cert warning</td>
+<td>Certbot cert does not cover the hostname — re-issue with <code>certbot certonly --nginx -d &lt;host&gt;</code>.</td>
+</tr>
+<tr>
+<td>Profile/device photo returns <code>404</code></td>
+<td>The object is missing in MinIO. Verify the backend container can reach <code>minio:9000</code> (<code>docker compose logs backend | grep -i minio</code>); if the <code>minio-data</code> volume was recreated (<code>docker volume rm</code>), all objects are gone — uploads must be redone.</td>
+</tr>
+<tr>
+<td>Uploads fail / <code>AccessDenied</code> on get</td>
+<td><code>MINIO_ROOT_USER</code>/<code>MINIO_ROOT_PASSWORD</code> changed after data was written, or they differ between backend and the <code>minio</code> container. They must be identical in <em>both</em> services and stable — set them once before the first upload.</td>
+</tr>
+<tr>
+<td>Verification emails link to <code>http://localhost:8888</code></td>
+<td><code>PUBLIC_API_URL</code> is empty — set it to the public backend URL and redeploy.</td>
+</tr>
+<tr>
+<td>Backend crashes at startup with <code>invalid literal for int() with base 10</code></td>
+<td><code>MAIL_PORT</code> is empty — keep it numeric (the deploy workflow defaults it to <code>587</code>).</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://www.careagain.org/">Care Again</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/FixMyMedTech/fixmymedtech-app/" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

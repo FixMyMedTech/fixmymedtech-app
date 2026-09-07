@@ -1,0 +1,1697 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Medical equipment management for LMICs.">
+      
+      
+        <meta name="author" content="Care Again">
+      
+      
+        <link rel="canonical" href="https://fixmymedtech.github.io/fixmymedtech-app/getting_started/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Getting Started - FixMyMedTech Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#getting-started-developer-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FixMyMedTech Documentation" class="md-header__button md-logo" aria-label="FixMyMedTech Documentation" data-md-component="logo">
+      
+  <img src="../images/favicon.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FixMyMedTech Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting Started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FixMyMedTech/fixmymedtech-app" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FixMyMedTech/fixmymedtech-app/
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FixMyMedTech Documentation" class="md-nav__button md-logo" aria-label="FixMyMedTech Documentation" data-md-component="logo">
+      
+  <img src="../images/favicon.svg" alt="logo">
+
+    </a>
+    FixMyMedTech Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FixMyMedTech/fixmymedtech-app" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FixMyMedTech/fixmymedtech-app/
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-clone-and-configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Clone and configure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Clone and configure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-for-oauth-email" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional (for OAuth / email)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-start-with-docker-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Start with Docker (recommended)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Start with Docker (recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-a-local-stack-postgresql-minio-no-account-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option A — Local stack (PostgreSQL + MinIO, no account needed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-b-supabase-remote-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option B — Supabase / remote PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#first-time-setup-create-a-superuser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-time setup — create a superuser
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#send-invitations-verification-emails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Send invitations &amp; verification emails
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-project-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Project structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-admin-portal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Admin portal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-database-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Database migrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-common-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Common tasks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Common tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-a-new-api-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create a new API endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-a-new-database-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add a new database model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a-one-off-db-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run a one-off DB query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-backend-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View backend logs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rebuild-after-dependency-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rebuild after dependency changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-environment-variables-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Environment variables reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Environment variables reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-tech-stack-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Tech stack summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collaboration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collaboration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LICENSE" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-clone-and-configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Clone and configure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Clone and configure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-for-oauth-email" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional (for OAuth / email)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-start-with-docker-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Start with Docker (recommended)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Start with Docker (recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-a-local-stack-postgresql-minio-no-account-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option A — Local stack (PostgreSQL + MinIO, no account needed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-b-supabase-remote-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option B — Supabase / remote PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#first-time-setup-create-a-superuser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-time setup — create a superuser
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#send-invitations-verification-emails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Send invitations &amp; verification emails
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-project-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Project structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-admin-portal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Admin portal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-database-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Database migrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-common-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Common tasks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Common tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-a-new-api-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create a new API endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-a-new-database-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add a new database model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a-one-off-db-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run a one-off DB query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-backend-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View backend logs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rebuild-after-dependency-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rebuild after dependency changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-environment-variables-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Environment variables reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Environment variables reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-tech-stack-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Tech stack summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="getting-started-developer-guide">Getting Started — Developer Guide<a class="headerlink" href="#getting-started-developer-guide" title="Permanent link">&para;</a></h1>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Docker Desktop</strong> (or Docker Engine + Compose V2)</li>
+<li><strong>Git</strong></li>
+<li>A <strong>Supabase</strong> project (free tier works) — or any PostgreSQL database</li>
+<li>(Optional) Python 3.12 + <code>uv</code> / <code>pip</code> if you want to run services outside Docker</li>
+</ul>
+<hr />
+<h2 id="1-clone-and-configure">1. Clone and configure<a class="headerlink" href="#1-clone-and-configure" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>&lt;repo-url&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>fixmymedtech-app
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+</span></code></pre></div>
+<p>Edit <code>.env</code> and fill in:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Where to find it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td>Postgres connection string (Supabase pooler or local). <code>postgresql+asyncpg://…</code></td>
+</tr>
+<tr>
+<td><code>DB_SCHEMA</code></td>
+<td><code>fixmymedtech</code> (default)</td>
+</tr>
+<tr>
+<td><code>FRONTEND_URL</code></td>
+<td><code>http://localhost:8888</code> for local dev</td>
+</tr>
+</tbody>
+</table>
+<h3 id="optional-for-oauth-email">Optional (for OAuth / email)<a class="headerlink" href="#optional-for-oauth-email" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># OAuth (leave blank to disable the buttons)
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>GOOGLE_CLIENT_ID=
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>GOOGLE_CLIENT_SECRET=
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>GITHUB_CLIENT_ID=
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>GITHUB_CLIENT_SECRET=
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a># SMTP (leave MAIL_SERVER blank to log emails to console instead)
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>MAIL_SERVER=
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>MAIL_PORT=587
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>MAIL_USERNAME=
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>MAIL_PASSWORD=
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>MAIL_FROM=noreply@fixmymedtech.org
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a># JWT signing secret (change in production)
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>AUTH_JWT_SECRET=replace-with-a-random-string
+</span></code></pre></div>
+<hr />
+<h2 id="2-start-with-docker-recommended">2. Start with Docker (recommended)<a class="headerlink" href="#2-start-with-docker-recommended" title="Permanent link">&para;</a></h2>
+<h3 id="option-a-local-stack-postgresql-minio-no-account-needed">Option A — Local stack (PostgreSQL + MinIO, no account needed)<a class="headerlink" href="#option-a-local-stack-postgresql-minio-no-account-needed" title="Permanent link">&para;</a></h3>
+<p>Recommended for day-to-day development. Runs the whole app against a local
+PostgreSQL container, no Supabase project required:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.local.yml<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>-d
+</span></code></pre></div>
+<p>This builds and starts four containers:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>URL</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>db</strong></td>
+<td><code>localhost:5432</code></td>
+<td>PostgreSQL 16 (isolated <code>pg-data</code> volume)</td>
+</tr>
+<tr>
+<td><strong>minio</strong></td>
+<td>console <code>http://localhost:9003</code></td>
+<td>S3-compatible file storage</td>
+</tr>
+<tr>
+<td><strong>backend</strong></td>
+<td><code>http://localhost:8888</code></td>
+<td>FastAPI REST API</td>
+</tr>
+<tr>
+<td><strong>frontend</strong></td>
+<td><code>http://localhost:5001</code></td>
+<td>FastHTML server-side UI</td>
+</tr>
+</tbody>
+</table>
+<p>On first boot the database is initialised from <code>infrastructure/db/init.sql</code>, then the backend
+auto-applies every migration in <code>infrastructure/migrations/</code> in order.</p>
+<blockquote>
+<p>The local stack uses its own compose project (<code>fixmymedtech-local</code>), so its
+<code>pg-data</code> / <code>minio-data</code> volumes and host ports are independent of Option B
+below — switch between them freely without losing data.</p>
+</blockquote>
+<h3 id="option-b-supabase-remote-postgresql">Option B — Supabase / remote PostgreSQL<a class="headerlink" href="#option-b-supabase-remote-postgresql" title="Permanent link">&para;</a></h3>
+<p>If you prefer to develop against your Supabase project, set <code>DATABASE_URL</code> in
+<code>.env</code> (see section 1) and run:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>-d
+</span></code></pre></div>
+<p>This builds and starts two containers:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>URL</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>backend</strong></td>
+<td><code>http://localhost:8888</code></td>
+<td>FastAPI REST API</td>
+</tr>
+<tr>
+<td><strong>frontend</strong></td>
+<td><code>http://localhost:5001</code></td>
+<td>FastHTML server-side UI</td>
+</tr>
+</tbody>
+</table>
+<p>Once running:</p>
+<ul>
+<li><strong>App:</strong> <a href="http://localhost:5001">http://localhost:5001</a></li>
+<li><strong>API docs (Swagger):</strong> <a href="http://localhost:8888/docs">http://localhost:8888/docs</a></li>
+<li><strong>Admin portal:</strong> <a href="http://localhost:8888/admin/">http://localhost:8888/admin/</a> <em>(superuser only — see below)</em></li>
+<li><strong>MinIO console:</strong> <a href="http://localhost:9003">http://localhost:9003</a> <em>(Option A only — creds <code>minioadmin</code>/<code>minioadmin</code>)</em></li>
+</ul>
+<h3 id="first-time-setup-create-a-superuser">First-time setup — create a superuser<a class="headerlink" href="#first-time-setup-create-a-superuser" title="Permanent link">&para;</a></h3>
+<p>After the containers are up, create your first admin account:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>backend<span class="w"> </span>python<span class="w"> </span>utils/create_superuser.py
+</span></code></pre></div>
+<p>(With the local stack, add <code>-f docker-compose.local.yml</code>: <code>docker compose -f docker-compose.local.yml exec backend python utils/create_superuser.py</code>)</p>
+<p>The script asks for email, name, and password interactively. It creates
+the user (with profile + default org) and marks them as superuser.</p>
+<p>To promote an existing user to superuser, run the script with their email — it
+will update their password and grant superuser access.</p>
+<p><strong>Automated (recommended for servers/deploys):</strong> instead set <code>SUPERUSER_EMAIL</code>,
+<code>SUPERUSER_PASSWORD</code> (and optional <code>SUPERUSER_NAME</code>) in your environment — the
+backend then creates/promotes that admin automatically on every startup, right
+after applying migrations. The dev/prod deploy workflows already pass these
+through from the <code>DEV_SUPERUSER_*</code> / <code>PROD_SUPERUSER_*</code> GitHub secrets.</p>
+<h3 id="send-invitations-verification-emails">Send invitations &amp; verification emails<a class="headerlink" href="#send-invitations-verification-emails" title="Permanent link">&para;</a></h3>
+<p>Once logged in as a superuser at <code>/admin/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Where</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Invite a user</strong></td>
+<td><code>/admin-panel/invite</code></td>
+<td>Creates an account and sends a verification email with a link to set their password</td>
+</tr>
+<tr>
+<td><strong>Resend verification</strong></td>
+<td>User detail page → "Send Verification Email" button</td>
+<td>Re-sends the verification email to an unverified user</td>
+</tr>
+<tr>
+<td><strong>Password reset</strong></td>
+<td>User detail page → "Send Password Reset" button</td>
+<td>Sends a password reset link to the user</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> When <code>MAIL_SERVER</code> is not configured (default for local dev), emails are logged to the backend console instead of being sent. Check <code>docker compose logs backend</code> to see the email content and verification links.</p>
+</blockquote>
+<hr />
+<h2 id="3-project-structure">3. Project structure<a class="headerlink" href="#3-project-structure" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>fixmymedtech-app1/
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>├── backend/                          ← FastAPI REST API
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>│   ├── main.py                       ← App entry, CORS, router registration, SQLAdmin
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>│   ├── admin_auth.py                 ← SQLAdmin auth (superuser-only login)
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>│   ├── migrations.py                 ← Auto-runs SQL migration files on startup
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>│   ├── config/
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>│   │   ├── db_config.py               ← DB engine + async session factory
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>│   │   ├── users.py                  ← FastAPI-Users: UserManager, JWT backend, deps
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>│   │   ├── email.py                  ← fastapi-mail config (SMTP or console fallback)
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>│   │   └── oauth.py                  ← Authlib OAuth client (Google/GitHub)
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>│   ├── models/
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>│   │   └── models.py                 ← SQLAlchemy models (User, Profile, Device, …)
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>│   ├── routers/
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>│   │   ├── auth.py                   ← /api/auth/* (login, signup, me, tasks, …)
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>│   │   ├── oauth.py                  ← /api/auth/oauth/{provider} (social login)
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>│   │   ├── devices.py                ← /api/devices/*
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>│   │   ├── fault_reports.py          ← /api/faults/*
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>│   │   ├── maintenance_logs.py       ← /api/maintenance-logs/*
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>│   │   ├── dashboard.py              ← /api/dashboard/*
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>│   │   └── organizations.py          ← /api/organizations/*
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>│   ├── utils/
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>│   │   ├── profile.py                ← get_current_profile dependency
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>│   │   └── username.py               ← Auto-generate unique usernames
+</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>│   └── requirements.txt
+</span><span id="__span-5-25"><a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>│
+</span><span id="__span-5-26"><a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>├── frontend/                         ← FastHTML frontend server
+</span><span id="__span-5-27"><a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>│   ├── main.py                       ← All routes and page rendering
+</span><span id="__span-5-28"><a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>│   ├── components.py                 ← Reusable HTML components + CSS
+</span><span id="__span-5-29"><a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>│   ├── i18n.py                       ← Translations (EN/ES/FR)
+</span><span id="__span-5-30"><a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a>│   ├── countries.py                  ← Country list
+</span><span id="__span-5-31"><a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>│   ├── features/
+</span><span id="__span-5-32"><a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a>│   │   └── auth/                     ← Login, signup pages + API helpers
+</span><span id="__span-5-33"><a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>│   ├── config/
+</span><span id="__span-5-34"><a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a>│   │   └── api.py                    ← HTTP client (calls FastAPI via httpx)
+</span><span id="__span-5-35"><a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>│   ├── static/                       ← Images, favicon
+</span><span id="__span-5-36"><a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>│   └── requirements.txt
+</span><span id="__span-5-37"><a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a>│
+</span><span id="__span-5-38"><a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a>├── infrastructure/
+</span><span id="__span-5-39"><a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a>│   └── migrations/                   ← SQL migrations (run in order on startup)
+</span><span id="__span-5-40"><a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a>│       ├── 001_device_coordinates.sql
+</span><span id="__span-5-41"><a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a>│       ├── …
+</span><span id="__span-5-42"><a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a>│       ├── 011_local_auth_users.sql  ← Creates local users table
+</span><span id="__span-5-43"><a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a>│       └── 012_fastapi_users.sql     ← Aligns schema for FastAPI-Users
+</span><span id="__span-5-44"><a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a>│
+</span><span id="__span-5-45"><a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a>├── docker-compose.yml                ← Production compose (backend + frontend)
+</span><span id="__span-5-46"><a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a>├── docker-compose.dev.yml            ← Dev-server compose (backend + frontend + minio)
+</span><span id="__span-5-47"><a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a>├── docker-compose.local.yml          ← Local dev stack (PostgreSQL + minio + backend + frontend)
+</span><span id="__span-5-48"><a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a>├── .env.example                      ← Template for environment variables
+</span><span id="__span-5-49"><a id="__codelineno-5-49" name="__codelineno-5-49" href="#__codelineno-5-49"></a>└── README.md                         ← Architecture overview
+</span></code></pre></div>
+<hr />
+<h2 id="5-admin-portal">5. Admin portal<a class="headerlink" href="#5-admin-portal" title="Permanent link">&para;</a></h2>
+<p>The admin portal at <code>/admin/</code> uses <a href="https://aminaltay.dev/sqladmin/">SQLAdmin</a> to provide a browsable database UI.</p>
+<p><strong>Who can access:</strong> Only users with <code>is_superuser = true</code> in the <code>fixmymedtech.users</code> table.</p>
+<p><strong>Available models:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Users</td>
+<td>Auth accounts (email, is_active, is_verified, is_superuser)</td>
+</tr>
+<tr>
+<td>Profiles</td>
+<td>User profiles (username, full_name)</td>
+</tr>
+<tr>
+<td>Org Users</td>
+<td>User↔Organization links and roles</td>
+</tr>
+<tr>
+<td>Organizations</td>
+<td>Hospitals, clinics, etc.</td>
+</tr>
+<tr>
+<td>Device Categories</td>
+<td>Equipment categories (seeded from CSV)</td>
+</tr>
+<tr>
+<td>Devices</td>
+<td>All registered equipment</td>
+</tr>
+<tr>
+<td>Documents</td>
+<td>Manuals, guides, videos linked to devices</td>
+</tr>
+<tr>
+<td>Fault Reports</td>
+<td>Submitted fault reports</td>
+</tr>
+<tr>
+<td>Maintenance Logs</td>
+<td>Maintenance history</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-database-migrations">6. Database migrations<a class="headerlink" href="#6-database-migrations" title="Permanent link">&para;</a></h2>
+<p>Migrations live in <code>infrastructure/migrations/</code> and are named <code>NNN_description.sql</code>. They run <strong>automatically</strong> on backend startup in numeric order. Each migration is recorded in <code>fixmymedtech.schema_migrations</code> so it only runs once.</p>
+<p>To add a new migration:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Pick the next number</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>cat<span class="w"> </span>&gt;<span class="w"> </span>infrastructure/migrations/013_my_change.sql<span class="w"> </span><span class="s">&lt;&lt; 'SQL'</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="s">ALTER TABLE fixmymedtech.devices ADD COLUMN IF NOT EXISTS warranty_end DATE;</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s">SQL</span>
+</span></code></pre></div>
+<p>Restart the backend container and it will apply automatically.</p>
+<hr />
+<h2 id="7-common-tasks">7. Common tasks<a class="headerlink" href="#7-common-tasks" title="Permanent link">&para;</a></h2>
+<h3 id="create-a-new-api-endpoint">Create a new API endpoint<a class="headerlink" href="#create-a-new-api-endpoint" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Add your route in the relevant <code>backend/routers/*.py</code> file</li>
+<li>Use <code>Depends(current_active_user)</code> for auth, or <code>Depends(get_current_profile)</code> for profile + org context</li>
+<li>Register the router in <code>backend/main.py</code> if it's a new file</li>
+</ol>
+<h3 id="add-a-new-database-model">Add a new database model<a class="headerlink" href="#add-a-new-database-model" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Define the model in <code>backend/models/models.py</code></li>
+<li>Create a migration SQL in <code>infrastructure/migrations/</code></li>
+<li>Add a <code>ModelView</code> in <code>backend/main.py</code> for the admin portal</li>
+</ol>
+<h3 id="run-a-one-off-db-query">Run a one-off DB query<a class="headerlink" href="#run-a-one-off-db-query" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>backend<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="s2">import asyncio</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="s2">from config.db_config import engine</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s2">from sqlalchemy import text</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="s2">async def main():</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="s2">    async with engine.begin() as conn:</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="s2">        result = await conn.execute(text('SELECT count(*) FROM fixmymedtech.users'))</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="s2">        print('Users:', result.scalar())</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="s2">asyncio.run(main())</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="s2">"</span>
+</span></code></pre></div>
+<h3 id="view-backend-logs">View backend logs<a class="headerlink" href="#view-backend-logs" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>backend
+</span></code></pre></div>
+<h3 id="rebuild-after-dependency-changes">Rebuild after dependency changes<a class="headerlink" href="#rebuild-after-dependency-changes" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>-d<span class="w"> </span>backend
+</span></code></pre></div>
+<hr />
+<h2 id="8-environment-variables-reference">8. Environment variables reference<a class="headerlink" href="#8-environment-variables-reference" title="Permanent link">&para;</a></h2>
+<h3 id="backend">Backend<a class="headerlink" href="#backend" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td>Yes</td>
+<td>—</td>
+<td>PostgreSQL connection string (asyncpg)</td>
+</tr>
+<tr>
+<td><code>DB_SCHEMA</code></td>
+<td>No</td>
+<td><code>fixmymedtech</code></td>
+<td>Database schema name</td>
+</tr>
+<tr>
+<td><code>FRONTEND_URL</code></td>
+<td>No</td>
+<td><code>http://localhost</code></td>
+<td>For CORS + email links</td>
+</tr>
+<tr>
+<td><code>AUTH_JWT_SECRET</code></td>
+<td>No</td>
+<td><code>dev-local-jwt-secret-change-me</code></td>
+<td>JWT signing secret</td>
+</tr>
+<tr>
+<td><code>AUTH_TOKEN_TTL</code></td>
+<td>No</td>
+<td><code>604800</code> (7 days)</td>
+<td>JWT lifetime in seconds</td>
+</tr>
+<tr>
+<td><code>AUTH_SESSION_SECRET</code></td>
+<td>No</td>
+<td><code>dev-admin-session-secret</code></td>
+<td>Session cookie signing</td>
+</tr>
+<tr>
+<td><code>MAIL_SERVER</code></td>
+<td>No</td>
+<td><em>(empty — logs emails)</em></td>
+<td>SMTP host</td>
+</tr>
+<tr>
+<td><code>MAIL_PORT</code></td>
+<td>No</td>
+<td><code>587</code></td>
+<td>SMTP port</td>
+</tr>
+<tr>
+<td><code>MAIL_USERNAME</code></td>
+<td>No</td>
+<td>—</td>
+<td>SMTP login</td>
+</tr>
+<tr>
+<td><code>MAIL_PASSWORD</code></td>
+<td>No</td>
+<td>—</td>
+<td>SMTP password</td>
+</tr>
+<tr>
+<td><code>MAIL_FROM</code></td>
+<td>No</td>
+<td><code>noreply@fixmymedtech.org</code></td>
+<td>Sender address</td>
+</tr>
+<tr>
+<td><code>GOOGLE_CLIENT_ID</code></td>
+<td>No</td>
+<td>—</td>
+<td>OAuth (disables button if empty)</td>
+</tr>
+<tr>
+<td><code>GOOGLE_CLIENT_SECRET</code></td>
+<td>No</td>
+<td>—</td>
+<td>OAuth</td>
+</tr>
+<tr>
+<td><code>GITHUB_CLIENT_ID</code></td>
+<td>No</td>
+<td>—</td>
+<td>OAuth</td>
+</tr>
+<tr>
+<td><code>GITHUB_CLIENT_SECRET</code></td>
+<td>No</td>
+<td>—</td>
+<td>OAuth</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frontend">Frontend<a class="headerlink" href="#frontend" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>API_URL</code></td>
+<td>No</td>
+<td><code>http://backend:8888</code></td>
+<td>FastAPI backend URL</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-tech-stack-summary">9. Tech stack summary<a class="headerlink" href="#9-tech-stack-summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API server</td>
+<td>FastAPI</td>
+<td>REST endpoints, auth, business logic</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td>FastAPI-Users 15 + JWT</td>
+<td>Local user management, JWT tokens</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>fastapi-mail</td>
+<td>Verification, welcome, password reset</td>
+</tr>
+<tr>
+<td>OAuth</td>
+<td>Authlib</td>
+<td>Google/GitHub social login</td>
+</tr>
+<tr>
+<td>Admin UI</td>
+<td>SQLAdmin</td>
+<td>Browsable database portal (superuser only)</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>FastHTML</td>
+<td>Server-side HTML rendering</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>PostgreSQL (Supabase)</td>
+<td>Data storage</td>
+</tr>
+<tr>
+<td>ORM</td>
+<td>SQLAlchemy 2 (async)</td>
+<td>Query builder</td>
+</tr>
+<tr>
+<td>Migrations</td>
+<td>Custom (file-based)</td>
+<td>Auto-applied on startup</td>
+</tr>
+<tr>
+<td>Containerization</td>
+<td>Docker Compose</td>
+<td>Multi-service orchestration</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://www.careagain.org/">Care Again</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/FixMyMedTech/fixmymedtech-app/" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

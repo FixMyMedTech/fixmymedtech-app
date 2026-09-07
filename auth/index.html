@@ -1,0 +1,1364 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Medical equipment management for LMICs.">
+      
+      
+        <meta name="author" content="Care Again">
+      
+      
+        <link rel="canonical" href="https://fixmymedtech.github.io/fixmymedtech-app/auth/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Authentication Guide - FixMyMedTech Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#authentication-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FixMyMedTech Documentation" class="md-header__button md-logo" aria-label="FixMyMedTech Documentation" data-md-component="logo">
+      
+  <img src="../images/favicon.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FixMyMedTech Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Authentication Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FixMyMedTech/fixmymedtech-app" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FixMyMedTech/fixmymedtech-app/
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FixMyMedTech Documentation" class="md-nav__button md-logo" aria-label="FixMyMedTech Documentation" data-md-component="logo">
+      
+  <img src="../images/favicon.svg" alt="logo">
+
+    </a>
+    FixMyMedTech Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FixMyMedTech/fixmymedtech-app" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FixMyMedTech/fixmymedtech-app/
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collaboration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collaboration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LICENSE" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-identity-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Identity model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-tokens-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Tokens &amp; sessions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Tokens &amp; sessions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#login-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login token
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#server-side-session-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server-side session (frontend)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-tokens-verification-reset-invitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email tokens (verification / reset / invitation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-self-signup-public" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Self signup (public)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-email-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Email verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-login-logout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Login &amp; logout
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Login &amp; logout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#login" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logout
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-password-reset-forgot-password" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Password reset ("Forgot password")
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-admin-invited-user-invitation-email" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Admin-invited user (invitation email)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Admin-invited user (invitation email)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#admin-side-email-actions-backendroutersadmin_emailpy-admin-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Admin-side email actions (backend/routers/admin_email.py, /admin-panel)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-admin-portal-admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Admin portal (/admin)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-social-login-oauth2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Social login (OAuth2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-endpoint-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Endpoint reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-email-templates-triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Email templates &amp; triggers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Environment variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-security-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Security notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="authentication-guide">Authentication Guide<a class="headerlink" href="#authentication-guide" title="Permanent link">&para;</a></h1>
+<p>This guide describes every authentication &amp; account lifecycle flow in
+FixMyMedTech: self signup, email verification, login/logout, password reset,
+admin-invited users, admin portal access, and social (OAuth2) login.</p>
+<p><strong>Stack:</strong> FastAPI + FastAPI-Users (auth core) · FastHTML (frontend) ·
+Authlib (social login) · SQLAdmin (admin portal) · Postgres</p>
+<hr />
+<h2 id="1-identity-model">1. Identity model<a class="headerlink" href="#1-identity-model" title="Permanent link">&para;</a></h2>
+<p>Accounts live in the local <code>fixmymedtech.users</code> table (Postgres). The core
+auth machinery is provided by <strong>FastAPI-Users 15</strong> (<code>backend/config/users.py</code>),
+which we hide behind the app's own router (<code>backend/routers/auth.py</code>) so the
+browser-facing API contract stays stable.</p>
+<p>Key fields on <code>users</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>email</code></td>
+<td>Unique login id (always stored lower-case)</td>
+</tr>
+<tr>
+<td><code>hashed_password</code></td>
+<td>bcrypt password hash (via <code>pwdlib</code>/<code>BcryptHasher</code>)</td>
+</tr>
+<tr>
+<td><code>is_active</code></td>
+<td>Disabled accounts can't log in</td>
+</tr>
+<tr>
+<td><code>is_verified</code></td>
+<td>Email verified (login does <strong>not</strong> enforce this)</td>
+</tr>
+<tr>
+<td><code>is_superuser</code></td>
+<td>Grants access to the <code>/admin</code> portal</td>
+</tr>
+</tbody>
+</table>
+<p>The 1:1 profile, default organization and membership are created alongside a
+new user by every provisioning path (signup, OAuth, admin invite).</p>
+<hr />
+<h2 id="2-tokens-sessions">2. Tokens &amp; sessions<a class="headerlink" href="#2-tokens-sessions" title="Permanent link">&para;</a></h2>
+<p>All tokens are <strong>JWTs signed with <code>AUTH_JWT_SECRET</code></strong> (≥ 32 bytes, HS256).</p>
+<h3 id="login-token">Login token<a class="headerlink" href="#login-token" title="Permanent link">&para;</a></h3>
+<p>Minted by the JWT auth backend (<code>JWTStrategy</code>, lifetime <code>AUTH_TOKEN_TTL</code>,
+default <strong>7 days</strong>), payload <code>{sub, exp}</code>. It is a <strong>Bearer</strong> token: the
+frontend ships it to the backend as <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+<h3 id="server-side-session-frontend">Server-side session (frontend)<a class="headerlink" href="#server-side-session-frontend" title="Permanent link">&para;</a></h3>
+<p>The FastHTML frontend stores the login token <strong>server-side in an encrypted
+cookie session</strong>, never in <code>localStorage</code>:</p>
+<ul>
+<li><code>/login</code> POST → <code>req.session["token"] = access_token</code></li>
+<li><code>features/auth/helper.py</code> → <code>get_token(req)</code>, <code>clear_session(req)</code>,
+  <code>require_auth()</code> / <code>require_auth_verified()</code> (validates against
+  <code>/api/dashboard/stats</code> and redirects to <code>/login?expired=1</code> on 401)</li>
+<li><code>/logout</code> clears the session (the backend JWT is stateless)</li>
+</ul>
+<p>So the browser only ever holds the session cookie; the JWT never reaches it.</p>
+<h3 id="email-tokens-verification-reset-invitation">Email tokens (verification / reset / invitation)<a class="headerlink" href="#email-tokens-verification-reset-invitation" title="Permanent link">&para;</a></h3>
+<p>These are signed with the <strong>same</strong> <code>AUTH_JWT_SECRET</code> but have a different
+payload shape and are consumed by FastAPI-Users' <code>verify()</code> / <code>reset_password()</code>
+<code>UserManager</code> methods:</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Claims</th>
+<th><code>aud</code></th>
+<th>TTL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Login</td>
+<td><code>{sub, exp}</code></td>
+<td><code>fastapi-users:auth</code></td>
+<td>7 d</td>
+</tr>
+<tr>
+<td>Verify email</td>
+<td><code>{sub, email, exp}</code></td>
+<td><code>fastapi-users:verify</code></td>
+<td>1 h</td>
+</tr>
+<tr>
+<td>Reset password</td>
+<td><code>{sub, email, password_fgpt, exp}</code></td>
+<td><code>fastapi-users:reset</code></td>
+<td>1 h</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong><code>password_fgpt</code> is required.</strong> <code>reset_password()</code> verifies
+<code>password_fgpt</code> (a bcrypt hash of the user's <em>current</em> <code>hashed_password</code>)
+against that stored hash. Any hand-minted reset token missing this claim is
+rejected with HTTP 400 <code>Reset failed:</code>. Never build these tokens by hand —
+route them through <code>UserManager.forgot_password()</code> or reproduce the exact
+claim set described in §6.</p>
+</blockquote>
+<hr />
+<h2 id="3-self-signup-public">3. Self signup (public)<a class="headerlink" href="#3-self-signup-public" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>browser → POST /api/auth/signup {email, password, full_name, organization_id?, ...}
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  1. UserManager.create() hashes the password (bcrypt), is_verified=false
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  2. Profile row created (id = user id, generated username)
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  3. Organization resolved-or-created + OrgUser membership (role)
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  4. on_after_register hook sends a WELCOME email + a VERIFICATION email
+</span></code></pre></div>
+<p>Response is <code>{message}</code>. Duplicate email → HTTP 409 <code>user_already_exists</code>.
+The frontend <code>/signup</code> page renders distinct success / "account already
+exists" states.</p>
+<p>A self-registered user is <code>is_verified=false</code> but can log in immediately
+(login does not gate on verification).</p>
+<hr />
+<h2 id="4-email-verification">4. Email verification<a class="headerlink" href="#4-email-verification" title="Permanent link">&para;</a></h2>
+<p>Triggered on self signup (<code>on_after_register</code>) or on demand via
+<code>POST /api/auth/request-verification</code> (anti-enumeration: always returns the
+same message).</p>
+<ol>
+<li>The hook calls <code>UserManager.request_verify()</code> → verification token
+   <code>{sub, email, aud: fastapi-users:verify}</code> (1 h).</li>
+<li><code>send_verification_email()</code> builds a <strong>backend</strong> link
+   <code>{API_BASE_URL}/api/auth/verify?token=...</code> — note it points at FastAPI,
+   because <code>/api/auth/*</code> is a backend route.</li>
+<li><code>user_manager.verify(token, request)</code> checks signature + audience, that
+   <code>sub</code>/<code>email</code> match the stored user, and sets <code>is_verified = true</code>.</li>
+<li>The router then 302s the browser to
+   <code>{FRONTEND_URL}/login?verified=1</code> (or <code>?verified=0</code> on failure), and the
+   login page shows a corresponding alert.</li>
+</ol>
+<p>Template: <code>backend/templates/email_verification.html</code>.</p>
+<hr />
+<h2 id="5-login-logout">5. Login &amp; logout<a class="headerlink" href="#5-login-logout" title="Permanent link">&para;</a></h2>
+<h3 id="login">Login<a class="headerlink" href="#login" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>POST /api/auth/login {email, password}
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  • get_by_email (lower-cased)      → 404 user_not_found
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  • verify_and_update(bcrypt)       → 401 invalid_credentials
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  • hash-rotation (argon2→bcrypt)   → transparent upgrade
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  • JWTStrategy.write_token(user)   → {access_token, user:{id, email}}
+</span></code></pre></div>
+<p>The frontend <code>/login</code> POST stores the token in the session and redirects to
+<code>/dashboard</code> (or <code>?next=</code>). Error mapping shown to the user:
+<code>user_not_found</code> / <code>email_not_confirmed</code> / <code>invalid_credentials</code>.</p>
+<h3 id="logout">Logout<a class="headerlink" href="#logout" title="Permanent link">&para;</a></h3>
+<p><code>POST /api/auth/logout</code> returns <code>{message}</code> — it is stateless; the frontend
+<code>/logout</code> route just clears the server-side session and redirects to <code>/login</code>.</p>
+<hr />
+<h2 id="6-password-reset-forgot-password">6. Password reset ("Forgot password")<a class="headerlink" href="#6-password-reset-forgot-password" title="Permanent link">&para;</a></h2>
+<p>Public flow, <strong>fully functional since the reset-token fix</strong>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>POST /api/auth/forgot-password {email}      (body: LoginRequest incl. password)
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  → UserManager.forgot_password()
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>      token = {sub, password_fgpt = bcrypt(current hashed_password),
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>               aud: fastapi-users:reset}   (1 h)
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  → on_after_forgot_password → send_reset_password_email()
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>      link = {FRONTEND_URL}/reset-password?token=...     (frontend page)
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  → always returns the same message (no email-address disclosure)
+</span></code></pre></div>
+<p>The invited user clicks the link → FastHTML <code>/reset-password?token=...</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>GET  /reset-password?token=…   renders the form (redirects to /login if absent)
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>POST /reset-password {token, password, password2}
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>      validates: token present, len ≥ 8, passwords match
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>      → POST /api/auth/reset-password?token=…&amp;password=…   (query params!)
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>          → UserManager.reset_password(token, password)
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>              verifies signature + aud + password_fgpt vs current hash
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>              400 Reset failed: … on bad/expired/single-use token
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>      success screen → "Go to login"
+</span></code></pre></div>
+<p>Important details:</p>
+<ul>
+<li>The backend endpoint declares <code>token</code> and <code>password</code> as <strong>query
+  parameters</strong>, so the frontend API helper (<code>_post</code>) appends them to the URL
+  and sends an empty JSON body.</li>
+<li>Reset tokens are <strong>single-use</strong> and the fingerprint ties them to the exact
+  current hash — changing the password invalidates any outstanding link.</li>
+<li>Template: <code>backend/templates/email_reset_password.html</code>.</li>
+</ul>
+<hr />
+<h2 id="7-admin-invited-user-invitation-email">7. Admin-invited user (invitation email)<a class="headerlink" href="#7-admin-invited-user-invitation-email" title="Permanent link">&para;</a></h2>
+<p>When a superuser creates a user <strong>in the SQLAdmin portal</strong> (<code>/admin/user/create</code>),
+<code>UserAdmin</code> provisions a fully-functional account and sends an <strong>invitation</strong>
+email — not a verification email:</p>
+<ol>
+<li><code>on_model_change</code> normalizes/strips fields, forces <code>is_verified=false</code>,
+   seeds a <strong>random</strong> password hash.</li>
+<li><code>after_model_change</code> creates the <code>Profile</code>, a default <code>Organization</code> and an
+   <code>OrgUser</code> (role <code>admin</code>).</li>
+<li>It mints a proper reset token (same shape as §6 <code>{sub, email,
+   password_fgpt, aud: fastapi-users:reset}</code>, 1 h) and sends
+   <code>send_invitation_email()</code> → <code>backend/templates/email_invitation.html</code>
+   ("You've been invited to FixMyMedTech", button links to
+   <code>{FRONTEND_URL}/reset-password?token=...</code>).</li>
+<li>The invited user sets their own password through the reset page and can
+   then log in (login doesn't require verification).</li>
+</ol>
+<p>A mail failure is logged and <strong>never</strong> aborts user creation.</p>
+<blockquote>
+<p>Gotcha (fixed): the old tokens used <code>aud: fastapi-users:reset-password</code> and
+omitted <code>password_fgpt</code>, so every such link returned <code>400 Reset failed:</code>.
+The invitation route <strong>must</strong> use <code>aud: fastapi-users:reset</code> and include the
+fingerprint claim to be accepted by <code>reset_password()</code>.</p>
+</blockquote>
+<h3 id="admin-side-email-actions-backendroutersadmin_emailpy-admin-panel">Admin-side email actions (<code>backend/routers/admin_email.py</code>, <code>/admin-panel</code>)<a class="headerlink" href="#admin-side-email-actions-backendroutersadmin_emailpy-admin-panel" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET  /admin-panel/invite</code></td>
+<td>Invitation form (<code>full_name</code>, <code>email</code>)</td>
+</tr>
+<tr>
+<td><code>POST /admin-panel/invite</code></td>
+<td>Find-or-create user, sends verification email</td>
+</tr>
+<tr>
+<td><code>POST /admin-panel/send-verification/{user_id}</code></td>
+<td>Resend verification link</td>
+</tr>
+<tr>
+<td><code>POST /admin-panel/send-reset/{user_id}</code></td>
+<td>Reset-password email (with <code>password_fgpt</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>All require the admin session (<code>require_superuser</code>).</p>
+<hr />
+<h2 id="8-admin-portal-admin">8. Admin portal (<code>/admin</code>)<a class="headerlink" href="#8-admin-portal-admin" title="Permanent link">&para;</a></h2>
+<p>The SQLAdmin UI at <code>/admin</code> is guarded by <code>AdminAuth</code>
+(<code>backend/admin_auth.py</code>):</p>
+<ul>
+<li><strong>Login</strong> is a form POST (<code>username</code> = email, <code>password</code>), validated with
+  pwdlib against the stored bcrypt hash <strong>and</strong> <code>is_active</code> +
+  <code>is_superuser</code>.</li>
+<li>On success the session cookie stores <code>admin_user_id</code> (signed with
+  <code>AUTH_SESSION_SECRET</code>).</li>
+<li>Every request re-verifies that the id maps to an active superuser
+  (<code>authenticate()</code>).</li>
+<li><code>require_superuser()</code> is the FastAPI dependency equivalent for the
+  <code>/admin-panel/*</code> endpoints (HTTP 403 otherwise).</li>
+</ul>
+<p>Create a superuser with
+<code>docker compose exec backend python scripts/create_superuser.py</code>
+(or promote an existing user's <code>is_superuser</code> flag).</p>
+<hr />
+<h2 id="9-social-login-oauth2">9. Social login (OAuth2)<a class="headerlink" href="#9-social-login-oauth2" title="Permanent link">&para;</a></h2>
+<p>Optional providers — <strong>Google, GitHub, Discord</strong> — registered in
+<code>backend/config/oauth.py</code> from <code>*_CLIENT_ID</code> / <code>*_CLIENT_SECRET</code> env vars
+(only when both are set).</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>browser → GET /api/auth/oauth/{provider}            (frontend /login buttons)
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  → Authlib redirects to the provider
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>provider → GET /api/auth/oauth/{provider}/callback
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  1. exchange code for access token
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  2. fetch userinfo (email + name)
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  3. find-or-create LOCAL users row (upsert)
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>       • new user: hashed_password="!" (unusable), is_verified=true
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>       • profile + default org + admin membership created
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  4. mint a LOCAL JWT (JWTStrategy) and redirect to
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>     {FRONTEND_URL}/oauth-callback?access_token=…
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>     (token passes through the URL for a single hop)
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>frontend → /oauth-callback stores token in the session → /dashboard
+</span></code></pre></div>
+<p>Notes:</p>
+<ul>
+<li>Discord only returns email when the <code>identify email</code> scopes apply and the
+  account has a verified email; the code then falls back to
+  <code>discord-{id}@fixmymedtech.local</code> (flagged so admins can fix it).</li>
+<li>GitHub uses the <code>user:email</code> scope; profile name is <code>name</code>/<code>preferred_username</code>.</li>
+<li>The OAuth user can later log in with <code>!</code>-hash accounts only through OAuth —
+  use admin <code>send-reset</code> to give them a password if needed.</li>
+</ul>
+<hr />
+<h2 id="10-endpoint-reference">10. Endpoint reference<a class="headerlink" href="#10-endpoint-reference" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/signup</code></td>
+<td>–</td>
+<td>Self registration</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/login</code></td>
+<td>–</td>
+<td>Password login</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/logout</code></td>
+<td>–</td>
+<td>Stateless logout</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/auth/me</code></td>
+<td>JWT</td>
+<td>Profile + organizations</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/auth/me</code></td>
+<td>JWT</td>
+<td>Update full_name / username</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/auth/tasks</code></td>
+<td>JWT</td>
+<td>My faults + maintenance tasks</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/auth/verify</code></td>
+<td>–</td>
+<td>Verify <code>?token=</code> (redirects)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/request-verification</code></td>
+<td>–</td>
+<td>Resend verification email</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/forgot-password</code></td>
+<td>–</td>
+<td>Send reset link</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/reset-password</code></td>
+<td>–</td>
+<td><code>?token=&amp;password=</code> set new pwd</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/auth/oauth/{provider}</code></td>
+<td>–</td>
+<td>Start OAuth</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/auth/oauth/{provider}/callback</code></td>
+<td>–</td>
+<td>OAuth callback</td>
+</tr>
+<tr>
+<td>GET/POST</td>
+<td><code>/login</code>, <code>/signup</code>, <code>/reset-password</code></td>
+<td>–</td>
+<td>FastHTML pages</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/oauth-callback</code>, <code>/logout</code></td>
+<td>sess</td>
+<td>FastHTML session helpers</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/admin/login</code>, <code>/admin/logout</code></td>
+<td>–</td>
+<td>SQLAdmin portal</td>
+</tr>
+<tr>
+<td>GET/POST</td>
+<td><code>/admin/*</code></td>
+<td>admin</td>
+<td>SQLAdmin portal UI</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/admin-panel/invite</code></td>
+<td>admin</td>
+<td>Invite user + verification email</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/admin-panel/send-verification/{id}</code></td>
+<td>admin</td>
+<td>Resend verification</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/admin-panel/send-reset/{id}</code></td>
+<td>admin</td>
+<td>Send reset-password email</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-email-templates-triggers">11. Email templates &amp; triggers<a class="headerlink" href="#11-email-templates-triggers" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Trigger</th>
+<th>Link →</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>email_welcome</code> (inline in <code>config.email</code>)</td>
+<td>Self signup <code>on_after_register</code></td>
+<td>–</td>
+</tr>
+<tr>
+<td><code>email_verification.html</code></td>
+<td>Self signup / <code>request-verification</code></td>
+<td><code>/api/auth/verify</code></td>
+</tr>
+<tr>
+<td><code>email_reset_password.html</code></td>
+<td><code>forgot-password</code> (+ admin <code>send-reset</code>)</td>
+<td><code>/reset-password</code></td>
+</tr>
+<tr>
+<td><code>email_invitation.html</code></td>
+<td>Admin-created user (<code>UserAdmin.after_model_change</code>)</td>
+<td><code>/reset-password</code></td>
+</tr>
+</tbody>
+</table>
+<p>All render with <code>{logo_url}</code> (from <code>LOGO_URL</code>) and <code>{link}</code>. When
+<code>MAIL_SERVER</code> is unset, <code>send_message()</code> logs the email to the backend
+console instead of sending (local dev).</p>
+<hr />
+<h2 id="12-environment-variables">12. Environment variables<a class="headerlink" href="#12-environment-variables" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Used for</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AUTH_JWT_SECRET</code></td>
+<td>Signs login / verify / reset JWTs (≥ 32 bytes)</td>
+<td>old 30-byte dev secret</td>
+</tr>
+<tr>
+<td><code>AUTH_TOKEN_TTL</code></td>
+<td>Login JWT lifetime (seconds)</td>
+<td>604800 (7 d)</td>
+</tr>
+<tr>
+<td><code>AUTH_SESSION_SECRET</code></td>
+<td>Admin portal session cookie</td>
+<td><code>dev-admin-session-secret</code></td>
+</tr>
+<tr>
+<td><code>FRONTEND_URL</code></td>
+<td>Base for reset/invite links &amp; OAuth callback</td>
+<td><code>http://localhost:8888</code></td>
+</tr>
+<tr>
+<td><code>API_BASE_URL</code></td>
+<td>Base for verify links (backend)</td>
+<td><code>http://localhost:8888</code></td>
+</tr>
+<tr>
+<td><code>PUBLIC_API_URL</code></td>
+<td>Overrides <code>API_BASE_URL</code> for verification links</td>
+<td>–</td>
+</tr>
+<tr>
+<td><code>LOGO_URL</code></td>
+<td>Branding in email templates</td>
+<td>Supabase asset URL</td>
+</tr>
+<tr>
+<td><code>MAIL_*</code></td>
+<td>SMTP (server/port/user/pass/from/starttls/tls)</td>
+<td>unset → console log</td>
+</tr>
+<tr>
+<td><code>GOOGLE_/GITHUB_/DISCORD_CLIENT_*</code></td>
+<td>OAuth provider creds</td>
+<td>unset → provider disabled</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="13-security-notes">13. Security notes<a class="headerlink" href="#13-security-notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Emails are <strong>lower-cased</strong> on input, so <code>User@X.org</code> and <code>user@x.org</code> are the
+  same account.</li>
+<li>Forgot-password / verification-resend endpoints return a fixed message
+  (no account enumeration).</li>
+<li>Reset and verification tokens are short-lived (1 h) and signed with the app
+  secret — rotation of <code>AUTH_JWT_SECRET</code> invalidates all outstanding links.</li>
+<li>Session cookies are HttpOnly server-side sessions; the JWT never reaches the
+  browser.</li>
+<li>Admin portal and <code>/admin-panel/*</code> are restricted to active superusers.</li>
+<li><code>AUTH_JWT_SECRET</code> must be ≥ 32 bytes to avoid the <code>InsecureKeyLengthWarning</code>
+  (generate with <code>openssl rand -base64 48</code>).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://www.careagain.org/">Care Again</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/FixMyMedTech/fixmymedtech-app/" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

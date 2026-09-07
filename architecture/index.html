@@ -15,8 +15,10 @@
         <link rel="canonical" href="https://fixmymedtech.github.io/fixmymedtech-app/architecture/">
       
       
-        <link rel="prev" href="../setup/">
+        <link rel="prev" href="../getting_started/">
       
+      
+        <link rel="next" href="../database/">
       
       
         
@@ -282,17 +284,66 @@
       
   
   
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../setup/" class="md-nav__link">
+      <a href="../getting_started/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Set Up
+    Getting Started
   
 
     
@@ -304,9 +355,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
     
@@ -600,10 +652,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#frontend-frontendenv" class="md-nav__link">
+  <a href="#frontend" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Frontend (frontend/.env)
+        Frontend
       
     </span>
   </a>
@@ -630,6 +682,124 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collaboration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collaboration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LICENSE" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -889,10 +1059,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#frontend-frontendenv" class="md-nav__link">
+  <a href="#frontend" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Frontend (frontend/.env)
+        Frontend
       
     </span>
   </a>
@@ -978,14 +1148,11 @@
 </span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>│       ├── styles.css              ← All CSS — edit this to change the design
 </span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>│       └── *.png / *.svg           ← Images and icons
 </span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>│
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>├── supabase/
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>│   └── schema.sql                  ← Run once in Supabase SQL Editor
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>│
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>├── docs/                           ← MkDocs documentation
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>│   ├── mkdocs.yml
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>│   └── docs/*.md
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>│
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>└── docker-compose.yml              ← Runs all services together
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>├── docs/                           ← MkDocs documentation
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>│   ├── mkdocs.yml
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>│   └── docs/*.md
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>│
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>└── docker-compose.yml              ← Runs all services together
 </span></code></pre></div>
 <hr />
 <h2 id="key-design-decisions">Key design decisions<a class="headerlink" href="#key-design-decisions" title="Permanent link">&para;</a></h2>
@@ -1094,7 +1261,7 @@
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>4. FastAPI queries Supabase (no auth required for this endpoint)
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>5. FastHTML renders device info, manuals, fault report form
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>6. Nurse submits fault → FastHTML calls POST /api/faults/public
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>7. FastAPI updates Supabase, device status changes to &quot;fault&quot; if critical
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>7. FastAPI updates Supabase, device status changes to "fault" if critical
 </span></code></pre></div>
 <h2 id="data-flow-admin-login">Data flow — admin login<a class="headerlink" href="#data-flow-admin-login" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>1. Admin submits login form
@@ -1109,24 +1276,23 @@
 <h3 id="1-supabase">1. Supabase<a class="headerlink" href="#1-supabase" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Create a project at https://supabase.com</li>
-<li>Go to <strong>SQL Editor</strong> → paste and run <code>supabase/schema.sql</code></li>
-<li>Go to <strong>Authentication → Settings</strong> → disable email confirmation for development</li>
+<li>The schema is applied automatically: backend startup runs the migrations in
+   <code>infrastructure/migrations/</code> (tracked in <code>fixmymedtech.schema_migrations</code>).</li>
 <li>Go to <strong>Project Settings → API</strong> → copy your keys</li>
 </ol>
 <h3 id="2-backend-fastapi">2. Backend (FastAPI)<a class="headerlink" href="#2-backend-fastapi" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>backend
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Edit .env:</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># SUPABASE_URL=https://your-project.supabase.co</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># SUPABASE_SERVICE_KEY=sb_secret_xxx</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># SUPABASE_ANON_KEY=sb_publishable_xxx</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># FRONTEND_URL=http://localhost:5001</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>uvicorn<span class="w"> </span>main:app<span class="w"> </span>--reload<span class="w"> </span>--port<span class="w"> </span><span class="m">8888</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># API runs at:  {API_URL}</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># Swagger docs: {API_URL}/docs</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># DATABASE_URL=postgresql+asyncpg://postgres:xxx@db.your-project.supabase.co:5432/postgres</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># DB_SCHEMA=fixmymedtech</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># FRONTEND_URL=http://localhost:8888</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>uvicorn<span class="w"> </span>main:app<span class="w"> </span>--reload<span class="w"> </span>--port<span class="w"> </span><span class="m">8888</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># API runs at:  {API_URL}</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># Swagger docs: {API_URL}/docs</span>
 </span></code></pre></div>
 <h3 id="3-frontend-fasthtml">3. Frontend (FastHTML)<a class="headerlink" href="#3-frontend-fasthtml" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">cd</span><span class="w"> </span>frontend
@@ -1194,24 +1360,21 @@
 </thead>
 <tbody>
 <tr>
-<td><code>SUPABASE_URL</code></td>
-<td>Your Supabase project URL</td>
+<td><code>DATABASE_URL</code></td>
+<td>PostgreSQL connection string (asyncpg driver)</td>
 </tr>
 <tr>
-<td><code>SUPABASE_SERVICE_KEY</code></td>
-<td><code>sb_secret_xxx</code> — bypasses RLS, backend only</td>
-</tr>
-<tr>
-<td><code>SUPABASE_ANON_KEY</code></td>
-<td><code>sb_publishable_xxx</code> — for token validation</td>
+<td><code>DB_SCHEMA</code></td>
+<td>Schema the app tables live in (e.g. <code>fixmymedtech</code>)</td>
 </tr>
 <tr>
 <td><code>FRONTEND_URL</code></td>
-<td>FastHTML URL for CORS (e.g. <code>http://localhost:5000</code>)</td>
+<td>Backend URL used for email links + redirects (e.g. <code>http://localhost:8888</code>)</td>
 </tr>
 </tbody>
 </table>
-<h3 id="frontend-frontendenv">Frontend (<code>frontend/.env</code>)<a class="headerlink" href="#frontend-frontendenv" title="Permanent link">&para;</a></h3>
+<h3 id="frontend">Frontend<a class="headerlink" href="#frontend" title="Permanent link">&para;</a></h3>
+<p>No <code>.env</code> file is needed — both variables have working defaults:</p>
 <table>
 <thead>
 <tr>
@@ -1222,11 +1385,11 @@
 <tbody>
 <tr>
 <td><code>API_URL</code></td>
-<td>FastAPI URL (e.g. <code>http://localhost:8000</code>)</td>
+<td>FastAPI URL (default <code>http://localhost:8888</code>)</td>
 </tr>
 <tr>
 <td><code>SESSION_SECRET</code></td>
-<td>Random string for encrypting session cookies</td>
+<td>Random string for encrypting session cookies (default <code>dev-secret-change-in-production</code>)</td>
 </tr>
 </tbody>
 </table>

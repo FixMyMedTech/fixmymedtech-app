@@ -12,7 +12,7 @@
 ## 1. Clone and configure
 
 ```bash
-git clone <repo-url> && cd fixmymedtech-app1
+git clone <repo-url> && cd fixmymedtech-app
 
 cp .env.example .env
 ```
@@ -186,41 +186,6 @@ fixmymedtech-app1/
 ├── .env.example                      ← Template for environment variables
 └── README.md                         ← Architecture overview
 ```
-
----
-
-## 4. Authentication flow
-
-```
-Browser → FastHTML frontend
-  │
-  ├─ POST /api/auth/login {email, password}
-  │    → FastAPI-Users: get_by_email + bcrypt verify
-  │    → JWTStrategy.write_token(user)
-  │    → returns {access_token, user: {id, email}}
-  │
-  ├─ Frontend stores JWT in server-side session cookie
-  │    (req.session["token"] = access_token)
-  │
-  ├─ Subsequent requests: Authorization: Bearer <token>
-  │    → FastAPI-Users JWTStrategy validates token
-  │    → current_active_user loads User from DB
-  │    → get_current_profile loads Profile + org memberships
-  │
-  └─ /admin/* (SQLAdmin)
-       → SessionMiddleware stores admin_user_id in cookie
-       → AdminAuth.authenticate checks is_superuser on each request
-       → Non-superusers redirected to login
-```
-
-### Social login (Google / GitHub)
-
-```
-GET  /api/auth/oauth/google   → Authlib redirects to Google
-GET  /api/auth/oauth/google/callback → upserts local User → mints JWT → redirects to frontend
-```
-
-OAuth buttons appear on the login page when `GOOGLE_CLIENT_ID` / `GITHUB_CLIENT_ID` are set.
 
 ---
 

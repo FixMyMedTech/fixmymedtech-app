@@ -1,13 +1,9 @@
 # FixMyMedTech 
 
-> A platform that gives biomedical engineers the knowledge, tools, and community
-> to diagnose, repair, and maintain medical equipment — anywhere on the continent.
+> A platform that gives biomedical engineers the knowledge, tools, and community to diagnose, repair, and maintain medical equipment — anywhere on the continent.
 
-**Fix My MedTech** is an open-source platform where biomedical engineers
-tag, track, diagnose, and repair medical devices. It is built around the
-realities of the field: devices that arrive without manuals, without spare
-parts, and often already degraded — in environments where heat, humidity, dust
-and unstable power accelerate failure far beyond what manufacturers expect.
+**Fix My MedTech** is an open-source platform where biomedical engineers tag, track, diagnose, and repair medical devices. It is built around the realities of the field: devices that arrive without manuals, without spare
+parts, and often already degraded — in environments where heat, humidity, dust and unstable power accelerate failure far beyond what manufacturers expect.
 
 | Pillar | What it does |
 |--------|--------------|

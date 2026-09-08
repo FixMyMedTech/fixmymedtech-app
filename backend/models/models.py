@@ -337,6 +337,7 @@ class FaultReport(Base):
     status              = Column(Text, default="open")
     resolved_at         = Column(DateTime(timezone=True))
     resolution_notes    = Column(Text)
+    photo_key           = Column(Text)
 
     # Relationships
     device                  = relationship("Device", back_populates="fault_reports")

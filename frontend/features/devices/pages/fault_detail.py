@@ -1,6 +1,6 @@
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 import os, httpx
 from dotenv import load_dotenv
 
@@ -17,6 +17,16 @@ rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 # FAULT REPORT DETAIL
 # ══════════════════════════════════════════════════════════════
+
+@rt("/device/{device_id}/fault/{fault_id}/photo")
+async def get_fault_photo(req, device_id: str, fault_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect: return redirect
+    try:
+        content, ctype = await faults_api.get_fault_photo(token, fault_id)
+        return Response(content=content, media_type=ctype)
+    except Exception:
+        return Response(status_code=404)
 
 @rt("/device/{device_id}/fault/{fault_id}")
 async def get(req, device_id: str, fault_id: str):
@@ -72,6 +82,13 @@ async def get(req, device_id: str, fault_id: str):
                   style="font-size:0.9rem;white-space:pre-wrap;"),
                 cls="card", style="margin-bottom:16px;"
             ),
+            Div(
+                H3(_("fault_detail.photo"), style="margin-bottom:12px;"),
+                Img(src=f"/device/{device_id}/fault/{fault.get('id')}/photo?v={fault.get('photo_key') or 'x'}",
+                    alt=_("fault_detail.photo"),
+                    style="width:100%;max-height:320px;object-fit:cover;border-radius:var(--r-md);"),
+                cls="card", style="margin-bottom:16px;",
+            ) if fault.get("photo_key") else "",
             Div(
                 H3(_("fault_detail.resolution"), style="margin-bottom:12px;"),
                 P(fault.get("resolution_notes", _("fault_detail.no_resolution")),

@@ -1,16 +1,20 @@
 # routers/fault_reports.py
 
+import os
+import uuid
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File as FileParam
+from fastapi.responses import Response as FastAPIResponse
 from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from config.db_config import get_db
+from config.storage import get_file, upload_file
 from utils.profile import get_current_profile
 from models.models import Device, FaultReport, Profile, OrgUser
 
@@ -98,6 +102,67 @@ async def get_fault_public(fault_id: UUID, db: AsyncSession = Depends(get_db)):
     if not fault:
         raise HTTPException(status_code=404, detail="Fault report not found")
     return fault
+
+
+@router.get("/public/{fault_id}/photo")
+async def get_fault_photo_public(fault_id: UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(FaultReport).where(FaultReport.id == fault_id))
+    fault = result.scalar_one_or_none()
+    if not fault or not fault.photo_key:
+        raise HTTPException(status_code=404, detail="No photo")
+
+    obj = await get_file(fault.photo_key)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Photo not found in storage")
+    content, ctype = obj
+    return FastAPIResponse(content=content, media_type=ctype)
+
+
+@router.post("/{fault_id}/photo")
+async def upload_fault_photo(
+    fault_id: UUID,
+    photo: UploadFile = FileParam(...),
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(FaultReport).where(FaultReport.id == fault_id))
+    fault = result.scalar_one_or_none()
+    if not fault:
+        raise HTTPException(status_code=404, detail="Fault report not found")
+
+    content = await photo.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty photo")
+
+    # Stored as-is: no downscale/white-background processing for fault photos.
+    filename = photo.filename or "fault_photo.jpg"
+    ctype = photo.content_type or "application/octet-stream"
+    key = await upload_file(
+        "faults", str(fault_id), filename, content, ctype,
+        object_id=f"photo_{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower() or '.jpg'}",
+    )
+    fault.photo_key = key
+    await db.commit()
+
+    return {"photo_key": key, "mime_type": ctype}
+
+
+@router.get("/{fault_id}/photo")
+async def get_fault_photo(
+    fault_id: UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(FaultReport).where(FaultReport.id == fault_id))
+    fault = result.scalar_one_or_none()
+    if not fault or not fault.photo_key:
+        raise HTTPException(status_code=404, detail="No photo")
+
+    obj = await get_file(fault.photo_key)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Photo not found in storage")
+    content, ctype = obj
+    return FastAPIResponse(content=content, media_type=ctype)
 
 
 @router.get("/assignees/{device_id}")

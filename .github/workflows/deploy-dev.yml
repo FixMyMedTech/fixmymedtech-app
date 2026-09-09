@@ -2,8 +2,8 @@ name: Deploy Development
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [dev]
+  push:
+    branches: [dev]
 
 concurrency:
   group: deploy-dev
@@ -30,12 +30,28 @@ jobs:
           script: |
             mkdir -p ${{ env.APP_DIR }}
             cat > ${{ env.APP_DIR }}/.env <<'EOF'
-            SUPABASE_URL=${{ secrets.DEV_SUPABASE_URL }}
-            SUPABASE_API_ANON_KEY=${{ secrets.DEV_SUPABASE_API_ANON_KEY }}
-            SUPABASE_API_SECRET_KEY=${{ secrets.DEV_SUPABASE_API_SECRET_KEY }}
-            SUPABASE_DB_SCHEMA=fixmymedtech
+            DATABASE_URL=${{ secrets.DEV_SUPABASE_DB_URI }}
+            DB_SCHEMA=fixmymedtech
             FRONTEND_URL=${{ secrets.DEV_FRONTEND_URL }}
             API_URL=http://backend:8888
+            AUTH_JWT_SECRET=${{ secrets.DEV_AUTH_JWT_SECRET }}
+            SUPERUSER_EMAIL=${{ secrets.DEV_SUPERUSER_EMAIL }}
+            SUPERUSER_PASSWORD=${{ secrets.DEV_SUPERUSER_PASSWORD }}
+            MAIL_SERVER=${{ secrets.DEV_MAIL_SERVER }}
+            MAIL_PORT=${{ secrets.DEV_MAIL_PORT }}
+            MAIL_USERNAME=${{ secrets.DEV_MAIL_USERNAME }}
+            MAIL_PASSWORD=${{ secrets.DEV_MAIL_PASSWORD }}
+            MAIL_FROM=${{ secrets.DEV_MAIL_FROM }}
+            MAIL_FROM_NAME=${{ secrets.DEV_MAIL_FROM_NAME }}
+            MAIL_STARTTLS=true
+            MAIL_SSL_TLS=false
+            MINIO_ROOT_USER=${{ secrets.DEV_MINIO_ROOT_USER }}
+            MINIO_ROOT_PASSWORD=${{ secrets.DEV_MINIO_ROOT_PASSWORD }}
+            AUTO_PROCESS_PHOTO=on
+            GEMINI_API_KEY=${{ secrets.DEV_GEMINI_API_KEY }}
+            GEMINI_PHOTO_MODEL=gemini-2.5-flash-image
+            PHOTO_MAX_DIMENSION=1600
+            PHOTO_JPEG_QUALITY=85
             EOF
 
       - name: Copy code to server
@@ -45,7 +61,7 @@ jobs:
           username: ${{ secrets.DEV_DEPLOY_USER }}
           key: ${{ secrets.DEV_DEPLOY_KEY }}
           port: ${{ secrets.DEV_DEPLOY_PORT }}
-          source: "backend,frontend,db,docker-compose.dev.yml"
+          source: "backend,frontend,docker-compose.dev.yml,infrastructure"
           target: ${{ env.APP_DIR }}
 
       - name: Build and deploy containers

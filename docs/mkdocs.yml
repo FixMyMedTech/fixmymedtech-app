@@ -9,9 +9,16 @@ copyright: Maintained by <a href="https://www.careagain.org/">Care Again</a>.
 
 nav:
   - Overview: index.md
-  - Set Up: setup.md
-  - Arquitecture: architecture.md
-
+  - Developers guide:
+  # - Set Up: setup.md
+    - Getting Started: getting_started.md
+    # - Arquitecture: architecture.md
+    - Database Schema: database.md
+    # - Authentication: auth.md
+    # - Deployment: deployment.md
+    - Collaboration: collaboration.md
+  - Code of Conduct: CODE_OF_CONDUCT.md
+  - License: LICENSE
 theme:
   name: material
   logo: images/favicon.svg
@@ -59,7 +66,11 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
   - toc:
       permalink: true

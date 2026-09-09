@@ -14,13 +14,11 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 import asyncio
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from supabase import create_client
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_KEY = os.environ["SUPABASE_API_SECRET_KEY"]
+SCHEMA = os.getenv("DB_SCHEMA", "fixmymedtech")
 DB_URI = os.environ.get(
-    "SUPABASE_DB_URI",
+    "DATABASE_URL",
     "postgresql+asyncpg://postgres:postgres@localhost:5432/fixmymedtech",
 )
 
@@ -85,16 +83,22 @@ USERS = [
 ]
 
 
+def _bcrypt_hash(password: str) -> str:
+    """BCrypt hash matching FastAPI-Users (pwdlib) format $2b$."""
+    from pwdlib import PasswordHash
+    from pwdlib.hashers.bcrypt import BcryptHasher
+    return PasswordHash(hashers=[BcryptHasher()]).hash(password)
+
+
 async def seed():
     engine = create_async_engine(DB_URI, echo=False)
-    sb = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     async with AsyncSession(engine) as db:
         # ── 1. Insert organizations ──────────────────────────
         for org in ORGANIZATIONS:
             await db.execute(
-                text("""
-                    INSERT INTO fixmymedtech.organizations (id, name, country, region, type)
+                text(f"""
+                    INSERT INTO {SCHEMA}.organizations (id, name, country, region, type)
                     VALUES (:id, :name, :country, :region, :type)
                     ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name
                 """),
@@ -103,54 +107,58 @@ async def seed():
         await db.commit()
         print(f"✓ {len(ORGANIZATIONS)} organizations seeded")
 
-        # ── 2. Create users via Supabase Auth + profile ──────
+        # ── 2. Create local users + profile + org membership ──
         for email, password, full_name, role, org_idx in USERS:
             org_id = ORGANIZATIONS[org_idx]["id"]
+            user_id = uuid.uuid4()
 
-            try:
-                res = sb.auth.admin.create_user({
-                    "email": email,
-                    "password": password,
-                    "email_confirm": True,
-                })
-                user_id = res.user.id
-                print(f"  ✓ {email:<30} → {user_id}")
-            except Exception as e:
-                if "already exists" in str(e):
-                    # Try to find existing user
-                    try:
-                        users = sb.auth.admin.list_users()
-                        match = [u for u in users if u.email == email]
-                        if match:
-                            user_id = match[0].id
-                            print(f"  ~ {email:<30} already exists ({user_id})")
-                        else:
-                            print(f"  ✗ {email:<30} {e}")
-                            continue
-                    except Exception as e2:
-                        print(f"  ✗ {email:<30} {e2}")
-                        continue
-                else:
-                    print(f"  ✗ {email:<30} {e}")
-                    continue
-
-            # Insert into auth.users for FK compatibility
-            await db.execute(
-                text("INSERT INTO auth.users (id, email) VALUES (:id, :email) ON CONFLICT (id) DO NOTHING"),
-                {"id": user_id, "email": email},
+            existing = await db.execute(
+                text(f"SELECT id FROM {SCHEMA}.users WHERE email = :email"),
+                {"email": email},
             )
+            row = existing.mappings().first()
+            if row:
+                user_id = row["id"]
+                print(f"  ~ {email:<30} already exists ({user_id})")
+            else:
+                await db.execute(
+                    text(f"""
+                        INSERT INTO {SCHEMA}.users
+                            (id, email, hashed_password, is_active, is_superuser, is_verified, full_name)
+                        VALUES (:id, :email, :pwd, TRUE, FALSE, TRUE, :full_name)
+                    """),
+                    {
+                        "id": str(user_id),
+                        "email": email,
+                        "pwd": _bcrypt_hash(password),
+                        "full_name": full_name,
+                    },
+                )
+                print(f"  ✓ {email:<30} → {user_id}")
 
             # Insert into profiles
             await db.execute(
-                text("""
-                    INSERT INTO fixmymedtech.profiles (id, organization_id, full_name, role)
-                    VALUES (:id, :org_id, :full_name, :role)
+                text(f"""
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name)
+                    VALUES (:id, :username, :full_name)
                     ON CONFLICT (id) DO UPDATE SET
-                        organization_id=EXCLUDED.organization_id,
-                        full_name=EXCLUDED.full_name,
-                        role=EXCLUDED.role
+                        full_name=EXCLUDED.full_name
                 """),
-                {"id": user_id, "org_id": org_id, "full_name": full_name, "role": role},
+                {
+                    "id": str(user_id),
+                    "username": email.split("@")[0].replace(".", "_"),
+                    "full_name": full_name,
+                },
+            )
+
+            # Insert into org_users (junction table)
+            await db.execute(
+                text(f"""
+                    INSERT INTO {SCHEMA}.org_users (profile_id, organization_id, role)
+                    VALUES (:profile_id, :org_id, :role)
+                    ON CONFLICT (profile_id, organization_id) DO UPDATE SET role=EXCLUDED.role
+                """),
+                {"profile_id": str(user_id), "org_id": org_id, "role": role},
             )
 
         await db.commit()

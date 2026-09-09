@@ -25,3 +25,11 @@ docs/site/
 docs/venv/
 /resources
 useful_commands.txt
+frontend/.sesskey
+infrastructure/nginx/nginx.conf
+backend/utils/qr_dom_codes/qr_3765901f-8d68-4dc8-b498-14827630f956.png
+/backend/utils/qr_dom_codes
+/backend/utils/Batch_001
+/scripts/Batch_001
+/scripts/qr_codes
+/scripts/qr_codes_new

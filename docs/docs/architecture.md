@@ -53,9 +53,6 @@ fixmymedtech/
 │       ├── styles.css              ← All CSS — edit this to change the design
 │       └── *.png / *.svg           ← Images and icons
 │
-├── supabase/
-│   └── schema.sql                  ← Run once in Supabase SQL Editor
-│
 ├── docs/                           ← MkDocs documentation
 │   ├── mkdocs.yml
 │   └── docs/*.md
@@ -140,9 +137,9 @@ Supabase provides PostgreSQL, authentication, file storage, and row-level securi
 ### 1. Supabase
 
 1. Create a project at https://supabase.com
-2. Go to **SQL Editor** → paste and run `supabase/schema.sql`
-3. Go to **Authentication → Settings** → disable email confirmation for development
-4. Go to **Project Settings → API** → copy your keys
+2. The schema is applied automatically: backend startup runs the migrations in
+   `infrastructure/migrations/` (tracked in `fixmymedtech.schema_migrations`).
+3. Go to **Project Settings → API** → copy your keys
 
 ### 2. Backend (FastAPI)
 
@@ -150,10 +147,9 @@ Supabase provides PostgreSQL, authentication, file storage, and row-level securi
 cd backend
 cp .env.example .env
 # Edit .env:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_SERVICE_KEY=sb_secret_xxx
-# SUPABASE_ANON_KEY=sb_publishable_xxx
-# FRONTEND_URL=http://localhost:5001
+# DATABASE_URL=postgresql+asyncpg://postgres:xxx@db.your-project.supabase.co:5432/postgres
+# DB_SCHEMA=fixmymedtech
+# FRONTEND_URL=http://localhost:8888
 
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8888
@@ -217,17 +213,18 @@ Services will be available at:
 
 | Variable | Description |
 |----------|-------------|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_SERVICE_KEY` | `sb_secret_xxx` — bypasses RLS, backend only |
-| `SUPABASE_ANON_KEY` | `sb_publishable_xxx` — for token validation |
-| `FRONTEND_URL` | FastHTML URL for CORS (e.g. `http://localhost:5000`) |
+| `DATABASE_URL` | PostgreSQL connection string (asyncpg driver) |
+| `DB_SCHEMA` | Schema the app tables live in (e.g. `fixmymedtech`) |
+| `FRONTEND_URL` | Backend URL used for email links + redirects (e.g. `http://localhost:8888`) |
 
-### Frontend (`frontend/.env`)
+### Frontend
+
+No `.env` file is needed — both variables have working defaults:
 
 | Variable | Description |
 |----------|-------------|
-| `API_URL` | FastAPI URL (e.g. `http://localhost:8000`) |
-| `SESSION_SECRET` | Random string for encrypting session cookies |
+| `API_URL` | FastAPI URL (default `http://localhost:8888`) |
+| `SESSION_SECRET` | Random string for encrypting session cookies (default `dev-secret-change-in-production`) |
 
 ---
 

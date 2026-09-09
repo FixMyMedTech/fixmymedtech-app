@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from config.supabase_config import get_db
+from config.db_config import get_db
 from utils.profile import get_current_profile
 from models.models import Device, FaultReport, MaintenanceLog, Profile
 
@@ -17,18 +17,18 @@ async def get_dashboard_stats(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Devuelve estadísticas agregadas para el dashboard admin:
-    conteo de dispositivos por estado, fallas abiertas, mantenimiento próximo.
-    """
-    org_id = profile.organization_id
+    org_ids = profile.org_ids()
     now = datetime.now(timezone.utc)
     soon = now + timedelta(days=30)
 
-    # ── Conteo de dispositivos por status (agregado en SQL, no en Python) ──
+    device_filter = or_(
+        Device.organization_id.in_(org_ids),
+        Device.organization_maintenance_id.in_(org_ids),
+    )
+
     status_counts_result = await db.execute(
         select(Device.status, func.count(Device.id))
-        .where(Device.organization_id == org_id)
+        .where(device_filter)
         .group_by(Device.status)
     )
     by_status = {"operational": 0, "maintenance": 0, "fault": 0, "decommissioned": 0}
@@ -37,23 +37,21 @@ async def get_dashboard_stats(
 
     total = sum(by_status.values())
 
-    # ── Mantenimiento vencido / próximo (agregado en SQL con func.count + case) ──
     maintenance_result = await db.execute(
         select(
             func.count(case((Device.next_maintenance < now.date(), Device.id))),
             func.count(case((
                 Device.next_maintenance.between(now.date(), soon.date()), Device.id
             ))),
-        ).where(Device.organization_id == org_id)
+        ).where(device_filter)
     )
     overdue_count, due_soon_count = maintenance_result.one()
 
-    # ── Fallas abiertas (con join a Device via relationship) ──
     open_faults_result = await db.execute(
         select(FaultReport)
         .join(Device, FaultReport.device_id == Device.id)
         .options(selectinload(FaultReport.device))
-        .where(Device.organization_id == org_id, FaultReport.status == "open")
+        .where(device_filter, FaultReport.status == "open")
         .order_by(FaultReport.reported_at.desc())
         .limit(10)
     )
@@ -68,12 +66,11 @@ async def get_dashboard_stats(
         for f in open_faults_result.scalars().all()
     ]
 
-    # ── Mantenimiento reciente ──
     recent_maintenance_result = await db.execute(
         select(MaintenanceLog)
         .join(Device, MaintenanceLog.device_id == Device.id)
         .options(selectinload(MaintenanceLog.device))
-        .where(Device.organization_id == org_id)
+        .where(device_filter)
         .order_by(MaintenanceLog.performed_at.desc())
         .limit(5)
     )

@@ -1,6 +1,6 @@
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 import os, httpx
 from dotenv import load_dotenv
 
@@ -29,6 +29,17 @@ async def post_location(req, device_id: str, latitude: float = 0, longitude: flo
     except Exception:
         pass
     return RedirectResponse(f"/device/{device_id}", status_code=303)
+
+
+@rt("/device/{device_id}/photo")
+async def get_photo(req, device_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect: return redirect
+    try:
+        content, ctype = await devices_api.get_device_photo(token, device_id)
+        return Response(content=content, media_type=ctype)
+    except Exception:
+        return Response(status_code=404)
 
 
 @rt("/device/{device_id}")
@@ -66,6 +77,8 @@ async def get(req, device_id: str):
             Td(l.get("description",_("common.fallback")), style="font-size:0.875rem;"),
             Td((l.get("performed_by_profile") or {}).get("full_name",_("common.fallback")), style="font-size:0.875rem;"),
             Td(f"${l['cost_usd']}" if l.get("cost_usd") else _("common.fallback"), style="font-size:0.875rem;"),
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/log/{l['id']}",
+                 cls="btn btn-secondary btn-sm")),
         ) for l in logs
     ]
 
@@ -77,6 +90,8 @@ async def get(req, device_id: str):
             Td(f.get("description",""), style="font-size:0.875rem;"),
             Td(status_badge(f.get("severity","medium"), "severity", lang=lang)),
             Td(status_badge(f.get("status","open"), "fault", lang=lang)),
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/fault/{f['id']}",
+                 cls="btn btn-secondary btn-sm")),
         ) for f in faults
     ]
 
@@ -105,6 +120,12 @@ async def get(req, device_id: str):
             ),
             style="display:flex;align-items:center;gap:12px;background:var(--c-primary-lt);border:1px solid #a7d9ce;border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;"
         ),
+        # Photo
+        Div(
+            Img(src=f"/device/{device_id}/photo?v={d.get('photo_processed_key') or 'original'}", alt=d.get("name", ""),
+                style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
+            cls="card", style="padding:6px;margin-bottom:16px;",
+        ) if d.get("photo_key") else "",
         # Device info
         Div(
             Div(
@@ -176,9 +197,9 @@ async def get(req, device_id: str):
             H3(_("device_detail.history"), style="margin-bottom:12px;"),
             Div(
                 Table(
-                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_technician")), Th(_("device_detail.col_cost")))),
+                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_technician")), Th(_("device_detail.col_cost")), Th(""))),
                     Tbody(*log_rows) if log_rows else Tbody(
-                        Tr(Td(_("device_detail.no_maint"), colspan="5",
+                        Tr(Td(_("device_detail.no_maint"), colspan="6",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
                 style="border:none;border-radius:0;"
@@ -190,9 +211,9 @@ async def get(req, device_id: str):
             H3(_("device_detail.faults"), style="margin-bottom:12px;"),
             Div(
                 Table(
-                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_reported_by")), Th(_("device_detail.col_description")), Th(_("device_detail.col_severity")), Th(_("device_detail.col_status")))),
+                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_reported_by")), Th(_("device_detail.col_description")), Th(_("device_detail.col_severity")), Th(_("device_detail.col_status")), Th(""))),
                     Tbody(*fault_rows) if fault_rows else Tbody(
-                        Tr(Td(_("device_detail.no_faults"), colspan="5",
+                        Tr(Td(_("device_detail.no_faults"), colspan="6",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
                 style="border:none;border-radius:0;"

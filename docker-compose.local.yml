@@ -1,0 +1,103 @@
+name: fixmymedtech-local
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fixmymedtech
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./infrastructure/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fixmymedtech"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8888:8888"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/fixmymedtech
+      DB_SCHEMA: fixmymedtech
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8888}
+      MAIL_SERVER: ${MAIL_SERVER}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
+      MAIL_SSL_TLS: ${MAIL_SSL_TLS:-false}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-dev-local-jwt-secret-change-me}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      MINIO_ENDPOINT: minio:9002
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-fixmymedtech-local}
+      AUTO_PROCESS_PHOTO: ${AUTO_PROCESS_PHOTO:-on}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_PHOTO_MODEL: ${GEMINI_PHOTO_MODEL:-gemini-2.5-flash-image}
+      PHOTO_MAX_DIMENSION: ${PHOTO_MAX_DIMENSION:-1600}
+      PHOTO_JPEG_QUALITY: ${PHOTO_JPEG_QUALITY:-85}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  frontend:
+    platform: linux/arm64
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      API_URL: ${API_URL:-http://backend:8888}
+    ports:
+      - "127.0.0.1:5001:5001"
+    depends_on:
+      - backend
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pg-data:
+  minio-data:

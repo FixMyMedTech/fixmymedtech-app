@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+.env.*
+venv
+*.pem
+careagain-hetzner*
+scripts
+resources
+docs

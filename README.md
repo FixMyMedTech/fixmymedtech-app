@@ -1,87 +1,122 @@
-# FixMyMedTech — Architecture Guide
+# FixMyMedTech 
 
-Medical equipment management platform for LMICs (Low and Middle Income Countries).
+> A platform that gives biomedical engineers the knowledge, tools, and community to diagnose, repair, and maintain medical equipment — anywhere on the continent.
 
-**Stack:** FastAPI (REST backend) + FastHTML (frontend) + Supabase (database & auth)
+**Fix My MedTech** is an open-source platform where biomedical engineers tag, track, diagnose, and repair medical devices. It is built around the realities of the field: devices that arrive without manuals, without spare
+parts, and often already degraded — in environments where heat, humidity, dust and unstable power accelerate failure far beyond what manufacturers expect.
+
+| Pillar | What it does |
+|--------|--------------|
+| **Tag & Map** | Register every device with a QR tag; clinics scan to report issues instantly; every device appears on a continent-wide map. |
+| **Access Documentation** | User manuals, maintenance guides, schematics and diagrams gathered in one place — available offline. |
+| **AI-Guided Repair** | An assistant that helps engineers navigate documentation, structure root-cause analysis, and find the right repair path. |
+| **Source Spare Parts** | A virtual inventory connects engineers with available parts across clinics and suppliers — buy, sell, or trade within the network. |
+
+Three pillars shape the project: **mapping** (the first structured, continent-wide
+map of devices in the field), **repair** (a structured repair co-pilot, not a chatbot),
+and **community** (open source, crowdsourced knowledge, engineers helping each
+other across borders). The long-term vision is to move from repair hubs to
+**manufacturing hubs** in every African country — assembling devices locally with
+3D printing, CNC, laser cutting and PCB fabrication.
+
+Built by and for biomedical engineers (Cameroon — Spain — Belgium). The platform
+is free for engineers.
+
+📚 **Full documentation:** <https://fixmymedtech.github.io/fixmymedtech-app/>
 
 ---
 
-## Architecture overview
+## Quick start
 
-```
-Browser
-  │
-  ▼
-FastHTML (port 5000)          ← renders HTML pages, handles sessions
-  │  httpx async requests
-  ▼
-FastAPI (port 8000)           ← REST API, business logic, auth validation
-  │  supabase-py
-  ▼
-Supabase (PostgreSQL)         ← database, auth, file storage
+The fastest way to run the whole stack on your machine — PostgreSQL, MinIO,
+backend and frontend — with no external accounts.
+
+Clone the repo and copy configuration:
+
+```bash
+git clone <repo-url> && cd fixmymedtech-app
+
+cp .env.example .env
 ```
 
-FastHTML is not a traditional frontend — it is a Python web server that generates HTML server-side. There is no JavaScript framework, no build step, and no API calls from the browser. The browser talks only to FastHTML. FastHTML talks to FastAPI. FastAPI talks to Supabase.
+Build and run the docker container:
 
-Authentication uses Supabase JWT tokens stored in **server-side sessions** (cookies). The token never touches the browser directly.
-
----
-
-## Project structure
-
+```bash
+docker compose -f docker-compose.local.yml up --build -d
 ```
-fixmymedtech/
-│
-├── backend/                        ← FastAPI REST API
-│   ├── main.py                     ← App entry point, CORS, router registration
-│   ├── deps.py                     ← Auth helpers, get_current_user
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── routers/
-│       ├── auth.py                 ← POST /api/auth/login, /signup, /logout
-│       ├── devices.py              ← CRUD /api/devices + public QR endpoint
-│       ├── fault_reports.py        ← Fault submission and management
-│       └── dashboard.py            ← Aggregated stats
-│
-├── frontend/                       ← FastHTML frontend server
-│   ├── main.py                     ← All routes and page rendering
-│   ├── api.py                      ← HTTP client (calls FastAPI via httpx)
-│   ├── components.py               ← Reusable UI components, page shells
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── static/
-│       ├── styles.css              ← All CSS — edit this to change the design
-│       └── *.png / *.svg           ← Images and icons
-│
-├── supabase/
-│   └── schema.sql                  ← Run once in Supabase SQL Editor
-│
-├── docs/                           ← MkDocs documentation
-│   ├── mkdocs.yml
-│   └── docs/*.md
-│
-└── docker-compose.yml              ← Runs all services together
+
+| Service | URL |
+|---------|-----|
+| App (FastHTML) | <http://localhost:5001> |
+| API (FastAPI) + Swagger | <http://localhost:8888> · <http://localhost:8888/docs> |
+| Admin portal (SQLAdmin) | <http://localhost:8888/admin/> |
+| MinIO console | <http://localhost:9003> (`minioadmin` / `minioadmin`) |
+
+Creating your first admin (optional — set `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD`
+in the environment to have it done automatically on every startup):
+
+```bash
+docker compose -f docker-compose.local.yml exec backend python utils/create_superuser.py
 ```
 
 ---
 
-## Key design decisions
+## Tech stack
 
-### Why two servers?
+| Layer | Technology |
+|-------|-----------|
+| API server | FastAPI (REST + reverse proxy hub + SQLAdmin admin portal) |
+| Frontend | FastHTML (server-rendered HTML, no SPA / build step) |
+| Auth | FastAPI-Users + JWT (server-side encrypted sessions) |
+| Database | PostgreSQL (hosted on Supabase, or local container) |
+| Object storage | MinIO (S3-compatible) — device photos |
+| Photo processing | Pillow (compress) + rembg / Gemini API (white background) |
+| Deployment | Docker Compose · GitHub Actions · nginx |
+| Docs | MkDocs Material |
 
-FastHTML handles routing and rendering. FastAPI handles data and business logic. This separation means:
+---
 
-- The API can be used independently by mobile apps or third parties later
-- Backend logic stays in FastAPI where it is easier to test
-- FastHTML stays thin — it only fetches data and renders HTML
+## Architecture
 
-### Why server-side sessions?
+```
+Browser (HTTPS)
+   │
+   ▼
+nginx ──► Backend FastAPI  :8888          ← "proxy hub"
+              ├─ serves  /admin   (SQLAdmin admin portal)
+              ├─ serves  /api/*   (REST + auth)
+              ├─ serves  /docs    (Swagger)
+              └─ proxies the UI to FastHTML frontend (frontend:5001)
+                              │   server-side httpx
+                              ▼
+                      FastAPI backend
+                              │
+              ┌───────────────┴────────────────┐
+              ▼                                ▼
+      PostgreSQL (Supabase pooler)     MinIO (device photos)
+```
 
-JWT tokens are stored in encrypted server-side sessions (cookies), not in localStorage or the browser. This is more secure — the token is never exposed to JavaScript or visible in the browser.
+FastHTML is not a traditional frontend — it is a Python web server that renders
+HTML server-side. There is no JavaScript framework, no build step, and the
+browser never calls the API directly. JWT tokens are stored in **encrypted
+server-side sessions** (cookies) and never exposed to the browser.
 
-### Why Supabase?
+---
 
-Supabase provides PostgreSQL, authentication, file storage, and row-level security in one managed service. Row Level Security (RLS) ensures each hospital can only see its own devices and data, enforced at the database level.
+## Device photos
+
+Devices can carry photos of the equipment:
+
+1. **Capture** — take a picture from the device form (browser camera) or upload a file.
+2. **Compress** — the image is EXIF-corrected, downscaled to 1600 px and
+   re-encoded as an optimized JPEG before being stored in MinIO.
+3. **Process (async)** — the photo is re-processed on a background task to get a
+   **pure white background** (local `rembg` U-Net model, or the Gemini
+   "Nano Banana" API if `GEMINI_API_KEY` is set) and stored as a second object.
+4. **Serve** — the detail page shows the white-background version when ready
+   (`processed_…`), falling back to the original.
+
+Turn processing off with `AUTO_PROCESS_PHOTO=off`.
 
 ---
 
@@ -89,161 +124,125 @@ Supabase provides PostgreSQL, authentication, file storage, and row-level securi
 
 | Role | What they can do |
 |------|-----------------|
-| `clinical_staff` | Scan QR codes, view device info, report faults |
-| `technician` | All of the above + update device status, log maintenance |
-| `admin` | All of the above + create/delete devices, manage users |
+| `superuser` | Full access, including the `/admin` SQLAdmin portal and user management |
+| `admin` | Manage hospitals/orgs, devices and users |
+| `technician` | Register devices, maintain equipment, log maintenance |
+| `clinical_staff` / `engineering_staff` | Scan QR codes, view device info, report faults |
 
 ---
 
-## Page map
+## Project structure
 
-| URL | Auth | Who | What |
-|-----|------|-----|------|
-| `/login` | No | Anyone | Sign in |
-| `/signup` | No | Anyone | Create account |
-| `/dashboard` | Yes | Admin / Technician | Stats overview |
-| `/devices` | Yes | Admin / Technician | Device list with filters |
-| `/devices/new` | Yes | Admin / Technician | Register new device |
-| `/devices/{id}` | Yes | Admin / Technician | Device detail, history, faults |
-| `/d/{id}` | **No** | Anyone with QR | Public device page |
-| `/d/{id}/report` | **No** | Anyone with QR | Submit fault report |
+```
+fixmymedtech-app/
+│
+├── backend/                        ← FastAPI REST API
+│   ├── main.py                     ← App entry, CORS, routers, SQLAdmin, UI proxy
+│   ├── admin_auth.py               ← SQLAdmin auth (superuser-only)
+│   ├── migrations.py               ← Auto-applies SQL migrations on startup
+│   ├── config/                     ← db_config, users, email, oauth, storage (MinIO)
+│   ├── models/models.py            ← SQLAlchemy models
+│   ├── routers/                    ← auth, devices, faults, maintenance, dashboard, orgs…
+│   ├── utils/                      ← photo_processing, create_superuser…
+│   └── requirements.txt
+│
+├── frontend/                       ← FastHTML frontend server (server-rendered UI)
+│   ├── main.py                     ← App + page mounting
+│   ├── config/api.py               ← Server-side httpx client → FastAPI
+│   ├── features/                   ← auth, devices, dashboard, profile, tasks, groups…
+│   └── requirements.txt
+│
+├── infrastructure/
+│   ├── migrations/                 ← NNN_name.sql (applied in order, tracked)
+│   ├── db/init.sql                 ← Base schema bootstrap (fresh local DB / new Supabase)
+│   └── nginx/                      ← Sample vhost config for prod/dev servers
+│
+├── docker-compose.yml              ← Production stack (backend + frontend + minio)
+├── docker-compose.dev.yml          ← Dev-server stack (backend + frontend + minio)
+├── docker-compose.local.yml        ← Fully local stack (PostgreSQL + minio + app)
+├── .env.example                    ← Environment template (all services)
+└── docs/                           ← MkDocs source → GitHub Pages
+```
+
+There are three compose stacks:
+
+| Compose file | PostgreSQL | Host ports (app / minio) | Used by |
+|--------------|------------|--------------------------|---------|
+| `docker-compose.local.yml` | local container | `8888` / `5001` / `9002–9003` | local development |
+| `docker-compose.dev.yml` | Supabase (dev) | `8889` / `5002` / `9002–9003` | dev server (`/opt/fixmymedtech-dev`) |
+| `docker-compose.yml` | Supabase (prod) | `8888` / `5001` / `9000–9001` | prod server (`/opt/fixmymedtech`) |
+
+MinIO runs **per environment** (own container + volume), so dev and prod never
+share objects.
 
 ---
 
-## Data flow — QR scan (no login)
+## Database schema
 
-```
-1. Nurse scans QR on device
-2. Browser opens: https://yourdomain.com/d/{device_id}
-3. FastHTML calls: GET {API_URL}/api/devices/public/{device_id}
-4. FastAPI queries Supabase (no auth required for this endpoint)
-5. FastHTML renders device info, manuals, fault report form
-6. Nurse submits fault → FastHTML calls POST /api/faults/public
-7. FastAPI updates Supabase, device status changes to "fault" if critical
-```
+There is no manual schema step:
 
-## Data flow — admin login
-
-```
-1. Admin submits login form
-2. FastHTML calls: POST {API_URL}/api/auth/login
-3. FastAPI calls Supabase Auth → gets JWT token
-4. FastHTML stores token in encrypted session cookie
-5. All subsequent requests include token in Authorization header (server-side)
-6. FastAPI validates token on every protected endpoint via Depends(get_current_user)
-```
+- The backend creates the `fixmymedtech` schema and applies every migration from
+  **`infrastructure/migrations/`** at startup, in filename order, tracked in
+  `fixmymedtech.schema_migrations`.
+- **`infrastructure/db/init.sql`** is the one-time base-schema bootstrap. The
+  local compose mounts it into a fresh PostgreSQL volume automatically; for a
+  brand-new Supabase project, run it once in the SQL Editor before first boot.
 
 ---
 
-## Local development setup
+## Deploy
 
-### 1. Supabase
+- **Dev** — push to `dev` → GitHub Action deploys to `/opt/fixmymedtech-dev`
+  (`docker-compose.dev.yml`).
+- **Prod** — push to `main` → deploys to `/opt/fixmymedtech`
+  (`docker-compose.yml`).
+- Both support `workflow_dispatch` from the Actions tab.
 
-1. Create a project at https://supabase.com
-2. Go to **SQL Editor** → paste and run `supabase/schema.sql`
-3. Go to **Authentication → Settings** → disable email confirmation for development
-4. Go to **Project Settings → API** → copy your keys
+Secrets live in GitHub environments (`DEV_*` / `PROD_*`), written to the server's
+`.env` on each deploy. The nginx vhost proxies HTTPS to the backend port, which
+requires trusting forwarded headers — the backend is started with
+`--forwarded-allow-ips "*"` so the admin portal and link URLs are generated as
+`https://…`.
 
-### 2. Backend (FastAPI)
-
-```bash
-cd backend
-cp .env.example .env
-# Edit .env:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_SERVICE_KEY=sb_secret_xxx
-# SUPABASE_ANON_KEY=sb_publishable_xxx
-# FRONTEND_URL=http://localhost:5001
-
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8888
-
-# API runs at:  {API_URL}
-# Swagger docs: {API_URL}/docs
-```
-
-### 3. Frontend (FastHTML)
-
-```bash
-cd frontend
-cp .env.example .env
-# Edit .env:
-# API_URL=http://localhost:8888
-# SESSION_SECRET=any-random-string
-
-pip install -r requirements.txt
-python main.py
-
-# App runs at: http://localhost:5000
-```
-
-### 4. Documentation (MkDocs)
-
-```bash
-cd docs
-pip install mkdocs-material
-mkdocs serve
-
-# Docs at: http://localhost:8080
-```
-
----
-
-## Production deploy
-
-### With Docker Compose (recommended)
-
-```bash
-cp .env.example .env
-# Fill in all values
-
-docker compose up --build -d
-```
-
-Services will be available at:
-
-| Service | URL |
-|---------|-----|
-| Frontend (FastHTML) | |
-| Backend (FastAPI) | |
-| API docs |  |
-| Documentation |  |
+An admin account can be created automatically on every deploy by setting
+`DEV_SUPERUSER_EMAIL` / `DEV_SUPERUSER_PASSWORD` (and `PROD_*`) secrets — no
+manual step on the server.
 
 ---
 
 ## Environment variables
 
-### Backend (`backend/.env`)
+See `.env.example` in the repo root for the complete set (DB, JWT, SMTP, OAuth,
+MinIO, photo processing, superuser bootstrap). Highlights:
 
-| Variable | Description |
-|----------|-------------|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_SERVICE_KEY` | `sb_secret_xxx` — bypasses RLS, backend only |
-| `SUPABASE_ANON_KEY` | `sb_publishable_xxx` — for token validation |
-| `FRONTEND_URL` | FastHTML URL for CORS (e.g. `http://localhost:5000`) |
-
-### Frontend (`frontend/.env`)
-
-| Variable | Description |
-|----------|-------------|
-| `API_URL` | FastAPI URL (e.g. `http://localhost:8000`) |
-| `SESSION_SECRET` | Random string for encrypting session cookies |
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL asyncpg connection string |
+| `DB_SCHEMA` | App schema (default `fixmymedtech`) |
+| `AUTH_JWT_SECRET` | JWT signing secret (≥ 32 bytes) |
+| `FRONTEND_URL` / `API_URL` | Public URL and internal backend URL |
+| `MINIO_ENDPOINT` / `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` / `MINIO_BUCKET` | Object storage |
+| `AUTO_PROCESS_PHOTO` / `GEMINI_API_KEY` / `PHOTO_MAX_DIMENSION` / `PHOTO_JPEG_QUALITY` | Device photo pipeline |
+| `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` / `SUPERUSER_NAME` | Auto-create admin on startup |
+| `MAIL_SERVER` … / `GOOGLE_CLIENT_ID` … | SMTP email + OAuth login (optional) |
 
 ---
 
 ## QR codes
 
-Each device gets a permanent public URL:
+Each device gets a permanent public URL that requires no login:
 
 ```
-https://yourdomain.com/d/{device_id}
+https://{your-domain}/d/{device_id}
 ```
 
-The UUID never changes. The content behind it updates in the database. To generate a printable QR label:
-
-1. Use the utils/generage_qr.py
-2. Enter the device URL
-3. Download as SVG or PNG
-4. Print on water-resistant label and attach to device
+Scanning the QR opens the device page: specs, documentation, fault reporting and
+maintenance history. The UUID never changes; the content behind it is always live.
 
 ---
+
+## Community
+
+- **Documentation:** <https://fixmymedtech.github.io/fixmymedtech-app/>
+- **Source:** <https://github.com/FixMyMedTech/fixmymedtech-app>
+- Built with ❤️ for biomedical engineers across the continent.

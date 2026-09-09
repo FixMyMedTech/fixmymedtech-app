@@ -1,9 +1,0 @@
-https://{$PROD_DOMAIN:prod.example.org} {
-	encode gzip
-	reverse_proxy 127.0.0.1:5001
-}
-
-https://{$DEV_DOMAIN:dev.example.org} {
-	encode gzip
-	reverse_proxy 127.0.0.1:5002
-}

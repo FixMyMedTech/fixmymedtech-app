@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FixMyMedTech - You've been invited</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        .container {
+            background-color: white;
+            max-width: 400px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .logo {
+            width: 180px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #104f84;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #01a2b5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <img src="{{ logo_url }}" alt="FixMyMedTech Logo" class="logo">
+        <h2>You've been invited to FixMyMedTech</h2>
+        <p>An administrator has created an account for you at FixMyMedTech.</p>
+        <p>Click the button below to set your password and start using the app:</p>
+        <p><a href="{{ link }}" class="button" style="color: #ffffff;">Set your password</a></p>
+        <!-- <p style="word-break: break-all; font-size: 13px;">If the button doesn't work, copy and paste this link into your browser:<br><a href="{{ link }}" style="color: #4d9c8f;">{{ link }}</a></p> -->
+        <p>This link will expire in 1 hour. If you didn't expect this email, you can safely ignore it.</p>
+    </div>
+
+</body>
+</html>

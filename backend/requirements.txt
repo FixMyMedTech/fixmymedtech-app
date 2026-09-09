@@ -8,3 +8,11 @@ pillow
 sqlalchemy 
 asyncpg 
 psycopg2-binary
+authlib
+sqladmin
+itsdangerous
+fastapi-users[sqlalchemy]
+fastapi-mail
+boto3
+rembg
+onnxruntime

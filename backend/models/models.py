@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from sqlalchemy import (
-    Column, String, Text, Integer, Numeric, Float, Date, DateTime,
-    ForeignKey, CheckConstraint, MetaData, event
+    Column, String, Text, Integer, Numeric, Float, Date, DateTime, Boolean,
+    ForeignKey, CheckConstraint, UniqueConstraint, MetaData, event
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
@@ -16,7 +16,7 @@ from sqlalchemy.sql import func
 import uuid
 
 
-SCHEMA = os.getenv("SUPABASE_DB_SCHEMA", "fixmymedtech")
+SCHEMA = os.getenv("DB_SCHEMA", "fixmymedtech")
 metadata = MetaData(schema=SCHEMA)
 
 
@@ -24,19 +24,28 @@ class Base(DeclarativeBase):
     metadata = metadata
 
 # ══════════════════════════════════════════════════════════════
-# AUTH USERS (from Supabase auth.users table) - only add columns I actually need
+# USERS (local auth — identity replaces Supabase auth.users)
 # ══════════════════════════════════════════════════════════════
 
-
-class AuthUser(Base):
+class User(Base):
     __tablename__ = "users"
-    __table_args__ = {
-        "schema": "auth",
-        "extend_existing": True,  # don't try to redefine if already reflected elsewhere
-    }
+    __table_args__ = {"schema": SCHEMA}
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    email = Column(String)
+    id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email          = Column(Text, unique=True, nullable=False)
+    hashed_password = Column(Text)
+    is_active      = Column(Boolean, default=True, nullable=False)
+    is_superuser   = Column(Boolean, default=False, nullable=False)
+    is_verified    = Column(Boolean, default=False, nullable=False)
+    full_name      = Column(Text)
+    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at     = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User {self.email}>"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -63,7 +72,7 @@ class Organization(Base):
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    profiles        = relationship("Profile", back_populates="organization", foreign_keys="Profile.organization_id")
+    org_users       = relationship("OrgUser", back_populates="organization")
     devices         = relationship("Device", back_populates="organization", foreign_keys="Device.organization_id")
     devices_maintained = relationship("Device", back_populates="organization_maintenance", foreign_keys="Device.organization_maintenance_id")
 
@@ -77,28 +86,75 @@ class Organization(Base):
 
 class Profile(Base):
     __tablename__ = "profiles"
+    __table_args__ = {"schema": SCHEMA}
+
+    id              = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.users.id", ondelete="CASCADE"), primary_key=True)
+    username        = Column(Text, unique=True, nullable=False)
+    full_name       = Column(Text)
+    avatar_key      = Column(Text)
+    country         = Column(Text)
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user            = relationship("User", back_populates="profile", lazy="selectin")
+    org_memberships = relationship("OrgUser", back_populates="profile", cascade="all, delete-orphan")
+    maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile", foreign_keys="MaintenanceLog.performed_by")
+    fault_reports   = relationship("FaultReport", back_populates="reported_by_profile", foreign_keys="FaultReport.reported_by")
+
+    def get_role_for_org(self, org_id):
+        for m in self.org_memberships:
+            if m.organization_id == org_id:
+                return m.role
+        return None
+
+    def org_ids(self):
+        return [m.organization_id for m in self.org_memberships]
+
+    @property
+    def role(self):
+        """Return role from first org membership (for display/serialization)."""
+        if self.org_memberships:
+            return self.org_memberships[0].role
+        return None
+
+    @property
+    def organization_id(self):
+        """Return first org membership's org_id (for display/serialization)."""
+        if self.org_memberships:
+            return self.org_memberships[0].organization_id
+        return None
+
+    def __repr__(self):
+        return f"<Profile {self.full_name}>"
+
+
+# ══════════════════════════════════════════════════════════════
+# ORG-USERS (junction: profile ↔ organization + role)
+# ══════════════════════════════════════════════════════════════
+
+class OrgUser(Base):
+    __tablename__ = "org_users"
     __table_args__ = (
+        UniqueConstraint("profile_id", "organization_id", name="uq_org_user_profile_org"),
         CheckConstraint(
             "role IN ('admin', 'technician', 'clinical_staff', 'engineering_staff')",
-            name="profiles_role_check"
+            name="org_users_role_check"
         ),
         {"schema": SCHEMA},
     )
 
-    id              = Column(UUID(as_uuid=True), ForeignKey(f"auth.users.id", ondelete="CASCADE"), primary_key=True)  # References auth.users
-    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"),nullable=False)
-    full_name       = Column(Text)
-    role            = Column(Text, nullable=False, default="clinical_staff")
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="CASCADE"), nullable=False)
+    role            = Column(Text, nullable=False, default="admin")
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    organization    = relationship("Organization", back_populates="profiles", foreign_keys=[organization_id])
-    maintenance_logs = relationship("MaintenanceLog", back_populates="performed_by_profile")
-    fault_reports   = relationship("FaultReport", back_populates="reported_by_profile")
-    auth_user = relationship("AuthUser", backref="profile", lazy="selectin")
+    profile      = relationship("Profile", back_populates="org_memberships")
+    organization = relationship("Organization", back_populates="org_users")
 
     def __repr__(self):
-        return f"<Profile {self.full_name} ({self.role})>"
+        return f"<OrgUser {self.profile_id} → {self.organization_id} ({self.role})>"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -154,7 +210,10 @@ class Device(Base):
     location                    = Column(Text)
     latitude                    = Column(Float)
     longitude                   = Column(Float)
+    photo_key                   = Column(Text)
+    photo_processed_key         = Column(Text)
     status                      = Column(Text, default="operational")
+    registered_by               = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"), nullable=True)
     last_maintenance            = Column(Date)
     next_maintenance            = Column(Date)
     notes                       = Column(Text)
@@ -165,6 +224,7 @@ class Device(Base):
     organization             = relationship("Organization", back_populates="devices", foreign_keys=[organization_id])
     organization_maintenance = relationship("Organization", back_populates="devices_maintained", foreign_keys=[organization_maintenance_id])
     category                 = relationship("DeviceCategory", back_populates="devices")
+    registered_by_profile    = relationship("Profile", foreign_keys=[registered_by])
     documents                = relationship("Document", back_populates="device", cascade="all, delete-orphan")
     maintenance_logs         = relationship("MaintenanceLog", back_populates="device", cascade="all, delete-orphan")
     fault_reports            = relationship("FaultReport", back_populates="device", cascade="all, delete-orphan")
@@ -216,22 +276,33 @@ class MaintenanceLog(Base):
             "type IN ('preventive', 'corrective', 'inspection')",
             name="maintenance_logs_type_check"
         ),
+        CheckConstraint(
+            "status IN ('open', 'in_progress', 'closed')",
+            name="maintenance_logs_status_check"
+        ),
         {"schema": SCHEMA},
     )
 
     id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     device_id       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"), nullable=False)
     performed_by    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    assigned_to     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
     performed_at    = Column(DateTime(timezone=True), server_default=func.now())
     type            = Column(Text, nullable=False)
     description     = Column(Text)
     parts_replaced  = Column(Text)
     cost_usd        = Column(Numeric(10, 2))
     next_due        = Column(Date)
+    status          = Column(Text, default="open", nullable=False)
 
     # Relationships
     device                  = relationship("Device", back_populates="maintenance_logs")
-    performed_by_profile    = relationship("Profile", back_populates="maintenance_logs")
+    performed_by_profile    = relationship("Profile", back_populates="maintenance_logs", foreign_keys=[performed_by])
+    assigned_to_profile     = relationship(
+        "Profile",
+        foreign_keys=[assigned_to],
+        primaryjoin="Profile.id == MaintenanceLog.assigned_to",
+    )
 
     def __repr__(self):
         return f"<MaintenanceLog {self.type} on {self.device_id} at {self.performed_at}>"
@@ -259,16 +330,27 @@ class FaultReport(Base):
     device_id           = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"), nullable=False)
     reported_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
     reporter_name       = Column(Text)
+    assigned_to         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
     reported_at         = Column(DateTime(timezone=True), server_default=func.now())
     description         = Column(Text, nullable=False)
     severity            = Column(Text, default="medium")
     status              = Column(Text, default="open")
     resolved_at         = Column(DateTime(timezone=True))
     resolution_notes    = Column(Text)
+    photo_key           = Column(Text)
 
     # Relationships
     device                  = relationship("Device", back_populates="fault_reports")
-    reported_by_profile     = relationship("Profile", back_populates="fault_reports")
+    reported_by_profile     = relationship(
+        "Profile",
+        back_populates="fault_reports",
+        foreign_keys=[reported_by],
+    )
+    assigned_to_profile     = relationship(
+        "Profile",
+        foreign_keys=[assigned_to],
+        primaryjoin="Profile.id == FaultReport.assigned_to",
+    )
 
     def __repr__(self):
         return f"<FaultReport {self.severity} on {self.device_id} [{self.status}]>"

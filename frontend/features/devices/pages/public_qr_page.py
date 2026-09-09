@@ -143,11 +143,6 @@ async def get(req, device_id: str):
     ]
 
     content = Div(
-        # Header
-        Div(
-            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
-            cls="pub-header"
-        ),
         # Device identity
         Div(
             Div(cat.get("icon","🏥"), cls="dev-icon"),
@@ -311,11 +306,6 @@ async def get_fault_public(req, device_id: str, fault_id: str):
             )
 
     content = Div(
-        # Header
-        Div(
-            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
-            cls="pub-header"
-        ),
         # Title
         Div(
             A(_("public_qr.back"), href=f"/d/{device_id}",
@@ -408,11 +398,6 @@ async def get_fault_edit(req, device_id: str, fault_id: str):
         assignees = []
 
     content = Div(
-        # Header
-        Div(
-            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
-            cls="pub-header"
-        ),
         # Title
         Div(
             A(_("public_qr.back"), href=f"/d/{device_id}/fault/{fault_id}",
@@ -527,11 +512,6 @@ async def get_log_public(req, device_id: str, log_id: str):
             )
 
     content = Div(
-        # Header
-        Div(
-            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
-            cls="pub-header"
-        ),
         # Title
         Div(
             A(_("public_qr.back"), href=f"/d/{device_id}",
@@ -601,11 +581,6 @@ async def get_log_edit(req, device_id: str, log_id: str):
         assignees = []
 
     content = Div(
-        # Header
-        Div(
-            Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"),
-            cls="pub-header"
-        ),
         # Title
         Div(
             A(_("public_qr.back"), href=f"/d/{device_id}/log/{log_id}",

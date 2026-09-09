@@ -11,7 +11,7 @@ import features.dashboard.api as dashboard_api
 
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import pub_shell
+from components import auth_shell
 rt = APIRouter()
 
 
@@ -111,7 +111,7 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
         method="post", action="/login"
     )
 
-    return pub_shell(form, title=_("title.login"), lang=lang)
+    return auth_shell(form, title=_("title.login"), lang=lang)
 
 
 @rt("/login")
@@ -178,7 +178,7 @@ async def post(req, email: str, password: str, next: str = ""):
             ),
             cls="auth-wrap"
         )
-        return pub_shell(Form(form_error, method="post", action="/login"),
+        return auth_shell(Form(form_error, method="post", action="/login"),
                         title=_("title.login"), lang=lang)
 
 

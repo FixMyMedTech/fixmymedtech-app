@@ -7,7 +7,7 @@ load_dotenv()
 
 import features.auth.api as auth_api
 from i18n import t as make_t
-from components import pub_shell
+from components import auth_shell
 
 rt = APIRouter()
 
@@ -60,7 +60,7 @@ async def get(req, token: str = ""):
     _ = make_t(lang)
     if not token:
         return RedirectResponse("/login", status_code=302)
-    return pub_shell(_reset_form(_, token), title=_("title.reset"), lang=lang)
+    return auth_shell(_reset_form(_, token), title=_("title.reset"), lang=lang)
 
 
 @rt("/reset-password")
@@ -75,7 +75,7 @@ async def post(req, token: str, password: str, password2: str):
     if not errors:
         try:
             await auth_api.reset_password(token=token, password=password)
-            return pub_shell(
+            return auth_shell(
                 Div(
                     Div(
                         Div("✓", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
@@ -99,5 +99,5 @@ async def post(req, token: str, password: str, password2: str):
         except Exception as e:
             errors.append(str(e))
 
-    return pub_shell(_reset_form(_, token, errors=errors),
+    return auth_shell(_reset_form(_, token, errors=errors),
                      title=_("title.reset"), lang=lang)

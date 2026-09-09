@@ -97,7 +97,6 @@ def _guide_page(guide, lang):
     ))
 
     page = Div(
-        Div(Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"), cls="pub-header"),
         Div(
             Div("🔧", style="width:52px;height:52px;background:var(--c-primary-lt);color:var(--c-primary);border-radius:12px;font-size:1.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"),
             H1(content["title"], style="margin-bottom:4px;"),
@@ -123,17 +122,13 @@ async def get(req, slug: str):
     if not guide:
         return HTMLResponse(str(pub_shell(
             Div(
-                Div(Div(Span("✚", cls="pub-cross"), f" {_('brand')}", cls="pub-logo"), cls="pub-header"),
-                Div(
-                    Div("⚠", style="width:52px;height:52px;background:var(--c-amber-lt);color:var(--c-amber);border-radius:12px;font-size:1.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"),
-                    H2(_("guide.not_found")),
-                    P(_("guide.not_found_msg"), style="margin-bottom:16px;"),
-                    A(_("guide.back"), href="/devices", cls="btn btn-primary",
-                      style="text-decoration:none;"),
-                    style="text-align:center;padding:60px 24px;"
-                ),
-                cls="pub-page"
+                Div("⚠", style="width:52px;height:52px;background:var(--c-amber-lt);color:var(--c-amber);border-radius:12px;font-size:1.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"),
+                H2(_("guide.not_found")),
+                P(_("guide.not_found_msg"), style="margin-bottom:16px;"),
+                A(_("guide.back"), href="/devices", cls="btn btn-primary",
+                  style="text-decoration:none;"),
+                style="text-align:center;padding:60px 24px;"
             ),
-            lang=lang
-        )), status_code=404)
+            cls="pub-page"
+        ), lang=lang), status_code=404)
     return _guide_page(guide, lang)

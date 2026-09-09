@@ -9,7 +9,7 @@ load_dotenv()
 import features.auth.api as auth_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import pub_shell
+from components import auth_shell
 
 rt = APIRouter()
 
@@ -101,7 +101,7 @@ async def get(req):
     if auth_helper.get_token(req):
         return RedirectResponse("/home", status_code=302)
 
-    return pub_shell(
+    return auth_shell(
         Form(_signup_form(_), method="post", action="/signup"),
         title=_("title.signup"), lang=lang
     )
@@ -122,7 +122,7 @@ async def post(req, full_name: str, email: str, password: str, password2: str):
             await auth_api.signup(
                 email=email, password=password, full_name=full_name,
             )
-            return pub_shell(
+            return auth_shell(
                 Div(
                     Div(
                         Div("✓", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
@@ -144,7 +144,7 @@ async def post(req, full_name: str, email: str, password: str, password2: str):
             except Exception:
                 pass
             if e.response.status_code == 409 and error_detail == "user_already_exists":
-                return pub_shell(
+                return auth_shell(
                     Div(
                         Div(
                             Div("📧", style="width:56px;height:56px;background:var(--c-orange-lt,#fff3e0);color:var(--c-orange,#e65100);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
@@ -163,7 +163,7 @@ async def post(req, full_name: str, email: str, password: str, password2: str):
         except Exception as e:
             errors.append(str(e))
 
-    return pub_shell(
+    return auth_shell(
         Form(
             _signup_form(_, errors=errors, values={"full_name": full_name, "email": email}),
             method="post", action="/signup"

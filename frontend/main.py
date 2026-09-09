@@ -14,14 +14,14 @@ from components import set_current_user
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
-from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,maintenance_log,fault_detail,maintenance_log_detail
+from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,maintenance_log,maintenance_log_detail
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
 from features.profile import pages as profile_pages
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page
-from features.faults.pages import report_page
+from features.faults.pages import report_page, fault_detail
 from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")

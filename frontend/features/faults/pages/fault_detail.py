@@ -54,7 +54,53 @@ async def get(req, device_id: str, fault_id: str):
         (_("fault_detail.resolved_at"), fmt_date(fault.get("resolved_at", ""))),
     ]
 
+    layout_css = Style("""
+        .fault-detail-grid { display:grid; grid-template-columns:1fr; gap:16px; }
+        @media (min-width:900px) { .fault-detail-grid { grid-template-columns:1fr 340px; align-items:start; } }
+        .fault-detail-photo { width:100%; height:auto; border-radius:var(--r-md); }
+    """)
+
+    info_card = Div(
+        H3(_("fault_detail.info"), style="margin-bottom:12px;"),
+        Dl(
+            *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
+                  style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;gap:16px;")
+              for k, v in rows],
+        ),
+        cls="card",
+    )
+
+    description_card = Div(
+        H3(_("fault_detail.description"), style="margin-bottom:12px;"),
+        P(fault.get("description", ""),
+          style="font-size:0.9rem;white-space:pre-wrap;"),
+        cls="card",
+    )
+
+    photo_card = Div(
+        H3(_("fault_detail.photo"), style="margin-bottom:12px;"),
+        Img(src=f"/device/{device_id}/fault/{fault.get('id')}/photo?v={fault.get('photo_key') or 'x'}",
+            alt=_("fault_detail.photo"),
+            cls="fault-detail-photo"),
+        cls="card",
+    )
+
+    resolution_card = Div(
+        H3(_("fault_detail.resolution"), style="margin-bottom:12px;"),
+        P(fault.get("resolution_notes", _("fault_detail.no_resolution")),
+          style="font-size:0.9rem;white-space:pre-wrap;color:var(--c-text-2);"),
+        cls="card",
+    ) if fault.get("resolution_notes") else ""
+
+    details_col = Div(
+        info_card,
+        description_card,
+        resolution_card,
+        style="display:flex;flex-direction:column;gap:16px;min-width:0;",
+    )
+
     content = Div(
+        layout_css,
         A(_("device_detail.back"), href=f"/device/{device_id}",
           style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;margin-bottom:14px;display:inline-block;"),
         Div(
@@ -67,35 +113,10 @@ async def get(req, device_id: str, fault_id: str):
             cls="page-header", style="margin-bottom:14px;"
         ),
         Div(
-            Div(
-                H3(_("fault_detail.info"), style="margin-bottom:12px;"),
-                Dl(
-                    *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
-                          style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;gap:16px;")
-                      for k, v in rows],
-                ),
-                cls="card", style="margin-bottom:16px;"
-            ),
-            Div(
-                H3(_("fault_detail.description"), style="margin-bottom:12px;"),
-                P(fault.get("description", ""),
-                  style="font-size:0.9rem;white-space:pre-wrap;"),
-                cls="card", style="margin-bottom:16px;"
-            ),
-            Div(
-                H3(_("fault_detail.photo"), style="margin-bottom:12px;"),
-                Img(src=f"/device/{device_id}/fault/{fault.get('id')}/photo?v={fault.get('photo_key') or 'x'}",
-                    alt=_("fault_detail.photo"),
-                    style="width:100%;max-height:320px;object-fit:cover;border-radius:var(--r-md);"),
-                cls="card", style="margin-bottom:16px;",
-            ) if fault.get("photo_key") else "",
-            Div(
-                H3(_("fault_detail.resolution"), style="margin-bottom:12px;"),
-                P(fault.get("resolution_notes", _("fault_detail.no_resolution")),
-                  style="font-size:0.9rem;white-space:pre-wrap;color:var(--c-text-2);"),
-                cls="card",
-            ) if fault.get("resolution_notes") else "",
-        ),
+            details_col,
+            photo_card,
+            cls="fault-detail-grid",
+        ) if fault.get("photo_key") else details_col,
     )
 
     return page_shell(content, current="/devices", lang=lang, title=f"{_('title.device_detail')}")

@@ -82,42 +82,25 @@ async def get(req, device_id: str):
                 cls="form-group"
             ),
             Div(
-                Label(_("report_fault.severity_label"), cls="label"),
-                Div(
-                    *[Label(Input(type="radio", name="severity", value=v,
-                                  checked=(v=="medium")),
-                             f" {_severity_text(_(f'report_fault.severity_{v}'))}",
-                             style="display:block;padding:8px 10px;margin-bottom:6px;font-size:0.875rem;cursor:pointer;")
-                      for v in ["low", "medium", "high", "critical"]],
-                )
-            ),
-            Div(
-                Label(_("report_fault.name_label"), cls="label"),
-                Div(full_name, cls="input",
-                    style="opacity:.7;"),
-                cls="form-group", style="margin-top:12px;"
-            ),
-            assignee_field,
-            Div(
                 H3(_("report_fault.photo"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
                 P(_("report_fault.photo_desc"), style="font-size:0.85rem;color:var(--c-text-3);margin-bottom:14px;"),
                 Div(
                     Div(
                         Button(_("report_fault.photo_take_label"), type="button", id="fault-open-camera",
-                               cls="btn btn-secondary", onclick="faultOpenCamera()"),
+                                cls="btn btn-secondary", onclick="faultOpenCamera()"),
                         Button(_("report_fault.photo_capture_label"), type="button", id="fault-capture-photo",
-                               cls="btn btn-primary", style="display:none;", onclick="faultCapturePhoto()"),
+                                cls="btn btn-primary", style="display:none;", onclick="faultCapturePhoto()"),
                         Button(_("report_fault.photo_close_label"), type="button", id="fault-close-camera",
-                               cls="btn btn-secondary", style="display:none;", onclick="faultStopCamera()"),
+                                cls="btn btn-secondary", style="display:none;", onclick="faultStopCamera()"),
                         style="display:flex;gap:10px;margin-bottom:10px;"
                     ),
                     Video(id="fault-camera-view", autoplay=True, playsinline=True, muted=True,
-                          style="display:none;width:100%;max-height:280px;border-radius:8px;margin-bottom:10px;background:#000;"),
+                            style="display:none;width:100%;max-height:280px;border-radius:8px;margin-bottom:10px;background:#000;"),
                     Div(
                         Div(Label(_("report_fault.photo_choose_label"), cls="label", for_="fault-photo-file"),
                             Input(type="file", id="fault-photo-file", name="photo",
-                                  accept="image/*", cls="input",
-                                  onchange="faultPreviewPhoto(this)"),
+                                    accept="image/*", cls="input",
+                                    onchange="faultPreviewPhoto(this)"),
                             cls="form-group"),
                     ),
                     Div(
@@ -195,6 +178,23 @@ async def get(req, device_id: str):
                 ),
                 cls="card", style="margin-bottom:14px;"
             ),
+            Div(
+                Label(_("report_fault.severity_label"), cls="label"),
+                Div(
+                    *[Label(Input(type="radio", name="severity", value=v,
+                                  checked=(v=="medium")),
+                             f" {_severity_text(_(f'report_fault.severity_{v}'))}",
+                             style="display:block;padding:8px 10px;margin-bottom:6px;font-size:0.875rem;cursor:pointer;")
+                      for v in ["low", "medium", "high", "critical"]],
+                )
+            ),
+            Div(
+                Label(_("report_fault.name_label"), cls="label"),
+                Div(full_name, cls="input",
+                    style="opacity:.7;"),
+                cls="form-group", style="margin-top:12px;"
+            ),
+            assignee_field,
             Button(_("report_fault.submit"), type="submit", cls="btn btn-primary",
                    style="width:100%;justify-content:center;margin-top:8px;"),
             style="padding:16px;"

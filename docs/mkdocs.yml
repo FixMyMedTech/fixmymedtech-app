@@ -12,7 +12,7 @@ nav:
   - Developers guide:
   # - Set Up: setup.md
     - Getting Started: getting_started.md
-    - Arquitecture: architecture.md
+    # - Arquitecture: architecture.md
     - Database Schema: database.md
     # - Authentication: auth.md
     # - Deployment: deployment.md

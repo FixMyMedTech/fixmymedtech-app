@@ -24,6 +24,15 @@ import os
 router = APIRouter()
 
 
+def add_months(d: date, months: int) -> date:
+    month_index = d.month - 1 + months
+    year = d.year + month_index // 12
+    month = month_index % 12 + 1
+    import calendar
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
 class DeviceCreate(BaseModel):
     id: Optional[UUID] = None
     name: str
@@ -204,6 +213,7 @@ async def create_device(
 
     payload = body.model_dump(exclude_none=True)
     payload.pop("organization_id", None)
+    payload.setdefault("next_maintenance", add_months(date.today(), 6))
     device = Device(
         **payload,
         organization_id=org_id,

@@ -16,7 +16,7 @@
 
 ## 💬 Do you want to collaborate?
 
-If you have questions: [contact us](collaboration)
+If you have questions: [contact us](collaboration.md)
 
 ## 📄 License
 
@@ -24,4 +24,4 @@ This project is licensed under the [Apache 2.0](LICENSE).
 
 ## 📄 Code of conduct
 
-This project follows thsi [Code of Conduct](CODE_OF_CONDUCT).
+This project follows thsi [Code of Conduct](CODE_OF_CONDUCT.md).

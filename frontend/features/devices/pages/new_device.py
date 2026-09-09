@@ -333,42 +333,24 @@ async def get(req,device_id: str):
             cls="card", style="margin-bottom:14px;"
         ),
         Div(
-            H3(_("new_device.location_acquisition"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
+            H3(_("new_device.location"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
             Div(
-                Div(Label(_("new_device.org_label"), cls="label", for_="organization_id"),
-                    Select(*org_options, id="organization_id", name="organization_id", cls="input"),
-                    cls="form-group"),
-                cls="form-row"
-            ),
-            Div(
-                Div(Label(_("new_device.location_label"), cls="label"),
-                    Input(name="location", cls="input", placeholder=_("new_device.location_placeholder")),
-                    cls="form-group"),
-                Div(Label(_("new_device.acquisition_label"), cls="label"),
-                    Select(Option(_("new_device.acquisition_purchased"), value="purchased"),
-                        Option(_("new_device.acquisition_donated"), value="donated"),
-                        Option(_("new_device.acquisition_leased"), value="leased"),
-                        name="acquisition_type", cls="input"),
-                    cls="form-group"),
-                cls="form-row"
-            ),
-            Div(
-                Div(Label(_("new_device.acquisition_date"), cls="label"),
-                    Input(name="acquisition_date", type="date", cls="input"),
-                    cls="form-group"),
-                Div(Label(_("new_device.next_maint"), cls="label"),
-                    Input(name="next_maintenance", type="date", cls="input"),
-                    cls="form-group"),
-                cls="form-row"
-            ),
-            Div(
-                Input(type="hidden", id="loc-lat", name="latitude", value=""),
-                Input(type="hidden", id="loc-lng", name="longitude", value=""),
-                Button(
-                    "📍 " + _("new_device.capture_location"),
-                    type="button", cls="btn btn-secondary btn-sm",
-                    onclick="captureLoc()",
-                    style="margin-top:8px;"
+                Div(
+                    Button(
+                        "📍 " + _("new_device.capture_location"),
+                        type="button", cls="btn btn-secondary btn-sm",
+                        onclick="captureLoc()",
+                        style="align-self:flex-centre;white-space:nowrap;flex-shrink:0;"
+                    ),
+                    Div(Label(_("new_device.latitude"), cls="label", for_="loc-lat"),
+                        Input(id="loc-lat", name="latitude", cls="input",
+                              placeholder=_("new_device.latitude_placeholder")),
+                        cls="form-group", style="flex:1 1 0;min-width:0;"),
+                    Div(Label(_("new_device.longitude"), cls="label", for_="loc-lng"),
+                        Input(id="loc-lng", name="longitude", cls="input",
+                              placeholder=_("new_device.longitude_placeholder")),
+                        cls="form-group", style="flex:1 1 0;min-width:0;"),
+                    style="display:flex;gap:14px;align-items:flex-centre;"
                 ),
                 Script("""
                 function captureLoc() {
@@ -380,6 +362,34 @@ async def get(req,device_id: str):
                 }
                 """),
                 cls="form-group",
+            ),
+            Div(
+                Div(Label(_("new_device.location_label"), cls="label"),
+                    Input(name="location", cls="input", placeholder=_("new_device.location_placeholder")),
+                    cls="form-group"),
+                cls="form-row"
+            ),
+            Div(
+                Div(Label(_("new_device.org_label"), cls="label", for_="organization_id"),
+                    Select(*org_options, id="organization_id", name="organization_id", cls="input"),
+                    cls="form-group"),
+                cls="form-row"
+            ),
+            cls="card", style="margin-bottom:14px;"
+        ),
+        Div(
+            H3(_("new_device.acquisition_optional"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
+            Div(
+                Div(Label(_("new_device.acquisition_label"), cls="label"),
+                    Select(Option(_("new_device.acquisition_purchased"), value="purchased"),
+                        Option(_("new_device.acquisition_donated"), value="donated"),
+                        Option(_("new_device.acquisition_leased"), value="leased"),
+                        name="acquisition_type", cls="input"),
+                    cls="form-group"),
+                Div(Label(_("new_device.acquisition_date"), cls="label"),
+                    Input(name="acquisition_date", type="date", cls="input"),
+                    cls="form-group"),
+                cls="form-row"
             ),
             cls="card", style="margin-bottom:14px;"
         ),
@@ -530,7 +540,6 @@ async def post(req, device_id: str):
     if field("location"):        payload["location"]         = field("location")
     if field("acquisition_type"):payload["acquisition_type"] = field("acquisition_type")
     if field("acquisition_date"):payload["acquisition_date"] = field("acquisition_date")
-    if field("next_maintenance"):payload["next_maintenance"] = field("next_maintenance")
     if field("notes"):           payload["notes"]            = field("notes")
 
     try:

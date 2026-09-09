@@ -134,6 +134,7 @@ erDiagram
         text status
         timestamptz resolved_at
         text resolution_notes
+        text photo_key
     }
 ```
 
@@ -311,6 +312,7 @@ a public QR link).
 | `status` | TEXT | Yes | `open` | `CHECK` in (`open`, `assigned`, `in_progress`, `resolved`) |
 | `resolved_at` | TIMESTAMPTZ | Yes | — | |
 | `resolution_notes` | TEXT | Yes | — | |
+| `photo_key` | TEXT | Yes | — | MinIO key of the attached photo, e.g. `faults/<uuid>/photo_<hex>.jpg`; stored as-is (no background processing) |
 
 ---
 

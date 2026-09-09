@@ -3,7 +3,9 @@
 All application tables live in a single PostgreSQL schema, `fixmymedtech`, and
 are created/updated by the ordered SQL files in
 `infrastructure/migrations/`, applied automatically at backend startup
-(tracked in `fixmymedtech.schema_migrations`).
+(tracked in `fixmymedtech.schema_migrations`). `000_initial_schema.sql` is the
+base bootstrap — it creates every base table (idempotently), so even a brand-new
+empty database (e.g. a fresh Supabase project) migrates cleanly on first boot.
 
 **Conventions**
 

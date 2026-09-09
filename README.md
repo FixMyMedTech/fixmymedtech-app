@@ -184,9 +184,10 @@ There is no manual schema step:
 - The backend creates the `fixmymedtech` schema and applies every migration from
   **`infrastructure/migrations/`** at startup, in filename order, tracked in
   `fixmymedtech.schema_migrations`.
-- **`infrastructure/db/init.sql`** is the one-time base-schema bootstrap. The
-  local compose mounts it into a fresh PostgreSQL volume automatically; for a
-  brand-new Supabase project, run it once in the SQL Editor before first boot.
+- **`infrastructure/db/init.sql`** is the local one-time base-schema bootstrap
+  (includes demo seed data). The local compose mounts it into a fresh PostgreSQL
+  volume automatically. For a brand-new Supabase project there is no manual step:
+  `000_initial_schema.sql` bootstraps the base tables on first backend boot.
 
 ---
 

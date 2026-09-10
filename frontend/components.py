@@ -547,6 +547,44 @@ function initSidebar(){
     document.body.classList.add('sidebar-collapsed');
   }
 }
+/* Shared client-side image compression (keeps uploads under nginx 1MB limit).
+   Returns a Promise resolving to a JPEG Blob. Falls back to smaller size /
+   lower quality until the result is under ~900KB. */
+function fmmCompressImage(file, maxSize, quality){
+  return new Promise(function (resolve, reject) {
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function () {
+      var target = 900 * 1024;
+      function attempt(size, q){
+        var scale = Math.min(1, size / Math.max(img.width, img.height));
+        var w = Math.max(1, Math.round(img.width * scale));
+        var h = Math.max(1, Math.round(img.height * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function (blob) {
+          if (!blob) { reject(new Error('compress failed')); return; }
+          if (blob.size > target && (size > 320 || q > 0.5)) {
+            attempt(Math.round(size * 0.75), Math.max(0.45, q - 0.12));
+          } else {
+            resolve(blob);
+          }
+        }, 'image/jpeg', q);
+      }
+      attempt(maxSize, quality);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('load failed')); };
+    img.src = url;
+  });
+}
+function fmmSetFiles(input, blob, filename){
+  try {
+    var dt = new DataTransfer();
+    dt.items.add(new File([blob], filename, { type: 'image/jpeg' }));
+    input.files = dt.files;
+  } catch (e) { /* leave original file if unsupported */ }
+}
 document.addEventListener('click', function(e){
   var wrap = document.getElementById('avatar-wrap');
   var menu = document.getElementById('avatar-menu');

@@ -151,14 +151,14 @@ async def get(req, device_id: str):
                         canvas.getContext('2d').drawImage(video, 0, 0);
                         canvas.toBlob(function (blob) {
                             if (!blob) return;
-                            const file = new File([blob], 'camera_photo.jpg', { type: blob.type || 'image/jpeg' });
-                            const dt = new DataTransfer();
-                            dt.items.add(file);
-                            document.getElementById('fault-photo-file').files = dt.files;
-                            const img = document.getElementById('fault-photo-preview');
-                            img.src = URL.createObjectURL(blob);
-                            img.style.display = 'inline-block';
-                            faultStopCamera();
+                            fmmCompressImage(new File([blob], 'camera_photo.jpg', { type: 'image/jpeg' }), 1024, 0.8)
+                                .then(function (cb) {
+                                    fmmSetFiles(document.getElementById('fault-photo-file'), cb, 'camera_photo.jpg');
+                                    const img = document.getElementById('fault-photo-preview');
+                                    img.src = URL.createObjectURL(cb);
+                                    img.style.display = 'inline-block';
+                                    faultStopCamera();
+                                }).catch(function () { faultStopCamera(); });
                         }, 'image/jpeg', 0.92);
                     }
 
@@ -171,6 +171,9 @@ async def get(req, device_id: str):
                                 img.style.display = 'inline-block';
                             };
                             reader.readAsDataURL(input.files[0]);
+                            fmmCompressImage(input.files[0], 1024, 0.8).then(function (blob) {
+                                fmmSetFiles(input, blob, input.files[0].name.replace(/\\.[^.]+$/, '') + '.jpg');
+                            }).catch(function () {});
                         }
                     }
                     """),

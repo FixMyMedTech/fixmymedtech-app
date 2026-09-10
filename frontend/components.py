@@ -122,6 +122,7 @@ a { color: var(--c-primary); text-decoration: none; }
   border-radius: var(--r-sm); background: var(--c-primary); color: #fff;
   font-size: .95rem; font-weight: 600;
 }
+.brand-logo { height: 30px; width: auto; flex-shrink: 0; display: block; }
 .brand-sub { color: var(--c-text-3); font-weight: 500; font-size: .82rem; }
 .top-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
@@ -566,7 +567,7 @@ def topbar(authenticated: bool, current: str = "", lang: str = "en"):
     return Header(
         *left,
         A(
-            Span("✚", cls="brand-mark"),
+            Img(src="/static/fixmymedtech_logo.png", cls="brand-logo", alt="FixMyMedTech"),
             Span("FixMyMedTech", cls="brand"),
             Span("Operations Console", cls="brand-sub"),
             href="/home" if authenticated else "/",
@@ -770,3 +771,16 @@ def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en"):
         }}
         """)
     )
+
+def assignee_options(assignees, current: str = "", lang: str = "en"):
+    _ = make_t(lang)
+    opts = [Option(_("maintenance_log.assignee_none"), value="",
+                   selected=(not current))]
+    for a in assignees:
+        role_label = _("role." + (a.get("role") or "technician"))
+        opts.append(Option(
+            f"{a.get('full_name','')} — {role_label}",
+            value=a["id"],
+            selected=(str(a["id"]) == str(current)),
+        ))
+    return opts

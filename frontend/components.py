@@ -323,8 +323,8 @@ tr:hover td { background:var(--c-bg-2); }
 }
 .input-lang:focus { border-color:var(--c-primary); }
 
-/* Public pages: content starts below the fixed top bar */
-.pub-page { padding-top: var(--topbar-h); }
+/* Public pages (no sidebar): content starts below the fixed top bar */
+.public-shell .pub-page { padding-top: var(--topbar-h); }
 
 /* Mobile: drawer sidebar */
 .sb-toggle, .sb-close, .sb-backdrop { display:none; }
@@ -544,8 +544,15 @@ initSidebar();
 """
 
 
+def is_authenticated() -> bool:
+    """True when the current request carries a logged-in session."""
+    u = current_user_ctx()
+    return bool(u.get("name") or u.get("username") or u.get("email"))
+
+
 def topbar(authenticated: bool, current: str = "", lang: str = "en"):
     _ = make_t(lang)
+    authenticated = authenticated or is_authenticated()
     left = []
     if authenticated:
         left.append(Button("☰", id="sb-toggle", cls="togg-btn", aria_label="Toggle sidebar",
@@ -573,6 +580,7 @@ def topbar(authenticated: bool, current: str = "", lang: str = "en"):
 
 def shell(content, title: str = "FixMyMedTech", lang: str = "en",
           authenticated: bool = False, current: str = ""):
+    authenticated = authenticated or is_authenticated()
     if authenticated:
         body_inner = Div(
             Div(id="sb-backdrop", cls="sb-backdrop", onclick="toggleSidebar(false)"),
@@ -608,7 +616,8 @@ def page_shell(content, current: str = "", title: str = "FixMyMedTech",
 
 
 def pub_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
-    """Public shell (QR pages, home) — same top bar as private, no sidebar/avatar."""
+    """Public shell (QR pages, home) — full top bar + sidebar; avatar only when
+    signed in, otherwise a Sign-in button."""
     return shell(content, title=title, lang=lang, authenticated=False)
 
 

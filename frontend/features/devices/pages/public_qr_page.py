@@ -61,12 +61,12 @@ async def get(req, device_id: str):
     if maint_slug in GUIDE_INDEX:
         user_guide_btn = A(Span("ⓘ", style="font-size:1.3rem;"),
                                     Div(_("public_qr.user_guide")),
-                                    href=f"/device/maintenace_guide/{maint_slug}",
+                                    href=f"/device/{device_id}/maintenace_guide/{maint_slug}",
                                     cls="btn btn-secondary btn-sm",
                                     style="margin-left:6px;justify-content:center;")
         maint_guide_btn = A(Span("🔧", style="font-size:1.3rem;"),
                             Div(_("public_qr.maint_guide")),
-                            href=f"/device/maintenace_guide/{maint_slug}",
+                            href=f"/device/{device_id}/maintenace_guide/{maint_slug}",
                             cls="btn btn-secondary btn-sm",
                             style="margin-left:6px;justify-content:center;")
     else:
@@ -142,7 +142,22 @@ async def get(req, device_id: str):
         ) for l in logs
     ]
 
+    # BBack to private page when logged in
+    back_ref = ""
+    token = auth_helper.get_token(req)
+    if token:
+        try:
+            me = await auth_api.get_me(token)
+            back_ref = Div(
+                A(_("public_qr.back"), href=f"/device/{device_id}",
+                    style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:14px;display:inline-block;"),
+                cls="pub-section"
+            )
+        except Exception:
+            me = {}
+
     content = Div(
+        back_ref,
         # Device identity
         Div(
             Div(cat.get("icon","🏥"), cls="dev-icon"),

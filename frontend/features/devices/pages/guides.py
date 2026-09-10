@@ -57,7 +57,7 @@ def _fault_table(faults, _):
     )
 
 
-def _guide_page(guide, lang):
+def _guide_page(guide, lang, device_id):
     _ = make_t(lang)
     content = guide.get(lang) or guide
     cards = []
@@ -98,6 +98,8 @@ def _guide_page(guide, lang):
 
     page = Div(
         Div(
+            A(_("public_qr.back"), href=f"/d/{device_id}",
+              style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:14px;display:inline-block;"),
             Div("🔧", style="width:52px;height:52px;background:var(--c-primary-lt);color:var(--c-primary);border-radius:12px;font-size:1.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"),
             H1(content["title"], style="margin-bottom:4px;"),
             P(_("guide.first_line"),
@@ -114,8 +116,8 @@ def _guide_page(guide, lang):
     return pub_shell(page, title=f"{content['title']} — {_('guide.maint_title')}", lang=lang)
 
 
-@rt("/device/maintenace_guide/{slug}")
-async def get(req, slug: str):
+@rt("/device/{device_id}/maintenace_guide/{slug}")
+async def get(req, device_id: str, slug: str):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     guide = GUIDE_INDEX.get(slug)
@@ -125,10 +127,10 @@ async def get(req, slug: str):
                 Div("⚠", style="width:52px;height:52px;background:var(--c-amber-lt);color:var(--c-amber);border-radius:12px;font-size:1.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"),
                 H2(_("guide.not_found")),
                 P(_("guide.not_found_msg"), style="margin-bottom:16px;"),
-                A(_("guide.back"), href="/devices", cls="btn btn-primary",
+                A(_("guide.back"), href=f"/d/{device_id}", cls="btn btn-primary",
                   style="text-decoration:none;"),
                 style="text-align:center;padding:60px 24px;"
             ),
             cls="pub-page"
         ), lang=lang), status_code=404)
-    return _guide_page(guide, lang)
+    return _guide_page(guide, lang, device_id)

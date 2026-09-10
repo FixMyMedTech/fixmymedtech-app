@@ -1,20 +1,14 @@
 from fasthtml.common import *
-from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
-import os, httpx
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # __ API imports __
 import features.auth.helper as auth_helper
-import features.dashboard.api as dashboard_api
-import features.devices.api as devices_api
 import features.faults.api as faults_api
+import features.maintenance.api as maintenance_api
+import features.auth.api as auth_api
 
 from components import *
-from components import page_shell, status_badge, fmt_date
-import features.auth.api as auth_api
+from components import page_shell
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -121,7 +115,7 @@ async def post(req, device_id: str, description: str = "",
         data["assigned_to"] = assigned_to
 
     try:
-        await devices_api.create_maintenance_log(token, data)
+        await maintenance_api.create_maintenance_log(token, data)
     except Exception:
         pass
 

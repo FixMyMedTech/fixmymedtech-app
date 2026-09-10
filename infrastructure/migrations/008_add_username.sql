@@ -2,7 +2,7 @@
 -- Add unique username to profiles, auto-generated from full_name.
 
 -- 1. Add the column (nullable first, for migration)
-ALTER TABLE fixmymedtech.profiles ADD COLUMN username TEXT;
+ALTER TABLE fixmymedtech.profiles ADD COLUMN IF NOT EXISTS username TEXT;
 
 -- 2. Generate usernames for existing profiles
 --    Format: slugified full_name + random 4-digit suffix, e.g. "john.smith4827"
@@ -31,5 +31,15 @@ BEGIN
 END $$;
 
 -- 3. Now enforce NOT NULL + UNIQUE
-ALTER TABLE fixmymedtech.profiles ALTER COLUMN username SET NOT NULL;
-ALTER TABLE fixmymedtech.profiles ADD CONSTRAINT uq_profiles_username UNIQUE (username);
+--    Skip when the column already has these (fresh base schemas).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'uq_profiles_username'
+      AND conrelid = 'fixmymedtech.profiles'::regclass
+  ) THEN
+    ALTER TABLE fixmymedtech.profiles ALTER COLUMN username SET NOT NULL;
+    ALTER TABLE fixmymedtech.profiles ADD CONSTRAINT uq_profiles_username UNIQUE (username);
+  END IF;
+END $$;

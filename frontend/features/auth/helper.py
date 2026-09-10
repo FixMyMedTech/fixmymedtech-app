@@ -37,6 +37,13 @@ async def verify_token(req) -> bool:
     except Exception:
         return True  # network errors don't mean token is invalid
 
+def user_can_edit(me, device_org_id):
+    """Check if user has admin/technician role in the device's organization."""
+    for org in me.get("organizations", []):
+        if org["id"] == device_org_id and org.get("role") in ("admin", "technician"):
+            return True
+    return False
+
 def require_auth(req):
     """
     Fast check — just verifies session has a token.

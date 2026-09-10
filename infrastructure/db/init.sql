@@ -11,6 +11,14 @@ CREATE TABLE IF NOT EXISTS auth.users (
   email   TEXT
 );
 
+-- auth.uid() used by RLS policies on fixmymedtech tables (Supabase has a real
+-- one; local needs this stub so migrations 007 can create policies).
+CREATE OR REPLACE FUNCTION auth.uid()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+AS 'SELECT NULL::uuid';
+
 -- Main app schema
 CREATE SCHEMA IF NOT EXISTS fixmymedtech;
 

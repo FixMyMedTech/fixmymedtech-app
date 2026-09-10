@@ -14,14 +14,15 @@ from components import set_current_user
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
-from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,maintenance_log,maintenance_log_detail
+from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
 from features.profile import pages as profile_pages
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page
-from features.faults.pages import report_page, fault_detail
+from features.faults.pages import report_page, fault_detail, public_fault
+from features.maintenance.pages import public_log, maintenance_log, maintenance_log_detail
 from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
@@ -31,7 +32,7 @@ app, route = fast_app(secret_key=SECRET,
                       live=True,
                       hdrs=(
                         Script(src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"),
-                        Link(rel="icon", href="/favicon.ico"),
+                        Link(rel="icon", type="image/png", href="/static/logo_BW_white.png"),
                     )
     )
                     
@@ -110,6 +111,8 @@ device_list.rt.to_app(app)
 dashboard.rt.to_app(app)
 home_pages.rt.to_app(app)
 public_qr_page.rt.to_app(app)
+public_fault.rt.to_app(app)
+public_log.rt.to_app(app)
 new_device.rt.to_app(app)
 report_page.rt.to_app(app)
 maintenance_log.rt.to_app(app)

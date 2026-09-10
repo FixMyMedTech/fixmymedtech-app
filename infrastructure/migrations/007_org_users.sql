@@ -14,11 +14,23 @@ CREATE TABLE IF NOT EXISTS fixmymedtech.org_users (
 );
 
 -- 2. Migrate existing data from profiles → org_users
-INSERT INTO fixmymedtech.org_users (profile_id, organization_id, role)
-SELECT id, organization_id, role
-FROM fixmymedtech.profiles
-WHERE organization_id IS NOT NULL
-ON CONFLICT DO NOTHING;
+--    Only applies to legacy schemas that still have the old per-profile
+--    organization_id/role columns (new bases already use org_users).
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'fixmymedtech'
+      AND table_name = 'profiles'
+      AND column_name = 'organization_id'
+  ) THEN
+    INSERT INTO fixmymedtech.org_users (profile_id, organization_id, role)
+    SELECT id, organization_id, role
+    FROM fixmymedtech.profiles
+    WHERE organization_id IS NOT NULL
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
 
 -- 3. Drop old columns from profiles
 ALTER TABLE fixmymedtech.profiles DROP COLUMN IF EXISTS role;

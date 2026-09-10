@@ -1,16 +1,11 @@
 from fasthtml.common import *
-from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
-import os, httpx
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # __ API imports __
 import features.auth.helper as auth_helper
-import features.devices.api as devices_api
+import features.maintenance.api as maintenance_api
 
-from components import page_shell, status_badge, fmt_date
+from components import page_shell, fmt_date
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -27,7 +22,7 @@ async def get(req, device_id: str, log_id: str):
     _ = make_t(lang)
 
     try:
-        log = await devices_api.get_maintenance_log(token, log_id)
+        log = await maintenance_api.get_maintenance_log(token, log_id)
     except Exception:
         return RedirectResponse(f"/device/{device_id}", status_code=302)
 

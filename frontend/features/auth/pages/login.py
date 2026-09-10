@@ -66,7 +66,7 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
             Div(
                 Div(
                     Span(
-                        Img(src=os.getenv("LOGO_URL"),
+                        Img(src=os.getenv("LOGO_URL") or "/static/fixmymedtech_africa.png",
                         style="height:56px; width:auto; display:block; margin-bottom:10px;"),
                         cls="brand-icon"
                     ),
@@ -143,7 +143,7 @@ async def post(req, email: str, password: str, next: str = ""):
                 Input(type="hidden", name="next", value=next),
                 Div(
                     Span(
-                        Img(src=os.getenv("LOGO_URL"),
+                        Img(src=os.getenv("LOGO_URL") or "/static/fixmymedtech_africa.png",
                         style="height:56px; width:auto; display:block; margin-bottom:10px;"),
                         cls="brand-icon"
                     ),

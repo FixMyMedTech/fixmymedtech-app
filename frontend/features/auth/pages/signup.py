@@ -20,7 +20,7 @@ def _signup_form(t, errors=None, values=None):
     fields = Div(
         Div(
             Span(
-                Img(src=os.getenv("LOGO_URL"),
+                Img(src=os.getenv("LOGO_URL") or "/static/fixmymedtech_africa.png",
                     style="height:56px; width:auto; display:block; margin-bottom:10px;"),
                 cls="brand-icon"),
             H1(t("signup.heading")),

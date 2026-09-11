@@ -283,8 +283,13 @@ def _fault_edit_form(fault, device_id, assignees, lang):
                 if (input.files && input.files[0]) {
                     const preview = document.getElementById('fault-edit-photo-preview');
                     const reader = new FileReader();
-                    reader.onload = function (e) { preview.src = e.target.result; };
+                    reader.onload = function (e) {
+                        if (preview) preview.src = e.target.result;
+                    };
                     reader.readAsDataURL(input.files[0]);
+                    fmmCompressImage(input.files[0], 1024, 0.8).then(function (blob) {
+                        fmmSetFiles(input, blob, input.files[0].name.replace(/\\.[^.]+$/, '') + '.jpg');
+                    }).catch(function () {});
                 }
             }
             """),

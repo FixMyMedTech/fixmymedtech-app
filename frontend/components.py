@@ -149,9 +149,10 @@ a { color: var(--c-primary); text-decoration: none; }
 .nav-ico { width: 18px; flex-shrink: 0; text-align: center; font-size: 1rem; }
 .sb-foot {
   padding: 12px 14px; border-top: 1px solid var(--c-border);
-  font-size: .7rem; color: var(--c-text-3); font-family: var(--font-mono);
-  white-space: nowrap; overflow: hidden;
+  display: flex; flex-direction: column; gap: 8px;
 }
+.sb-foot .input-lang { width: 100%; }
+.sb-foot .theme-btn { width: 100%; height: 34px; }
 .main {
   margin-left: var(--sidebar-w); flex: 1;
   padding: calc(var(--topbar-h) + 22px) 28px 32px;
@@ -314,6 +315,8 @@ tr:hover td { background:var(--c-bg-2); }
 .avatar-menu-email { font-size:.75rem; color:var(--c-text-3); overflow-wrap:anywhere; }
 .avatar-menu a { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r-md); font-size:.875rem; font-weight:500; color:var(--c-text-2); text-decoration:none; }
 .avatar-menu a:hover { background:var(--c-bg-2); color:var(--c-primary); }
+.avatar-menu form { padding: 0 8px 4px; }
+.avatar-menu .input-lang { width: 100%; }
 
 /* Language select */
 .input-lang {
@@ -425,6 +428,11 @@ def sidebar(current: str = "", lang: str = "en"):
               for href, icon, label in links],
             cls="sb-nav"
         ),
+        Div(
+            language_switcher(lang),
+            theme_toggle(),
+            cls="sb-foot"
+        ),
         cls="sidebar",
         id="app-sidebar"
     )
@@ -433,7 +441,7 @@ def sidebar(current: str = "", lang: str = "en"):
 def language_switcher(current_lang: str):
     options = []
     for code, name in LANGUAGES.items():
-        options.append(Option(name, value=code, selected=(code == current_lang)))
+        options.append(Option(code.upper(), value=code, selected=(code == current_lang)))
     return Form(
         Select(*options, name="lang", cls="input-lang",
                onchange="this.form.submit()"),
@@ -478,6 +486,12 @@ def avatar_menu(lang: str = "en"):
             ),
             A("◉ " + _("nav.profile"), href="/profile"),
             A("➜] " + _("nav.logout"), href="/logout"),
+            Div(
+                Div(_("lang.label"),
+                    style="font-size:.7rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;margin:4px 12px;"),
+                language_switcher(lang),
+                style="border-top:1px solid var(--c-border);padding-top:8px;margin-top:6px;"
+            ),
             id="avatar-menu", cls="avatar-menu",
         ),
         cls="avatar-wrap",
@@ -533,6 +547,44 @@ function initSidebar(){
     document.body.classList.add('sidebar-collapsed');
   }
 }
+/* Shared client-side image compression (keeps uploads under nginx 1MB limit).
+   Returns a Promise resolving to a JPEG Blob. Falls back to smaller size /
+   lower quality until the result is under ~900KB. */
+function fmmCompressImage(file, maxSize, quality){
+  return new Promise(function (resolve, reject) {
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function () {
+      var target = 900 * 1024;
+      function attempt(size, q){
+        var scale = Math.min(1, size / Math.max(img.width, img.height));
+        var w = Math.max(1, Math.round(img.width * scale));
+        var h = Math.max(1, Math.round(img.height * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function (blob) {
+          if (!blob) { reject(new Error('compress failed')); return; }
+          if (blob.size > target && (size > 320 || q > 0.5)) {
+            attempt(Math.round(size * 0.75), Math.max(0.45, q - 0.12));
+          } else {
+            resolve(blob);
+          }
+        }, 'image/jpeg', q);
+      }
+      attempt(maxSize, quality);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('load failed')); };
+    img.src = url;
+  });
+}
+function fmmSetFiles(input, blob, filename){
+  try {
+    var dt = new DataTransfer();
+    dt.items.add(new File([blob], filename, { type: 'image/jpeg' }));
+    input.files = dt.files;
+  } catch (e) { /* leave original file if unsupported */ }
+}
 document.addEventListener('click', function(e){
   var wrap = document.getElementById('avatar-wrap');
   var menu = document.getElementById('avatar-menu');
@@ -558,12 +610,13 @@ def topbar(authenticated: bool, current: str = "", lang: str = "en"):
     if authenticated:
         left.append(Button("☰", id="sb-toggle", cls="togg-btn", aria_label="Toggle sidebar",
                            onclick="toggleSidebar()"))
-    right = [language_switcher(lang), theme_toggle()]
+    right = []
     if authenticated:
         right.append(avatar_menu(lang))
     else:
-        right.insert(0, A(_("login.signin"), href="/login",
-                          cls="btn btn-secondary btn-sm"))
+        right = [A(_("login.signin"), href="/login",
+                    cls="btn btn-secondary btn-sm"),
+                    language_switcher(lang)]
     return Header(
         *left,
         A(

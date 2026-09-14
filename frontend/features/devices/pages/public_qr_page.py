@@ -1,4 +1,5 @@
 from fasthtml.common import *
+from starlette.responses import Response
 
 # __ API imports __
 import features.auth.helper as auth_helper
@@ -15,6 +16,15 @@ rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 # PUBLIC QR PAGE
 # ══════════════════════════════════════════════════════════════
+
+@rt("/d/{device_id}/photo")
+async def get_device_photo_public(device_id: str):
+    try:
+        content, ctype = await devices_api.get_device_photo_public(device_id)
+        return Response(content=content, media_type=ctype)
+    except Exception:
+        return Response(status_code=404)
+
 
 @rt("/d/{device_id}")
 async def get(req, device_id: str):
@@ -209,6 +219,15 @@ async def get(req, device_id: str):
             ),
             cls="pub-section"
         ),
+        # Device photo
+        Div(
+            H3(_("Photo"),
+                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
+            Img(src=f"/d/{device_id}/photo?v={d.get('photo_processed_key') or 'original'}",
+                alt=d.get("name", ""),
+                style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
+            cls="pub-section",
+        ) if d.get("photo_key") else "",
         # Map
         Div(
             H3(_("public_qr.location_map"),

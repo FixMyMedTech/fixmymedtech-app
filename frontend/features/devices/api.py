@@ -13,6 +13,12 @@ async def get_device(token: str, device_id: str):
 async def get_device_public(device_id: str):
     return await _get(f"/api/devices/public/{device_id}")
 
+async def get_device_photo_public(device_id: str):
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{API_URL}/api/devices/public/{device_id}/photo")
+        r.raise_for_status()
+        return r.content, r.headers.get("content-type", "image/jpeg")
+
 async def get_categories():
     return await _get("/api/devices/categories")
 

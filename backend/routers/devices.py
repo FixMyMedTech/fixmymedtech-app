@@ -109,6 +109,21 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
     }
 
 
+@router.get("/public/{device_id}/photo")
+async def get_device_photo_public(device_id: UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device or not device.photo_key:
+        raise HTTPException(status_code=404, detail="No photo")
+
+    key = device.photo_processed_key or device.photo_key
+    obj = await get_file(key)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Photo not found in storage")
+    content, ctype = obj
+    return FastAPIResponse(content=content, media_type=ctype)
+
+
 @router.get("/")
 async def list_devices(
     status: Optional[str] = None,

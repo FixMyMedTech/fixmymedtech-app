@@ -3,7 +3,7 @@ from urllib.parse import quote, urlparse
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
-import os, httpx
+import os, json, httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -170,6 +170,77 @@ async def get(req, device_id: str, selected: str = ""):
                        selected=selected)
 
 
+def _wizard_script(device_id: str, step_tmpl: str):
+    js = """
+(function () {
+    const KEY = @@STEP_KEY@@;
+    const TMPL = @@STEP_TMPL@@;
+    const stepEls = Array.from(document.querySelectorAll('[data-step]'));
+    const total = stepEls.length;
+    const form = document.getElementById('device-form');
+    const backBtn = document.getElementById('step-back');
+    const nextBtn = document.getElementById('step-next');
+    const regBtn = document.getElementById('step-register');
+    const labelEl = document.getElementById('step-label');
+    if (!form || !stepEls.length) return;
+
+    function fmt(n) { return String(TMPL).replace('{c}', n).replace('{n}', total); }
+
+    function show(n) {
+        n = Math.min(Math.max(1, n), total);
+        stepEls.forEach(function (el, i) { el.style.display = (i + 1 === n) ? '' : 'none'; });
+        labelEl.textContent = fmt(n);
+        backBtn.style.display = (n === 1) ? 'none' : '';
+        nextBtn.style.display = (n === total) ? 'none' : '';
+        regBtn.style.display = (n === total) ? '' : 'none';
+        window.scrollTo({ top: form.getBoundingClientRect().top + window.scrollY - 60, behavior: 'smooth' });
+    }
+
+    function save() {
+        try {
+            const d = {};
+            form.querySelectorAll('input[name],select[name],textarea[name]').forEach(function (el) {
+                if (el.type === 'file') return;
+                d[el.name] = (el.type === 'checkbox') ? (el.checked ? 'on' : '') : el.value;
+            });
+            sessionStorage.setItem(KEY, JSON.stringify(d));
+            sessionStorage.setItem(KEY + '.step', String(current));
+        } catch (e) {}
+    }
+
+    let current = 1;
+    try {
+        const s = sessionStorage.getItem(KEY + '.step');
+        if (s) current = parseInt(s, 10) || 1;
+        const raw = sessionStorage.getItem(KEY);
+        if (raw) {
+            const d = JSON.parse(raw);
+            const skipHs = new URLSearchParams(location.search).has('selected');
+            Object.keys(d).forEach(function (name) {
+                if (name === 'healthsite_id' && skipHs) return;
+                const el = form.elements[name];
+                if (!el || el.type === 'file') return;
+                try {
+                    if (el.type === 'checkbox') el.checked = d[name] === 'on';
+                    else el.value = d[name];
+                } catch (e2) {}
+            });
+        }
+    } catch (e) {}
+
+    show(current);
+    form.addEventListener('input', save);
+    form.addEventListener('change', save);
+    window.wStep = function (delta) {
+        current = Math.min(Math.max(1, current + delta), total);
+        show(current);
+    };
+})();
+"""
+    return (js.replace("@@STEP_KEY@@", json.dumps(f"fmm_new_{device_id}"))
+             .replace("@@STEP_TMPL@@", json.dumps(step_tmpl)))
+
+
 def _device_form(lang, device_id: str, orgs, selected: str = ""):
     _ = make_t(lang)
 
@@ -190,6 +261,10 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
     hs_options = [Option(_("new_device.select_healthsite"), value="")]
     for o in orgs:
         hs_options.append(Option(o["name"], value=o["id"], selected=(o["id"] == selected)))
+
+    step_back = _("new_device.wizard_back")
+    step_next = _("new_device.wizard_next")
+    step_script = _wizard_script(device_id, _("new_device.wizard_step"))
 
     return Form(
         A(_("new_device.back"), href="/devices",
@@ -246,7 +321,7 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                 """),
                 cls="form-row"
             ),
-            cls="card", style="margin-bottom:14px;"
+            cls="card", style="margin-bottom:14px;", data_step="1"
         ),
         Div(
             H3(_("new_device.photo"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
@@ -346,7 +421,7 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                 """),
                 cls="form-group",
             ),
-            cls="card", style="margin-bottom:14px;"
+            cls="card", style="margin-bottom:14px;", data_step="2"
         ),
         Div(
             H3(_("new_device.location"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
@@ -407,7 +482,7 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                     cls="form-group"),
                 cls="form-row"
             ),
-            cls="card", style="margin-bottom:14px;"
+            cls="card", style="margin-bottom:14px;", data_step="3"
         ),
         Div(
             H3(_("new_device.acquisition_optional"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
@@ -432,19 +507,30 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                     cls="form-group"),
                 cls="form-row"
             ),
-            cls="card", style="margin-bottom:14px;"
+            cls="card", style="margin-bottom:14px;", data_step="4"
         ),
         Div(
             H3(_("new_device.notes"), style="font-size:1rem;margin-bottom:14px;color:var(--c-text-2);"),
             Div(Textarea(name="notes", cls="input", placeholder=_("new_device.notes_placeholder"), rows="3"),
                 cls="form-group"),
-            cls="card", style="margin-bottom:14px;"
+            cls="card", style="margin-bottom:14px;", data_step="5"
         ),
         Div(
-            A(_("new_device.cancel"), href="/devices", cls="btn btn-secondary"),
-            Button(_("new_device.register"), type="submit", cls="btn btn-primary"),
-            style="display:flex;justify-content:flex-end;gap:10px;"
+            Button(step_back, id="step-back", type="button", cls="btn btn-secondary",
+                   onclick="wStep(-1)", style="display:none;"),
+            Div(
+                A(_("new_device.cancel"), href="/devices", cls="btn btn-secondary"),
+                Span(id="step-label", style="font-size:0.875rem;color:var(--c-text-3);font-weight:600;"),
+                Button(step_next, id="step-next", type="button", cls="btn btn-primary",
+                       onclick="wStep(1)"),
+                Button(_("new_device.register"), id="step-register", type="submit", cls="btn btn-primary",
+                       style="display:none;"),
+                style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"
+            ),
+            style="display:flex;justify-content:space-between;align-items:center;gap:10px;"
         ),
+        Script(step_script),
+        id="device-form",
         method="post", action=f"/device/{device_id}/new",
         enctype="multipart/form-data",
         style="max-width:720px;"

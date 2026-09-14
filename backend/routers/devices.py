@@ -48,6 +48,7 @@ class DeviceCreate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     notes: Optional[str] = None
+    last_maintenance: Optional[date] = None
     next_maintenance: Optional[date] = None
 
 

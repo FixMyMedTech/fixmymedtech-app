@@ -40,3 +40,13 @@ async def _patch(path: str, data: dict, token: str = None):
         r = await client.patch(f"{API_URL}{path}", json=data, headers=headers)
         _raise(r)
         return r.json()
+
+
+async def _delete(path: str, token: str = None):
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    async with httpx.AsyncClient() as client:
+        r = await client.delete(f"{API_URL}{path}", headers=headers)
+        _raise(r)
+        if r.status_code == 204:
+            return {}
+        return r.json()

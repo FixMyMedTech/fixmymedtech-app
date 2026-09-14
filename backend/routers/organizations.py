@@ -18,6 +18,8 @@ class OrgUpdate(BaseModel):
     name: Optional[str] = None
     country: Optional[str] = None
     contact_email: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 @router.get("/")
@@ -40,7 +42,23 @@ async def get_my_organizations(
     orgs = result.scalars().all()
     if not orgs:
         raise HTTPException(status_code=403, detail="No organizations found")
-    return orgs
+    return [
+        {
+            "id": str(o.id),
+            "name": o.name,
+            "country": o.country,
+            "region": o.region,
+            "type": o.type,
+            "contact_email": o.contact_email,
+            "osm_id": o.osm_id,
+            "osm_type": o.osm_type,
+            "latitude": o.latitude,
+            "longitude": o.longitude,
+            "source": o.source,
+            "role": profile.get_role_for_org(o.id),
+        }
+        for o in orgs
+    ]
 
 
 @router.patch("/{org_id}")
@@ -73,6 +91,10 @@ async def update_organization(
         org.country = body.country
     if body.contact_email is not None:
         org.contact_email = body.contact_email
+    if body.latitude is not None:
+        org.latitude = body.latitude
+    if body.longitude is not None:
+        org.longitude = body.longitude
 
     await db.commit()
     await db.refresh(org)

@@ -327,6 +327,10 @@ tr:hover td { background:var(--c-bg-2); }
 }
 .input-lang:focus { border-color:var(--c-primary); }
 
+/* Organization healthsites manager */
+.hs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; }
+.hs-grid > div { min-width:0; }
+
 /* Public pages (no sidebar): content starts below the fixed top bar */
 .public-shell .pub-page { padding-top: var(--topbar-h); }
 
@@ -364,6 +368,31 @@ tr:hover td { background:var(--c-bg-2); }
   .form-row { grid-template-columns:1fr; }
   .profile-basic { flex-direction:column; gap:8px; }
 }
+
+/* Modal dialogs: center on screen with a dimmed backdrop */
+dialog {
+  margin:auto;
+  position:fixed;
+  inset:0;
+  width:fit-content;
+  height:fit-content;
+  max-width:calc(100vw - 32px);
+  max-height:calc(100vh - 32px);
+  overflow:auto;
+}
+dialog::backdrop {
+  background:rgba(15,23,42,.45);
+}
+
+/* Loading spinner (used by healthsites search, etc.) */
+.spinner {
+  width:16px; height:16px; flex-shrink:0;
+  border:2px solid rgba(37,99,235,.25);
+  border-top-color:var(--c-primary);
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
 """
 
 
@@ -402,10 +431,10 @@ def sidebar(current: str = "", lang: str = "en"):
     _ = make_t(lang)
     links = [
         ("/home",     "⌂", _("nav.home")),
-        ("/dashboard", "◈", _("nav.dashboard")),
+        ("/dashboard", "📊", _("nav.dashboard")), #◈
         ("/devices",   "⊞", _("nav.devices")),
-        ("/tasks",     "☐", _("nav.tasks")),
-        ("/groups",    "⊞", _("nav.groups")),
+        ("/tasks",     "📋", _("nav.tasks")), #☐
+        ("/groups",    "🏢", _("nav.groups")),
         ("/profile",   "◉", _("nav.profile")),
         ("/logout",   "➜]", _("nav.logout")),
     ]

@@ -59,6 +59,10 @@ class Organization(Base):
             "type IN ('hospital', 'clinic', 'health_centre', 'lab', 'engineering')",
             name="organizations_type_check"
         ),
+        CheckConstraint(
+            "source IN ('app', 'healthsites.io')",
+            name="organizations_source_check"
+        ),
         {"schema": SCHEMA},
     )
 
@@ -68,6 +72,12 @@ class Organization(Base):
     region          = Column(Text)
     type            = Column(Text, default="hospital")
     contact_email   = Column(Text)
+    # healthsites.io link: each organization IS a facility/site
+    osm_id          = Column(Text)
+    osm_type        = Column(Text)
+    latitude        = Column(Float)
+    longitude       = Column(Float)
+    source          = Column(Text, default="app", nullable=False)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

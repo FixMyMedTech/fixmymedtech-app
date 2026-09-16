@@ -31,5 +31,5 @@ async def search_healthsites(token: str, data: dict):
     return await _post("/api/healthsites/search", data, token=token)
 
 
-async def import_healthsite(token: str, facility: dict):
-    return await _post("/api/healthsites/import", {"facility": facility}, token=token)
+async def import_healthsite(token: str, facility: dict, role: str = "admin"):
+    return await _post("/api/healthsites/import", {"facility": facility, "role": role}, token=token)

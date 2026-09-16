@@ -233,9 +233,47 @@ def _wizard_script(device_id: str, step_tmpl: str):
         }
     } catch (e) {}
 
+    // A healthsite search/import reloads the page (full navigation) after the
+    // user may already have picked a photo on step 2. Browsers clear file
+    // inputs on reload, so restore the compressed photo cached in sessionStorage.
+    try {
+        const rawPhoto = sessionStorage.getItem(KEY + '.photo');
+        if (rawPhoto) {
+            const p = JSON.parse(rawPhoto);
+            const input = document.getElementById('photo-file');
+            if (p && p.data && input) {
+                fetch(p.data).then(function (r) { return r.blob(); }).then(function (blob) {
+                    try {
+                        const dt = new DataTransfer();
+                        dt.items.add(new File([blob], p.name || 'device_photo.jpg',
+                                              { type: blob.type || 'image/jpeg' }));
+                        input.files = dt.files;
+                        const img = document.getElementById('photo-preview');
+                        if (img) { img.src = p.data; img.style.display = 'inline-block'; }
+                    } catch (e2) {}
+                }).catch(function () {});
+            }
+        }
+    } catch (e) {}
+
     show(current);
     form.addEventListener('input', save);
     form.addEventListener('change', save);
+    form.addEventListener('submit', function () {
+        try { sessionStorage.removeItem(KEY + '.photo'); } catch (e) {}
+    });
+    window.fmmSavePhoto = function (blob, name) {
+        try {
+            const reader = new FileReader();
+            reader.onload = function () {
+                try {
+                    sessionStorage.setItem(KEY + '.photo',
+                        JSON.stringify({ name: name, data: reader.result }));
+                } catch (e) {}
+            };
+            reader.readAsDataURL(blob);
+        } catch (e) {}
+    };
     window.wStep = function (delta) {
         show(current + delta);
     };
@@ -400,6 +438,7 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                         fmmCompressImage(new File([blob], 'camera_photo.jpg', { type: 'image/jpeg' }), 1024, 0.8)
                             .then(function (cb) {
                                 fmmSetFiles(document.getElementById('photo-file'), cb, 'camera_photo.jpg');
+                                if (window.fmmSavePhoto) window.fmmSavePhoto(cb, 'camera_photo.jpg');
                                 const img = document.getElementById('photo-preview');
                                 img.src = URL.createObjectURL(cb);
                                 img.style.display = 'inline-block';
@@ -418,7 +457,9 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                         };
                         reader.readAsDataURL(input.files[0]);
                         fmmCompressImage(input.files[0], 1024, 0.8).then(function (blob) {
-                            fmmSetFiles(input, blob, input.files[0].name.replace(/\\.[^.]+$/, '') + '.jpg');
+                            const name = input.files[0].name.replace(/\\.[^.]+$/, '') + '.jpg';
+                            fmmSetFiles(input, blob, name);
+                            if (window.fmmSavePhoto) window.fmmSavePhoto(blob, name);
                         }).catch(function () {});
                     }
                 }
@@ -641,7 +682,7 @@ async def post(req, device_id: str, osm_id: str = "", osm_type: str = "", name: 
         return RedirectResponse(f"/device/{device_id}/new", status_code=302)
 
     try:
-        result = await org_api.import_healthsite(token, facility)
+        result = await org_api.import_healthsite(token, facility, role="technician")
         if result.get("added"):
             selected = result.get("id", "")
             return RedirectResponse(
@@ -680,7 +721,7 @@ async def post(req, device_id: str):
     payload = {"name": name or _("new_device.name_unknown")}
     if device_id:         payload["id"]        = device_id
     if field("organization_id"): payload["organization_id"]  = field("organization_id")
-    if field("healthsite_id"):   payload["organization_id"]  = field("healthsite_id")
+    if field("healthsite_id"):   payload["healthsite_id"]    = field("healthsite_id")
     if field("manufacturer"):    payload["manufacturer"]     = field("manufacturer")
     if field("model"):           payload["model"]            = field("model")
     if field("serial_number"):   payload["serial_number"]    = field("serial_number")

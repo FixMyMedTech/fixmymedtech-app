@@ -66,24 +66,48 @@ def _pick(props: dict, *keys) -> str:
     return ""
 
 
+async def _reverse_geocode(lat: float, lng: float) -> dict:
+    """Reverse-geocode a point via Nominatim (free, no key). Returns
+    {country, region, city} strings. Used as fallback when OSM tags are
+    missing country/region/address."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            resp = await c.get(
+                "https://nominatim.openstreetmap.org/reverse",
+                params={"format": "jsonv2", "lat": lat, "lon": lng},
+                headers={"User-Agent": "fixmymedtech/1.0 (https://fixmymedtech.com)"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        addr = data.get("address") or {}
+        country = addr.get("country_code", "").upper() or addr.get("country", "")
+        region = (addr.get("state") or addr.get("region")
+                  or addr.get("province") or "")
+        city = (addr.get("city") or addr.get("town") or addr.get("village")
+                or addr.get("hamlet") or addr.get("suburb") or "")
+        return {"country": country, "region": region, "city": city}
+    except Exception:
+        return {"country": "", "region": "", "city": ""}
+
+
 def _extract_address(props: dict) -> str:
     parts = []
-    number = _pick(props, "addr:housenumber")
-    street = _pick(props, "addr:street")
+    number = _pick(props, "addr_housenumber")
+    street = _pick(props, "addr_street")
     if number and street:
         parts.append(f"{number} {street}")
     elif street:
         parts.append(street)
-    locality = _pick(props, "addr:city", "addr:town", "addr:village", "addr:hamlet",
-                     "addr:suburb", "addr:district", "addr:place")
+    locality = _pick(props, "addr_city", "addr_town", "addr_village", "addr_hamlet",
+                     "addr_suburb", "addr_district", "addr_place")
     if locality:
         parts.append(locality)
-    postcode = _pick(props, "addr:postcode")
+    postcode = _pick(props, "addr_postcode")
     if postcode:
         parts.append(postcode)
     if parts:
         return ", ".join(parts)
-    return _pick(props, "address", "full_address", "addr:full")
+    return _pick(props, "address", "full_address", "addr_full")
 
 
 def _extract(item: dict) -> dict | None:
@@ -194,6 +218,7 @@ class FacilityCandidate(BaseModel):
 
 class ImportBody(BaseModel):
     facility: FacilityCandidate
+    role: Optional[str] = None
 
 
 # ── manual creation (source='app', creator becomes admin) ─────
@@ -299,6 +324,20 @@ async def search_healthsites(
         f["distance_km"] = round(
             _haversine_km(clat, clng, f["lat"] or clat, f["lng"] or clng), 2
         )
+
+    # fill missing country/region/address from reverse-geocoding the search center
+    if results and any(not f.get("country") or not f.get("region") or not f.get("address")
+                       for f in results):
+        geo = await _reverse_geocode(clat, clng)
+        if geo["country"] or geo["region"] or geo["city"]:
+            for f in results:
+                if not f.get("country") and geo["country"]:
+                    f["country"] = geo["country"]
+                if not f.get("region") and geo["region"]:
+                    f["region"] = geo["region"]
+                if not f.get("address") and geo["city"]:
+                    f["address"] = geo["city"]
+
     return {"facilities": results[:MAX_IMPORT_RESULTS]}
 
 
@@ -335,12 +374,15 @@ async def import_healthsite(
         source="healthsites.io",
     )
     db.add(org)
+    creator_role = (body.role or "admin").strip().lower()
+    if creator_role not in ("admin", "technician", "clinical_staff", "engineering_staff"):
+        creator_role = "admin"
     try:
         await db.flush()
         db.add(OrgUser(
             profile_id=profile.id,
             organization_id=org.id,
-            role="admin",
+            role=creator_role,
         ))
         await db.commit()
     except Exception as exc:

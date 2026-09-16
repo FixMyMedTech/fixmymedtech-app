@@ -37,6 +37,7 @@ class DeviceCreate(BaseModel):
     id: Optional[UUID] = None
     name: str
     organization_id: Optional[UUID] = None
+    healthsite_id: Optional[UUID] = None
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
@@ -73,6 +74,7 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
         .options(
             selectinload(Device.category),
             selectinload(Device.organization),
+            selectinload(Device.healthsite),
         )
         .where(Device.id == device_id)
     )
@@ -174,6 +176,7 @@ async def get_device(
         .options(
             selectinload(Device.category),
             selectinload(Device.organization),
+            selectinload(Device.healthsite),
         )
         .where(Device.id == device_id)
     )

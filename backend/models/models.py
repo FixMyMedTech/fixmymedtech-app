@@ -84,6 +84,7 @@ class Organization(Base):
     org_users       = relationship("OrgUser", back_populates="organization")
     devices         = relationship("Device", back_populates="organization", foreign_keys="Device.organization_id")
     devices_maintained = relationship("Device", back_populates="organization_maintenance", foreign_keys="Device.organization_maintenance_id")
+    device_healthsites  = relationship("Device", back_populates="healthsite", foreign_keys="Device.healthsite_id")
 
     def __repr__(self):
         return f"<Organization {self.name} ({self.country})>"
@@ -208,6 +209,7 @@ class Device(Base):
     id                          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id             = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"), nullable=False)
     organization_maintenance_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"), nullable=False)
+    healthsite_id               = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id"), nullable=True)
     category_id                 = Column(Text, ForeignKey(f"{SCHEMA}.device_categories.slug"))
     name                        = Column(Text, nullable=False)
     manufacturer                = Column(Text)
@@ -232,6 +234,7 @@ class Device(Base):
     # Relationships
     organization             = relationship("Organization", back_populates="devices", foreign_keys=[organization_id])
     organization_maintenance = relationship("Organization", back_populates="devices_maintained", foreign_keys=[organization_maintenance_id])
+    healthsite               = relationship("Organization", back_populates="device_healthsites", foreign_keys=[healthsite_id])
     category                 = relationship("DeviceCategory", back_populates="devices")
     registered_by_profile    = relationship("Profile", foreign_keys=[registered_by])
     documents                = relationship("Document", back_populates="device", cascade="all, delete-orphan")

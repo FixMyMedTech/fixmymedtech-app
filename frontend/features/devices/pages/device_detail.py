@@ -15,6 +15,17 @@ from features.devices.static.guides import category_label
 from i18n import t as make_t
 rt = APIRouter()
 
+
+def _org_loc(org: dict) -> str:
+    bits = []
+    if org.get("country"):
+        bits.append(str(org["country"]))
+    if org.get("region"):
+        bits.append(str(org["region"]))
+    if org.get("address"):
+        bits.append(str(org["address"]))
+    return " · ".join(bits)
+
 # ══════════════════════════════════════════════════════════════
 # DEVICE DETAIL
 # ══════════════════════════════════════════════════════════════
@@ -63,6 +74,7 @@ async def get(req, device_id: str):
     d = data.get("device", {})
     cat = d.get("category") or {}
     org = d.get("organization") or {}
+    hs = d.get("healthsite") or {}
     logs = data.get("maintenance_logs", [])
     faults = data.get("fault_reports", [])
     docs = data.get("documents", [])
@@ -120,12 +132,6 @@ async def get(req, device_id: str):
             ),
             style="display:flex;align-items:center;gap:12px;background:var(--c-primary-lt);border:1px solid #a7d9ce;border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;"
         ),
-        # Photo
-        Div(
-            Img(src=f"/device/{device_id}/photo?v={d.get('photo_processed_key') or 'original'}", alt=d.get("name", ""),
-                style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
-            cls="card", style="padding:6px;margin-bottom:16px;",
-        ) if d.get("photo_key") else "",
         # Device info
         Div(
             Div(
@@ -139,8 +145,6 @@ async def get(req, device_id: str):
                         (_("device_detail.model"),         d.get("model",_("common.fallback"))),
                         (_("device_detail.year"),          str(d.get("manufacture_year",_("common.fallback")))),
                         (_("device_detail.acquisition"),   f"{d.get('acquisition_type',_('common.fallback'))} · {fmt_date(d.get('acquisition_date',''))}"),
-                        (_("device_detail.location"),      d.get("location",_("common.fallback"))),
-                        (_("device_detail.organisation"),  org.get("name",_("common.fallback"))),
                     ]]
                 ),
                 cls="card"
@@ -159,38 +163,54 @@ async def get(req, device_id: str):
             ),
             cls="two-col", style="margin-bottom:16px;"
         ),
-        # Map
         Div(
-            H3(_("device_detail.location_map"), style="margin-bottom:12px;"),
-            map_component(
-                lat=d.get("latitude", 0),
-                lng=d.get("longitude", 0),
-                markers=[{"lat": d["latitude"], "lng": d["longitude"], "title": d.get("name","")}],
-                height="300px"
-            ) if d.get("latitude") is not None and d.get("longitude") is not None else "",
-            Form(
-                Input(type="hidden", id="loc-lat", name="latitude"),
-                Input(type="hidden", id="loc-lng", name="longitude"),
-                Button(
-                    "📍 " + _("device_detail.capture_location"),
-                    type="button", cls="btn btn-secondary btn-sm",
-                    onclick="getLocation()",
-                    style="margin-top:8px;"
+            # Photo
+            Div(
+                Img(src=f"/device/{device_id}/photo?v={d.get('photo_processed_key') or 'original'}", alt=d.get("name", ""),
+                    style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
+                cls="card", style="padding:6px;margin-bottom:16px;",
+            ) if d.get("photo_key") else "",
+            # Map
+            Div(
+                H3(_("device_detail.location_map"), style="margin-bottom:12px;"),
+                Div(
+                    P(d.get("location",_("common.fallback")), style="font-size:0.85rem;margin:2px 0 0;"),
+                    Div(hs.get("name", ""), style="font-weight:600;font-size:0.9rem;"),
+                    P(_org_loc(hs), style="color:var(--c-text-3);font-size:0.85rem;margin:2px 0 0;")
+                    if _org_loc(hs) else "",
+                    # style="background:var(--c-bg-soft,#f4f4f4);border-radius:8px;padding:10px 12px;margin-bottom:12px;"
+                ) if hs.get("name") else "",
+                map_component(
+                    lat=d.get("latitude", 0),
+                    lng=d.get("longitude", 0),
+                    markers=[{"lat": d["latitude"], "lng": d["longitude"], "title": d.get("name","")}],
+                    height="300px"
+                ) if d.get("latitude") is not None and d.get("longitude") is not None else "",
+                Form(
+                    Input(type="hidden", id="loc-lat", name="latitude"),
+                    Input(type="hidden", id="loc-lng", name="longitude"),
+                    Button(
+                        "📍 " + _("device_detail.capture_location"),
+                        type="button", cls="btn btn-secondary btn-sm",
+                        onclick="getLocation()",
+                        style="margin-top:8px;"
+                    ),
+                    Script("""
+                    function getLocation() {
+                        if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+                        navigator.geolocation.getCurrentPosition((pos) => {
+                            document.getElementById('loc-lat').value = pos.coords.latitude;
+                            document.getElementById('loc-lng').value = pos.coords.longitude;
+                            document.getElementById('loc-form').submit();
+                        }, (err) => alert('Geolocation error: ' + err.message));
+                    }
+                    """),
+                    id="loc-form",
+                    method="post", action=f"/device/{device_id}/location",
                 ),
-                Script("""
-                function getLocation() {
-                    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        document.getElementById('loc-lat').value = pos.coords.latitude;
-                        document.getElementById('loc-lng').value = pos.coords.longitude;
-                        document.getElementById('loc-form').submit();
-                    }, (err) => alert('Geolocation error: ' + err.message));
-                }
-                """),
-                id="loc-form",
-                method="post", action=f"/device/{device_id}/location",
+                cls="card", style="margin-bottom:16px;"
             ),
-            cls="card", style="margin-bottom:16px;"
+            cls="two-col", style="margin-bottom:16px;"
         ),
         # Maintenance logs
         Div(

@@ -186,13 +186,19 @@ def _wizard_script(device_id: str, step_tmpl: str):
 
     function fmt(n) { return String(TMPL).replace('{c}', n).replace('{n}', total); }
 
+    function persistStep() {
+        try { sessionStorage.setItem(KEY + '.step', String(current)); } catch (e) {}
+    }
+
     function show(n) {
         n = Math.min(Math.max(1, n), total);
+        current = n;
         stepEls.forEach(function (el, i) { el.style.display = (i + 1 === n) ? '' : 'none'; });
         labelEl.textContent = fmt(n);
         backBtn.style.display = (n === 1) ? 'none' : '';
         nextBtn.style.display = (n === total) ? 'none' : '';
         regBtn.style.display = (n === total) ? '' : 'none';
+        persistStep();
         window.scrollTo({ top: form.getBoundingClientRect().top + window.scrollY - 60, behavior: 'smooth' });
     }
 
@@ -204,7 +210,6 @@ def _wizard_script(device_id: str, step_tmpl: str):
                 d[el.name] = (el.type === 'checkbox') ? (el.checked ? 'on' : '') : el.value;
             });
             sessionStorage.setItem(KEY, JSON.stringify(d));
-            sessionStorage.setItem(KEY + '.step', String(current));
         } catch (e) {}
     }
 
@@ -232,8 +237,7 @@ def _wizard_script(device_id: str, step_tmpl: str):
     form.addEventListener('input', save);
     form.addEventListener('change', save);
     window.wStep = function (delta) {
-        current = Math.min(Math.max(1, current + delta), total);
-        show(current);
+        show(current + delta);
     };
 })();
 """
@@ -452,6 +456,8 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                     navigator.geolocation.getCurrentPosition((pos) => {
                         document.getElementById('loc-lat').value = pos.coords.latitude;
                         document.getElementById('loc-lng').value = pos.coords.longitude;
+                        const f = document.getElementById('device-form');
+                        if (f) f.dispatchEvent(new Event('input', { bubbles: true }));
                     }, (err) => alert('Geolocation error: ' + err.message));
                 }
                 """),
@@ -613,7 +619,7 @@ async def post(req, device_id: str, lat: str = "", lng: str = "", radius_km: str
 
 @rt("/device/{device_id}/new/import-healthsite")
 async def post(req, device_id: str, osm_id: str = "", osm_type: str = "", name: str = "",
-               country: str = "", lat: str = "", lng: str = ""):
+               country: str = "", region: str = "", address: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
@@ -626,16 +632,10 @@ async def post(req, device_id: str, osm_id: str = "", osm_type: str = "", name: 
         "name": name.strip(),
         "country": country.strip(),
     }
-    if lat.strip():
-        try:
-            facility["lat"] = float(lat.strip())
-        except ValueError:
-            pass
-    if lng.strip():
-        try:
-            facility["lng"] = float(lng.strip())
-        except ValueError:
-            pass
+    if region.strip():
+        facility["region"] = region.strip()
+    if address.strip():
+        facility["address"] = address.strip()
 
     if not facility["osm_id"] or not facility["name"]:
         return RedirectResponse(f"/device/{device_id}/new", status_code=302)

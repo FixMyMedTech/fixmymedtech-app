@@ -57,6 +57,35 @@ def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return 2 * r * math.asin(math.sqrt(a))
 
 
+def _pick(props: dict, *keys) -> str:
+    """First non-empty string value among the given key candidates."""
+    for k in keys:
+        v = props.get(k)
+        if v:
+            return str(v).strip()
+    return ""
+
+
+def _extract_address(props: dict) -> str:
+    parts = []
+    number = _pick(props, "addr:housenumber")
+    street = _pick(props, "addr:street")
+    if number and street:
+        parts.append(f"{number} {street}")
+    elif street:
+        parts.append(street)
+    locality = _pick(props, "addr:city", "addr:town", "addr:village", "addr:hamlet",
+                     "addr:suburb", "addr:district", "addr:place")
+    if locality:
+        parts.append(locality)
+    postcode = _pick(props, "addr:postcode")
+    if postcode:
+        parts.append(postcode)
+    if parts:
+        return ", ".join(parts)
+    return _pick(props, "address", "full_address", "addr:full")
+
+
 def _extract(item: dict) -> dict | None:
     if not isinstance(item, dict):
         return None
@@ -95,13 +124,20 @@ def _extract(item: dict) -> dict | None:
     if org_type not in IMPORT_TYPES:
         org_type = "clinic"
 
+    country = _pick(props, "is_in:country", "addr:country", "country", "country_code") or str(item.get("country") or "")
+    region = _pick(props, "is_in:state", "is_in:province", "is_in:region",
+                   "state", "province", "addr:state")
+    address = _extract_address(props)
+
     return {
         "osm_id": str(osm_id),
         "osm_type": str(osm_type),
         "name": name,
         "lat": lat,
         "lng": lng,
-        "country": str(item.get("country") or props.get("country") or ""),
+        "country": country,
+        "region": region,
+        "address": address,
         "type": org_type,
     }
 
@@ -112,12 +148,11 @@ def _org_dict(o: Organization) -> dict:
         "name": o.name,
         "country": o.country,
         "region": o.region,
+        "address": o.address,
         "type": o.type,
         "contact_email": o.contact_email,
         "osm_id": o.osm_id,
         "osm_type": o.osm_type,
-        "latitude": o.latitude,
-        "longitude": o.longitude,
         "source": o.source,
     }
 
@@ -127,16 +162,16 @@ def _org_dict(o: Organization) -> dict:
 class HealthsiteCreate(BaseModel):
     name: str
     country: Optional[str] = ""
+    region: Optional[str] = ""
+    address: Optional[str] = ""
     type: Optional[str] = "clinic"
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
 
 
 class HealthsiteUpdate(BaseModel):
     name: Optional[str] = None
     country: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    region: Optional[str] = None
+    address: Optional[str] = None
 
 
 class SearchBody(BaseModel):
@@ -150,6 +185,8 @@ class FacilityCandidate(BaseModel):
     osm_type: str
     name: str
     country: Optional[str] = ""
+    region: Optional[str] = ""
+    address: Optional[str] = ""
     type: Optional[str] = "clinic"
     lat: Optional[float] = None
     lng: Optional[float] = None
@@ -173,9 +210,9 @@ async def create_healthsite(
     org = Organization(
         name=body.name.strip(),
         country=(body.country or "").strip(),
+        region=(body.region or "").strip(),
+        address=(body.address or "").strip(),
         type=body.type,
-        latitude=body.latitude,
-        longitude=body.longitude,
         source="app",
     )
     db.add(org)
@@ -290,9 +327,9 @@ async def import_healthsite(
     org = Organization(
         name=fac.name.strip(),
         country=(fac.country or "").strip(),
+        region=(fac.region or "").strip(),
+        address=(fac.address or "").strip(),
         type=fac.type or "clinic",
-        latitude=fac.lat,
-        longitude=fac.lng,
         osm_id=fac.osm_id,
         osm_type=fac.osm_type,
         source="healthsites.io",
@@ -335,10 +372,10 @@ async def update_healthsite(
         org.name = body.name
     if body.country is not None:
         org.country = body.country
-    if body.latitude is not None:
-        org.latitude = body.latitude
-    if body.longitude is not None:
-        org.longitude = body.longitude
+    if body.region is not None:
+        org.region = body.region
+    if body.address is not None:
+        org.address = body.address
     await db.commit()
     await db.refresh(org)
     return _org_dict(org)

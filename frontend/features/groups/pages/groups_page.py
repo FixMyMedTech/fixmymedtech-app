@@ -21,8 +21,8 @@ function pickHS(el){
   document.getElementById('hs-osm-type').value = el.dataset.osmType || '';
   document.getElementById('hs-name').value = el.dataset.name || '';
   document.getElementById('hs-country').value = el.dataset.country || '';
-  document.getElementById('hs-lat').value = el.dataset.lat || '';
-  document.getElementById('hs-lng').value = el.dataset.lng || '';
+  document.getElementById('hs-region').value = el.dataset.region || '';
+  document.getElementById('hs-address').value = el.dataset.address || '';
   document.getElementById('hs-submit').disabled = false;
 }
 document.addEventListener('submit', function(e){
@@ -52,16 +52,19 @@ def _source_badge(source: str, _):
     return Span(_("groups.source_app"), cls="badge badge-green")
 
 
-def _coords_str(org: dict) -> str:
-    if org.get("latitude") is not None and org.get("longitude") is not None:
-        return f"· {org['latitude']:.4f}, {org['longitude']:.4f}"
-    return ""
+def _loc_str(org: dict) -> str:
+    bits = []
+    if org.get("region"):
+        bits.append(str(org["region"]))
+    if org.get("address"):
+        bits.append(str(org["address"]))
+    return (" · " + " · ".join(bits)) if bits else ""
 
 
 def _org_card(org: dict, _):
     org_id = str(org.get("id", ""))
     is_admin = org.get("role") == "admin"
-    coords = _coords_str(org)
+    loc = _loc_str(org)
 
     edit_form = Form(
         Div(
@@ -71,12 +74,12 @@ def _org_card(org: dict, _):
             Div(Label(_("groups.country"), cls="label"),
                 Div(Input(name="country", value=org.get("country", ""), cls="input"),
                     style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.latitude"), cls="label"),
-                Div(Input(name="latitude", value="" if org.get("latitude") is None else org["latitude"],
-                          cls="input"), style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.longitude"), cls="label"),
-                Div(Input(name="longitude", value="" if org.get("longitude") is None else org["longitude"],
-                          cls="input"), style="display:flex;flex-direction:column;")),
+            Div(Label(_("groups.region"), cls="label"),
+                Div(Input(name="region", value=org.get("region", "") or "", cls="input"),
+                    style="display:flex;flex-direction:column;")),
+            Div(Label(_("groups.address"), cls="label"),
+                Div(Input(name="address", value=org.get("address", "") or "", cls="input"),
+                    style="display:flex;flex-direction:column;")),
             cls="hs-grid",
         ),
         Button(_("groups.save"), type="submit", cls="btn btn-primary btn-sm",
@@ -90,7 +93,7 @@ def _org_card(org: dict, _):
         Div(
             Div(
                 H3(org.get("name", ""), style="margin:0 0 4px 0;font-size:1.1rem;"),
-                P(f"{_('groups.country')}: {org.get('country', '') or '—'} {coords}",
+                P(f"{_('groups.country')}: {org.get('country', '') or '—'} {loc}",
                   style="color:var(--c-text-3);font-size:0.85rem;margin:0;"),
                 style="flex:1;min-width:0;",
             ),
@@ -120,11 +123,11 @@ def _org_dialog(_):
                     Div(Label(_("groups.country"), cls="label"),
                         Div(Input(name="country", cls="input", placeholder="HN"),
                             style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.latitude"), cls="label"),
-                        Div(Input(name="latitude", cls="input", placeholder="10.0"),
+                    Div(Label(_("groups.region"), cls="label"),
+                        Div(Input(name="region", cls="input", placeholder=_("groups.region_placeholder")),
                             style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.longitude"), cls="label"),
-                        Div(Input(name="longitude", cls="input", placeholder="-70.0"),
+                    Div(Label(_("groups.address"), cls="label"),
+                        Div(Input(name="address", cls="input", placeholder=_("groups.address_placeholder")),
                             style="display:flex;flex-direction:column;")),
                     cls="hs-grid",
                 ),
@@ -148,10 +151,12 @@ def _fac_meta(fac: dict) -> str:
     bits = []
     if fac.get("country"):
         bits.append(str(fac["country"]))
+    if fac.get("region"):
+        bits.append(str(fac["region"]))
+    if fac.get("address"):
+        bits.append(str(fac["address"]))
     if fac.get("distance_km") is not None:
         bits.append(f"{fac['distance_km']:.1f} km")
-    if fac.get("lat") is not None and fac.get("lng") is not None:
-        bits.append(f"{fac['lat']:.4f}, {fac['lng']:.4f}")
     return " · ".join(bits)
 
 
@@ -179,7 +184,7 @@ def _hs_results(results, _, search, import_url="/groups/import-healthsite"):
                 Input(type="radio", name="sel", onchange="pickHS(this)",
                       data_osm_id=fac.get("osm_id", ""), data_osm_type=fac.get("osm_type", ""),
                       data_name=fac.get("name", ""), data_country=fac.get("country", ""),
-                      data_lat=fac.get("lat") or "", data_lng=fac.get("lng") or "",
+                      data_region=fac.get("region", ""), data_address=fac.get("address", ""),
                       style="margin-right:10px;"),
                 Span(fac.get("name", ""), style="font-weight:600;"),
                 Span(meta, style="color:var(--c-text-3);font-size:0.8rem;"),
@@ -194,8 +199,8 @@ def _hs_results(results, _, search, import_url="/groups/import-healthsite"):
             Input(type="hidden", name="osm_type", id="hs-osm-type"),
             Input(type="hidden", name="name", id="hs-name"),
             Input(type="hidden", name="country", id="hs-country"),
-            Input(type="hidden", name="lat", id="hs-lat"),
-            Input(type="hidden", name="lng", id="hs-lng"),
+            Input(type="hidden", name="region", id="hs-region"),
+            Input(type="hidden", name="address", id="hs-address"),
             Button(_("groups.add_selected_btn"), type="submit", id="hs-submit", disabled=True,
                    cls="btn btn-primary btn-sm"),
             method="post",
@@ -362,7 +367,7 @@ async def get(req):
 
 
 @rt("/groups/{org_id}/edit")
-async def post(req, org_id: str, name: str = "", country: str = "", latitude: str = "", longitude: str = ""):
+async def post(req, org_id: str, name: str = "", country: str = "", region: str = "", address: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
@@ -371,16 +376,10 @@ async def post(req, org_id: str, name: str = "", country: str = "", latitude: st
         "name": name.strip(),
         "country": country.strip(),
     }
-    if latitude.strip():
-        try:
-            data["latitude"] = float(latitude.strip())
-        except ValueError:
-            pass
-    if longitude.strip():
-        try:
-            data["longitude"] = float(longitude.strip())
-        except ValueError:
-            pass
+    if region.strip():
+        data["region"] = region.strip()
+    if address.strip():
+        data["address"] = address.strip()
     try:
         await groups_api.update_organization(token, org_id, data)
     except Exception:
@@ -389,22 +388,16 @@ async def post(req, org_id: str, name: str = "", country: str = "", latitude: st
 
 
 @rt("/groups/add-organization")
-async def post(req, name: str = "", country: str = "", latitude: str = "", longitude: str = ""):
+async def post(req, name: str = "", country: str = "", region: str = "", address: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
 
     data = {"name": name.strip(), "country": country.strip(), "type": "hospital"}
-    if latitude.strip():
-        try:
-            data["latitude"] = float(latitude.strip())
-        except ValueError:
-            pass
-    if longitude.strip():
-        try:
-            data["longitude"] = float(longitude.strip())
-        except ValueError:
-            pass
+    if region.strip():
+        data["region"] = region.strip()
+    if address.strip():
+        data["address"] = address.strip()
     try:
         await groups_api.create_healthsite(token, data)
         return RedirectResponse("/groups", status_code=302)
@@ -459,7 +452,7 @@ async def post(req, lat: str = "", lng: str = "", radius_km: str = "20"):
 
 @rt("/groups/import-healthsite")
 async def post(req, osm_id: str = "", osm_type: str = "", name: str = "",
-               country: str = "", lat: str = "", lng: str = ""):
+               country: str = "", region: str = "", address: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
@@ -473,16 +466,10 @@ async def post(req, osm_id: str = "", osm_type: str = "", name: str = "",
         "name": name.strip(),
         "country": country.strip(),
     }
-    if lat.strip():
-        try:
-            facility["lat"] = float(lat.strip())
-        except ValueError:
-            pass
-    if lng.strip():
-        try:
-            facility["lng"] = float(lng.strip())
-        except ValueError:
-            pass
+    if region.strip():
+        facility["region"] = region.strip()
+    if address.strip():
+        facility["address"] = address.strip()
 
     if not facility["osm_id"] or not facility["name"]:
         return RedirectResponse("/groups", status_code=302)

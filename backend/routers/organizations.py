@@ -17,9 +17,9 @@ router = APIRouter()
 class OrgUpdate(BaseModel):
     name: Optional[str] = None
     country: Optional[str] = None
+    region: Optional[str] = None
+    address: Optional[str] = None
     contact_email: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
 
 
 @router.get("/")
@@ -48,12 +48,11 @@ async def get_my_organizations(
             "name": o.name,
             "country": o.country,
             "region": o.region,
+            "address": o.address,
             "type": o.type,
             "contact_email": o.contact_email,
             "osm_id": o.osm_id,
             "osm_type": o.osm_type,
-            "latitude": o.latitude,
-            "longitude": o.longitude,
             "source": o.source,
             "role": profile.get_role_for_org(o.id),
         }
@@ -89,12 +88,12 @@ async def update_organization(
         org.name = body.name
     if body.country is not None:
         org.country = body.country
+    if body.region is not None:
+        org.region = body.region
+    if body.address is not None:
+        org.address = body.address
     if body.contact_email is not None:
         org.contact_email = body.contact_email
-    if body.latitude is not None:
-        org.latitude = body.latitude
-    if body.longitude is not None:
-        org.longitude = body.longitude
 
     await db.commit()
     await db.refresh(org)
@@ -102,5 +101,7 @@ async def update_organization(
         "id": str(org.id),
         "name": org.name,
         "country": org.country,
+        "region": org.region,
+        "address": org.address,
         "contact_email": org.contact_email,
     }

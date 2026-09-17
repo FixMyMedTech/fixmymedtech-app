@@ -508,18 +508,15 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                 Div(
                     Div(Label(_("new_device.healthsite_label"), cls="label", for_="healthsite_id"),
                         Select(*hs_options, id="healthsite_id", name="healthsite_id", cls="input"),
+                        Button("🔍 " + _("new_device.search_healthsite_btn"), type="button",
+                                                        cls="btn btn-secondary btn-sm",
+                                                        onclick="document.getElementById('hsDialog').showModal()",
+                                                        style="white-space:nowrap;flex-shrink:0;gap:10px;margin-top:8px;"),
                         cls="form-group"),
                     Div(Label(_("new_device.location_label"), cls="label"),
                         Input(name="location", cls="input", placeholder=_("new_device.location_placeholder")),
                         cls="form-group"),
                     cls="form-row"
-                ),
-                Div(
-                    Button("🔍 " + _("new_device.search_healthsite_btn"), type="button",
-                                cls="btn btn-secondary btn-sm",
-                                onclick="document.getElementById('hsDialog').showModal()",
-                                style="white-space:nowrap;flex-shrink:0;"),
-                        style="display:flex;gap:10px;align-items:flex-centre;",
                 ),
                 cls="form-group"
             ),
@@ -544,6 +541,15 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                     Input(name="acquisition_date", type="date", cls="input"),
                     cls="form-group"),
                 cls="form-row"
+            ),
+            Div(
+                Div(Label(_("new_device.status_label"), cls="label"),
+                    Select(Option(_("new_device.status_operational"), value="operational"),
+                        Option(_("new_device.status_fault"), value="fault"),
+                        Option(_("new_device.status_decommissioned"), value="decommissioned"),
+                        Option(_("new_device.status_maintenance"), value="maintenance"),
+                        name="status", cls="input"),
+                    cls="form-group"),
             ),
             Div(
                 Div(Label(_("new_device.last_maintenance"), cls="label"),

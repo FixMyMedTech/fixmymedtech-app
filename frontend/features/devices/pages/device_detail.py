@@ -1,7 +1,7 @@
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse, Response
-import os, httpx
+import os, json, httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -129,8 +129,150 @@ async def get(req, device_id: str):
                 Div(_("device_detail.public_qr"), style="font-size:0.75rem;font-weight:500;color:var(--c-primary);"),
                 A(qr_url, href=qr_url, target="_blank",
                 style="font-size:0.8rem;color:var(--c-primary-md);font-family:monospace;"),
+                style="min-width:0;flex:1;",
             ),
+            Button("▣ " + _("device_detail.show_qr"), type="button",
+                   cls="btn btn-primary btn-sm", onclick="showDeviceQR()",
+                   style="flex-shrink:0;"),
             style="display:flex;align-items:center;gap:12px;background:var(--c-primary-lt);border:1px solid #a7d9ce;border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;"
+        ),
+        # QR popup + generator
+        Script(src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"),
+        Script(f"""
+        var _deviceQr = null;
+        var _deviceQrUrl = {json.dumps(qr_url)};
+        var _deviceId = {json.dumps(device_id)};
+        var _deviceLogo = new Image();
+        var _deviceLogoReady = false;
+        _deviceLogo.onload = function () {{ _deviceLogoReady = true; if (_deviceQr) composeDeviceQR(); }};
+        _deviceLogo.onerror = function () {{ _deviceLogoReady = false; }};
+        _deviceLogo.src = '/static/fixmymedtech_logo.png';
+
+        function _fmmRoundRect(ctx, x, y, w, h, r) {{
+            if (ctx.roundRect) {{ ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return; }}
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }}
+
+        function _qrContentBox(qcanvas) {{
+            var w = qcanvas.width, h = qcanvas.height;
+            var data = qcanvas.getContext('2d').getImageData(0, 0, w, h).data;
+            var minx = w, miny = h, maxx = -1, maxy = -1;
+            for (var y = 0; y < h; y++) {{
+                for (var x = 0; x < w; x++) {{
+                    var i = (y * w + x) * 4;
+                    if (data[i] < 128 && data[i + 1] < 128 && data[i + 2] < 128) {{
+                        if (x < minx) minx = x;
+                        if (y < miny) miny = y;
+                        if (x > maxx) maxx = x;
+                        if (y > maxy) maxy = y;
+                    }}
+                }}
+            }}
+            if (maxx < minx) return {{ x: 0, y: 0, w: w, h: h }};
+            return {{ x: minx, y: miny, w: maxx - minx + 1, h: maxy - miny + 1 }};
+        }}
+
+        function composeDeviceQR() {{
+            if (!window.QRious) return null;
+            if (!_deviceQr) {{
+                _deviceQr = new QRious({{
+                    value: _deviceQrUrl,
+                    size: 280,
+                    level: 'H',
+                    padding: 0,
+                    background: '#ffffff',
+                    foreground: '#000000'
+                }});
+            }}
+            var QR = 280, MARGIN = 28, FOOTER = 62;
+            var W = QR + MARGIN * 2;
+            var H = QR + MARGIN * 2 + FOOTER;
+            var canvas = document.getElementById('device-qr-canvas');
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            // QRious left/top-aligns the modules (integer cell size), so crop the
+            // real QR content and draw it centered to fill the square exactly.
+            var cb = _qrContentBox(_deviceQr.canvas);
+            ctx.drawImage(_deviceQr.canvas, cb.x, cb.y, cb.w, cb.h, MARGIN, MARGIN, QR, QR);
+            if (_deviceLogoReady) {{
+                var maxL = Math.round(QR * 0.24);
+                var ar = (_deviceLogo.naturalWidth || 1) / (_deviceLogo.naturalHeight || 1);
+                var lw, lh;
+                if (ar >= 1) {{ lw = maxL; lh = Math.round(maxL / ar); }}
+                else {{ lh = maxL; lw = Math.round(maxL * ar); }}
+                var ccx = MARGIN + QR / 2, ccy = MARGIN + QR / 2;
+                var pad = 8;
+                ctx.fillStyle = '#ffffff';
+                _fmmRoundRect(ctx, ccx - lw / 2 - pad, ccy - lh / 2 - pad, lw + pad * 2, lh + pad * 2, 8);
+                ctx.fill();
+                ctx.drawImage(_deviceLogo, ccx - lw / 2, ccy - lh / 2, lw, lh);
+            }}
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#111111';
+            ctx.font = 'bold 20px Arial, Helvetica, sans-serif';
+            ctx.fillText('FixMyMedTech QR', W / 2, MARGIN + QR + 30);
+            ctx.fillStyle = '#666666';
+            ctx.font = '13px "Courier New", monospace';
+            ctx.fillText(_deviceId, W / 2, MARGIN + QR + 50);
+            return canvas;
+        }}
+
+        function showDeviceQR() {{
+            if (!window.QRious) {{ alert('QR library unavailable'); return; }}
+            composeDeviceQR();
+            document.getElementById('deviceQrDialog').showModal();
+        }}
+
+        function downloadDeviceQR() {{
+            var canvas = composeDeviceQR();
+            if (!canvas) return;
+            var a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = 'device-qr-' + _deviceId + '.png';
+            document.body.appendChild(a); a.click(); a.remove();
+        }}
+
+        function printDeviceQR() {{
+            var canvas = composeDeviceQR();
+            if (!canvas) return;
+            var w = window.open('', '_blank');
+            if (!w) return;
+            w.document.write('<html><head><title>' + document.title + '</title></head>'
+                + '<body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;">'
+                + '<img src="' + canvas.toDataURL('image/png') + '" style="width:360px;height:auto;" '
+                + 'onload="window.focus();window.print();"></body></html>');
+            w.document.close();
+        }}
+        """),
+        Dialog(
+            Div(
+                H3(_("device_detail.qr_title"), style="margin:0 0 4px 0;font-size:1.05rem;"),
+                P(_("device_detail.qr_hint"), style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 10px 0;"),
+                Div(
+                    Canvas(id="device-qr-canvas", style="max-width:100%;height:auto;border-radius:8px;"),
+                    style="display:flex;justify-content:center;margin-bottom:14px;"
+                ),
+                Div(
+                    Button("⬇ " + _("device_detail.download_qr"), type="button",
+                           cls="btn btn-primary btn-sm", onclick="downloadDeviceQR()"),
+                    Button("🖨 " + _("device_detail.print_qr"), type="button",
+                           cls="btn btn-secondary btn-sm", onclick="printDeviceQR()"),
+                    Button(_("groups.close_btn"), type="button", cls="btn btn-secondary btn-sm",
+                           onclick="document.getElementById('deviceQrDialog').close()"),
+                    style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"
+                ),
+                style="padding:18px;max-width:360px;text-align:center;"
+            ),
+            id="deviceQrDialog",
+            style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);"
         ),
         # Device info
         Div(
@@ -144,7 +286,6 @@ async def get(req, device_id: str):
                         (_("device_detail.manufacturer"),  d.get("manufacturer",_("common.fallback"))),
                         (_("device_detail.model"),         d.get("model",_("common.fallback"))),
                         (_("device_detail.year"),          str(d.get("manufacture_year",_("common.fallback")))),
-                        (_("device_detail.acquisition"),   f"{d.get('acquisition_type',_('common.fallback'))} · {fmt_date(d.get('acquisition_date',''))}"),
                     ]]
                 ),
                 cls="card"
@@ -155,6 +296,8 @@ async def get(req, device_id: str):
                     *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
                         style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
                     for k, v in [
+                        (_("device_detail.status"),   d.get("status",_("common.fallback"))),
+                        (_("device_detail.acquisition"),   f"{d.get('acquisition_type',_('common.fallback'))} · {fmt_date(d.get('acquisition_date',''))}"),
                         (_("device_detail.last_maint"), fmt_date(d.get("last_maintenance",""))),
                         (_("device_detail.next_maint"), fmt_date(d.get("next_maintenance",""))),
                     ]]

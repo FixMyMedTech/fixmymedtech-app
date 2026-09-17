@@ -277,8 +277,8 @@ def _action_buttons(_):
     return Div(
         Button("＋ " + _("groups.add_org_btn"), cls="btn btn-primary",
                onclick="document.getElementById('orgDialog').showModal()"),
-        Button("＋ " + _("groups.add_healthsite_btn"), cls="btn btn-secondary",
-               onclick="document.getElementById('hsDialog').showModal()"),
+        # Button("＋ " + _("groups.add_healthsite_btn"), cls="btn btn-secondary",
+        #        onclick="document.getElementById('hsDialog').showModal()"),
         style="display:flex;gap:10px;flex-wrap:wrap;",
     )
 
@@ -299,7 +299,7 @@ async def _build_page(req, token, lang, orgs, *, results=None, search=None, erro
 
         sections = [
             Div(
-                H2(_("groups.default_heading"), style="margin:0 0 8px 0;font-size:1rem;color:var(--c-text-3);"),
+                H2(_("groups.default_heading"), style="margin:8px 0 8px 0;font-size:1rem;color:var(--c-text-3);"),
                 _org_card(default_org, _),
             )
         ]
@@ -400,9 +400,11 @@ async def post(req, name: str = "", country: str = "", region: str = "", address
         data["address"] = address.strip()
     try:
         await groups_api.create_healthsite(token, data)
-        return RedirectResponse("/groups", status_code=302)
     except Exception:
-        pass
+        import logging
+        logging.getLogger("groups.create_healthsite").exception(
+            "failed to create healthsite %r", data.get("name")
+        )
     return RedirectResponse("/groups", status_code=302)
 
 

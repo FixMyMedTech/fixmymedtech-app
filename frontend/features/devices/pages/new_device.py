@@ -506,13 +506,6 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
             ),
             Div(
                 Div(
-                    Button("🔍 " + _("new_device.search_healthsite_btn"), type="button",
-                                cls="btn btn-secondary btn-sm",
-                                onclick="document.getElementById('hsDialog').showModal()",
-                                style="white-space:nowrap;flex-shrink:0;"),
-                        style="display:flex;gap:10px;align-items:flex-centre;",
-                    ),
-                Div(
                     Div(Label(_("new_device.healthsite_label"), cls="label", for_="healthsite_id"),
                         Select(*hs_options, id="healthsite_id", name="healthsite_id", cls="input"),
                         cls="form-group"),
@@ -520,6 +513,13 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                         Input(name="location", cls="input", placeholder=_("new_device.location_placeholder")),
                         cls="form-group"),
                     cls="form-row"
+                ),
+                Div(
+                    Button("🔍 " + _("new_device.search_healthsite_btn"), type="button",
+                                cls="btn btn-secondary btn-sm",
+                                onclick="document.getElementById('hsDialog').showModal()",
+                                style="white-space:nowrap;flex-shrink:0;"),
+                        style="display:flex;gap:10px;align-items:flex-centre;",
                 ),
                 cls="form-group"
             ),

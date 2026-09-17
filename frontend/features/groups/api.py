@@ -16,7 +16,7 @@ async def update_organization(token: str, org_id: str, data: dict):
 # ── Healthsites ──────────────────────────────────────────────
 
 async def create_healthsite(token: str, data: dict):
-    return await _post("/api/healthsites", data, token=token)
+    return await _post("/api/healthsites/", data, token=token)
 
 
 async def update_healthsite(token: str, healthsite_id: str, data: dict):

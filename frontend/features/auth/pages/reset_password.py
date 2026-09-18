@@ -16,33 +16,45 @@ def _reset_card(_, errors=None):
     """Build the password-reset form card, optionally with error messages."""
     return Div(
         Div(
-            Span(
-                Img(src=os.getenv("LOGO_URL") or "/static/fixmymedtech_africa.png",
-                    style="height:56px; width:auto; display:block; margin-bottom:10px;"),
-                cls="brand-icon"
+            Div(
+                Span(
+                    Img(src=os.getenv("LOGO_URL") or "/static/fixmymedtech_africa.png",
+                        style="height:56px; width:auto; display:block; margin-bottom:10px;"),
+                    cls="brand-icon"
+                ),
+                H1(_("reset.heading")),
+                P(_("reset.subtitle")),
+                cls="auth-brand"
             ),
-            H1(_("reset.heading")),
-            P(_("reset.subtitle")),
-            cls="auth-brand"
+            *([Div(e, cls="alert alert-error") for e in (errors or [])]),
+            Div(
+                Label(_("reset.password_label"), cls="label", for_="password"),
+                Input(id="password", name="password", type="password",
+                    placeholder=_("reset.password_placeholder"), cls="input"),
+                cls="form-group"
+            ),
+            Div(
+                Label(_("reset.confirm_label"), cls="label", for_="password2"),
+                Input(id="password2", name="password2", type="password",
+                    placeholder=_("reset.confirm_placeholder"), cls="input"),
+                cls="form-group"
+            ),
+            Button(_("reset.submit"), type="submit", cls="btn btn-primary",
+                style="width:100%;justify-content:center;margin-top:8px;"),
+            P(_("reset.login_link"), A(_("reset.login_link_action"), href="/login"),
+            cls="auth-link", style="margin-top:12px;"),
+            cls="auth-card",
         ),
-        *([Div(e, cls="alert alert-error") for e in (errors or [])]),
         Div(
-            Label(_("reset.password_label"), cls="label", for_="password"),
-            Input(id="password", name="password", type="password",
-                  placeholder=_("reset.password_placeholder"), cls="input"),
-            cls="form-group"
+            Blockquote(
+                _("login.quote"),
+                Em(_("login.quote_em")),
+                '"',
+                cls="auth-quote"
+            ),
+            cls="auth-bg"
         ),
-        Div(
-            Label(_("reset.confirm_label"), cls="label", for_="password2"),
-            Input(id="password2", name="password2", type="password",
-                  placeholder=_("reset.confirm_placeholder"), cls="input"),
-            cls="form-group"
-        ),
-        Button(_("reset.submit"), type="submit", cls="btn btn-primary",
-               style="width:100%;justify-content:center;margin-top:8px;"),
-        P(_("reset.login_link"), A(_("reset.login_link_action"), href="/login"),
-          cls="auth-link", style="margin-top:12px;"),
-        cls="auth-card"
+        cls="auth-wrap"
     )
 
 

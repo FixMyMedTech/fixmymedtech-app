@@ -130,6 +130,7 @@ async def get_device_photo_public(device_id: UUID, db: AsyncSession = Depends(ge
 @router.get("/")
 async def list_devices(
     status: Optional[str] = None,
+    healthsite_id: Optional[UUID] = None,
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
@@ -139,6 +140,7 @@ async def list_devices(
         .options(
             selectinload(Device.category),
             selectinload(Device.organization_maintenance),
+            selectinload(Device.healthsite),
         )
         .where(or_(
             Device.organization_id.in_(org_ids),
@@ -149,6 +151,8 @@ async def list_devices(
 
     if status:
         query = query.where(Device.status == status)
+    if healthsite_id:
+        query = query.where(Device.healthsite_id == healthsite_id)
 
     result = await db.execute(query)
     return result.scalars().all()

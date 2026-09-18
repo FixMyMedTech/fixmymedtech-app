@@ -25,7 +25,7 @@ rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 
 @rt("/devices")
-async def get(req, status: str = ""):
+async def get(req, status: str = "", healthsite_id: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
@@ -33,7 +33,7 @@ async def get(req, status: str = ""):
     _ = make_t(lang)
 
     try:
-        devices = await devices_api.get_devices(token, status or None)
+        devices = await devices_api.get_devices(token, status or None, healthsite_id or None)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
@@ -62,6 +62,7 @@ async def get(req, status: str = ""):
 
     is_admin = False
     my_org_ids = set()
+    my_orgs = []
     try:
         me = await auth_api.get_me(token)
         my_orgs = me.get("organizations", [])
@@ -77,10 +78,27 @@ async def get(req, status: str = ""):
         orgs = []
 
     pills = [
-        A(label, href=f"/devices?status={val}",
+        A(label, href=f"/devices?status={val}&healthsite_id={healthsite_id}" if healthsite_id else f"/devices?status={val}",
         cls=f"pill {'active' if status == val else ''}")
         for val, label in status_filters
     ]
+
+    healthsite_options = [
+        Option(_("device_list.filter_healthsite_all"), value="", selected=not healthsite_id),
+        *[
+            Option(f"{o['name']} ({o['country']})", value=o["id"], selected=(o["id"] == healthsite_id))
+            for o in my_orgs
+        ],
+    ]
+    healthsite_filter = Form(
+        Label(_("device_list.filter_healthsite"), for_="healthsite_id", style="font-size:0.8rem;color:var(--c-text-3);"),
+        Select(*healthsite_options, name="healthsite_id", id="healthsite_id",
+               onchange="this.form.submit()",
+               style="padding:6px 8px;border:1px solid var(--c-border);border-radius:var(--r-md);font-size:0.8rem;"),
+        Input(type="hidden", name="status", value=status),
+        method="get", action="/devices",
+        style="display:flex;align-items:center;gap:8px;margin-left:auto;",
+    )
 
     def maintenance_cell(d):
         name = (d.get("organization_maintenance") or {}).get("name", "")
@@ -144,7 +162,7 @@ async def get(req, status: str = ""):
             A(_("device_list.add"), href="/new_device", cls="btn btn-primary"),
             cls="page-header"
         ),
-        Div(*pills, cls="toolbar"),
+        Div(*pills, healthsite_filter, cls="toolbar"),
         table,
     )
 

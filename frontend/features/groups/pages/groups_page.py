@@ -201,8 +201,16 @@ def _hs_results(results, _, search, import_url="/groups/import-healthsite"):
             Input(type="hidden", name="country", id="hs-country"),
             Input(type="hidden", name="region", id="hs-region"),
             Input(type="hidden", name="address", id="hs-address"),
+            Label(_("signup.role_label"), for_="hs-role", cls="label",
+                  style="display:block;margin-top:10px;"),
+            Select(
+                Option(_("signup.role_technician"), value="technician", selected=True),
+                Option(_("signup.role_clinical"), value="clinical_staff"),
+                Option(_("role.engineering_staff"), value="engineering_staff"),
+                name="role", id="hs-role", cls="input"
+            ),
             Button(_("groups.add_selected_btn"), type="submit", id="hs-submit", disabled=True,
-                   cls="btn btn-primary btn-sm"),
+                   cls="btn btn-primary btn-sm", style="margin-top:12px;"),
             method="post",
             action=import_url,
             style="margin-top:12px;",
@@ -277,8 +285,8 @@ def _action_buttons(_):
     return Div(
         Button("＋ " + _("groups.add_org_btn"), cls="btn btn-primary",
                onclick="document.getElementById('orgDialog').showModal()"),
-        # Button("＋ " + _("groups.add_healthsite_btn"), cls="btn btn-secondary",
-        #        onclick="document.getElementById('hsDialog').showModal()"),
+        Button("＋ " + _("groups.add_healthsite_btn"), cls="btn btn-secondary",
+               onclick="document.getElementById('hsDialog').showModal()"),
         style="display:flex;gap:10px;flex-wrap:wrap;",
     )
 
@@ -454,7 +462,8 @@ async def post(req, lat: str = "", lng: str = "", radius_km: str = "20"):
 
 @rt("/groups/import-healthsite")
 async def post(req, osm_id: str = "", osm_type: str = "", name: str = "",
-               country: str = "", region: str = "", address: str = ""):
+               country: str = "", region: str = "", address: str = "",
+               role: str = "technician"):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
@@ -477,7 +486,7 @@ async def post(req, osm_id: str = "", osm_type: str = "", name: str = "",
         return RedirectResponse("/groups", status_code=302)
 
     try:
-        result = await groups_api.import_healthsite(token, facility)
+        result = await groups_api.import_healthsite(token, facility, role=role)
         if result.get("added"):
             return RedirectResponse(f"/groups?flash={_('groups.import_added')}&ok=1", status_code=302)
         return RedirectResponse(f"/groups?flash={_('groups.import_dup')}", status_code=302)

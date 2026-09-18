@@ -3,8 +3,13 @@ import httpx
 
 
 # ── Devices ──────────────────────────────────────────────────
-async def get_devices(token: str, status: str = None):
-    path = f"/api/devices/?status={status}" if status else "/api/devices/"
+async def get_devices(token: str, status: str = None, healthsite_id: str = None):
+    params = []
+    if status:
+        params.append(f"status={status}")
+    if healthsite_id:
+        params.append(f"healthsite_id={healthsite_id}")
+    path = f"/api/devices/?{'&'.join(params)}" if params else "/api/devices/"
     return await _get(path, token)
 
 async def get_device(token: str, device_id: str):

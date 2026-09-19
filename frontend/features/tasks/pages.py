@@ -25,7 +25,8 @@ async def get(req):
     for t_item in tasks:
         is_fault = t_item.get("type") == "fault"
         type_label = _("tasks.type_fault") if is_fault else _("tasks.type_maintenance")
-        href = f"/faults/{t_item['id']}" if is_fault else f"/maintenance-logs/{t_item['id']}"
+        href = (f"/d/{t_item['device_id']}/fault/{t_item['id']}"
+                if is_fault else f"/d/{t_item['device_id']}/log/{t_item['id']}")
         task_rows.append(
             Tr(
                 Td(A(t_item.get("title", ""), href=href,

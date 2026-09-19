@@ -37,6 +37,7 @@ class DeviceCreate(BaseModel):
     id: Optional[UUID] = None
     name: str
     organization_id: Optional[UUID] = None
+    healthsite_id: Optional[UUID] = None
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
@@ -48,6 +49,7 @@ class DeviceCreate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     notes: Optional[str] = None
+    last_maintenance: Optional[date] = None
     next_maintenance: Optional[date] = None
 
 
@@ -58,6 +60,10 @@ class DeviceUpdate(BaseModel):
     notes: Optional[str] = None
     next_maintenance: Optional[date] = None
     organization_maintenance_id: Optional[UUID] = None
+
+
+class PhotoVariantUpdate(BaseModel):
+    variant: str
 
 
 class LocationUpdate(BaseModel):
@@ -72,6 +78,7 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
         .options(
             selectinload(Device.category),
             selectinload(Device.organization),
+            selectinload(Device.healthsite),
         )
         .where(Device.id == device_id)
     )
@@ -109,9 +116,27 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
     }
 
 
+@router.get("/public/{device_id}/photo")
+async def get_device_photo_public(device_id: UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device or not device.photo_key:
+        raise HTTPException(status_code=404, detail="No photo")
+
+    key = device.photo_key if device.photo_public_variant == "original" else (
+        device.photo_processed_key or device.photo_key
+    )
+    obj = await get_file(key)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Photo not found in storage")
+    content, ctype = obj
+    return FastAPIResponse(content=content, media_type=ctype)
+
+
 @router.get("/")
 async def list_devices(
     status: Optional[str] = None,
+    healthsite_id: Optional[UUID] = None,
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
@@ -121,6 +146,7 @@ async def list_devices(
         .options(
             selectinload(Device.category),
             selectinload(Device.organization_maintenance),
+            selectinload(Device.healthsite),
         )
         .where(or_(
             Device.organization_id.in_(org_ids),
@@ -131,6 +157,8 @@ async def list_devices(
 
     if status:
         query = query.where(Device.status == status)
+    if healthsite_id:
+        query = query.where(Device.healthsite_id == healthsite_id)
 
     result = await db.execute(query)
     return result.scalars().all()
@@ -158,6 +186,7 @@ async def get_device(
         .options(
             selectinload(Device.category),
             selectinload(Device.organization),
+            selectinload(Device.healthsite),
         )
         .where(Device.id == device_id)
     )
@@ -253,6 +282,32 @@ async def update_device(
     await db.commit()
     await db.refresh(device)
     return device
+
+
+@router.post("/{device_id}/photo-variant")
+async def update_device_photo_variant(
+    device_id: UUID,
+    body: PhotoVariantUpdate,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.variant not in ("processed", "original"):
+        raise HTTPException(status_code=400, detail="Invalid photo variant")
+
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    is_admin = profile.get_role_for_org(device.organization_id) == "admin"
+    is_registrar = device.registered_by == profile.id
+    if not (is_admin or is_registrar):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    device.photo_public_variant = body.variant
+    await db.commit()
+    await db.refresh(device)
+    return {"photo_public_variant": device.photo_public_variant}
 
 
 @router.patch("/{device_id}/location")
@@ -395,7 +450,9 @@ async def get_device_photo(
     if role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    key = device.photo_processed_key or device.photo_key
+    key = device.photo_key if device.photo_public_variant == "original" else (
+        device.photo_processed_key or device.photo_key
+    )
     obj = await get_file(key)
     if obj is None:
         raise HTTPException(status_code=404, detail="Photo not found in storage")

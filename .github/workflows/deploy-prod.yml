@@ -59,6 +59,7 @@ jobs:
             DISCORD_CLIENT_SECRET=${{ secrets.PROD_DISCORD_CLIENT_SECRET }}
             GEMINI_API_KEY=${{ secrets.PROD_GEMINI_API_KEY }}
             AUTO_PROCESS_PHOTO=${{ secrets.PROD_AUTO_PROCESS_PHOTO }}
+            HEALTHSITES_API_KEY=${{ secrets.PROD_HEALTHSITES_API_KEY }}
             EOF
 
       - name: Copy code to server

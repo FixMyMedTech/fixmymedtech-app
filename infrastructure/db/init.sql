@@ -27,6 +27,7 @@ CREATE TABLE fixmymedtech.organizations (
   name        TEXT NOT NULL,
   country     TEXT NOT NULL,
   region      TEXT,
+  address     TEXT,
   type        TEXT CHECK (type IN ('hospital', 'clinic', 'health_centre', 'lab', 'engineering')) DEFAULT 'hospital',
   contact_email TEXT,
   created_at  TIMESTAMPTZ DEFAULT NOW(),

@@ -17,6 +17,8 @@ router = APIRouter()
 class OrgUpdate(BaseModel):
     name: Optional[str] = None
     country: Optional[str] = None
+    region: Optional[str] = None
+    address: Optional[str] = None
     contact_email: Optional[str] = None
 
 
@@ -40,7 +42,22 @@ async def get_my_organizations(
     orgs = result.scalars().all()
     if not orgs:
         raise HTTPException(status_code=403, detail="No organizations found")
-    return orgs
+    return [
+        {
+            "id": str(o.id),
+            "name": o.name,
+            "country": o.country,
+            "region": o.region,
+            "address": o.address,
+            "type": o.type,
+            "contact_email": o.contact_email,
+            "osm_id": o.osm_id,
+            "osm_type": o.osm_type,
+            "source": o.source,
+            "role": profile.get_role_for_org(o.id),
+        }
+        for o in orgs
+    ]
 
 
 @router.patch("/{org_id}")
@@ -71,6 +88,10 @@ async def update_organization(
         org.name = body.name
     if body.country is not None:
         org.country = body.country
+    if body.region is not None:
+        org.region = body.region
+    if body.address is not None:
+        org.address = body.address
     if body.contact_email is not None:
         org.contact_email = body.contact_email
 
@@ -80,5 +101,7 @@ async def update_organization(
         "id": str(org.id),
         "name": org.name,
         "country": org.country,
+        "region": org.region,
+        "address": org.address,
         "contact_email": org.contact_email,
     }

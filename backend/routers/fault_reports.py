@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload
 
 from config.db_config import get_db
 from config.storage import get_file, upload_file
-from utils.profile import get_current_profile
+from utils.profile import get_current_profile, get_optional_profile
 from models.models import Device, FaultReport, Profile, OrgUser
 
 router = APIRouter()
@@ -39,6 +39,10 @@ class FaultStatusUpdate(BaseModel):
     assigned_to: Optional[UUID] = None
 
 
+def _can_edit_fault(fault: FaultReport, profile: Profile) -> bool:
+    return fault.reported_by == profile.id or fault.assigned_to == profile.id
+
+
 async def _validate_assignee(db: AsyncSession, assignee_id: UUID, org_id: UUID):
     assignee_result = await db.execute(
         select(Profile)
@@ -59,7 +63,11 @@ async def _validate_assignee(db: AsyncSession, assignee_id: UUID, org_id: UUID):
 
 
 @router.post("/public")
-async def submit_fault_public(body: FaultReportCreate, db: AsyncSession = Depends(get_db)):
+async def submit_fault_public(
+    body: FaultReportCreate,
+    profile: Optional[Profile] = Depends(get_optional_profile),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(select(Device).where(Device.id == body.device_id))
     device = result.scalar_one_or_none()
     if not device:
@@ -70,6 +78,7 @@ async def submit_fault_public(body: FaultReportCreate, db: AsyncSession = Depend
 
     fault = FaultReport(
         device_id=body.device_id,
+        reported_by=profile.id if profile else None,
         description=body.description,
         severity=body.severity,
         reporter_name=body.reporter_name or "Anonymous",
@@ -129,6 +138,8 @@ async def upload_fault_photo(
     fault = result.scalar_one_or_none()
     if not fault:
         raise HTTPException(status_code=404, detail="Fault report not found")
+    if not _can_edit_fault(fault, profile):
+        raise HTTPException(status_code=403, detail="Only the reporter or assignee can edit this fault report")
 
     content = await photo.read()
     if not content:
@@ -257,9 +268,8 @@ async def update_fault(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    role = profile.get_role_for_org(device.organization_id)
-    if role not in ("admin", "technician"):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if not _can_edit_fault(fault, profile):
+        raise HTTPException(status_code=403, detail="Only the reporter or assignee can edit this fault report")
 
     if body.status is not None:
         fault.status = body.status

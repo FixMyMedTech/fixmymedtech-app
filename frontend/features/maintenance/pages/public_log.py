@@ -37,7 +37,6 @@ async def get_log_public(req, device_id: str, log_id: str):
         )
 
     device = log.get("device") or {}
-    performed_by = log.get("performed_by_profile") or {}
     assigned = log.get("assigned_to_profile") or {}
 
     sec_head = lambda t: H3(t,
@@ -47,14 +46,13 @@ async def get_log_public(req, device_id: str, log_id: str):
         (_("log_detail.status"),       status_badge(log.get("status", "open"), "log", lang=lang)),
         (_("log_detail.type"),         _(f"maintenance_log.type_{log.get('type', 'preventive')}")),
         (_("log_detail.performed_at"), fmt_date(log.get("performed_at", ""))),
-        (_("log_detail.technician"),   performed_by.get("full_name", _("common.fallback"))),
         (_("log_detail.assigned_to"),  assigned.get("full_name", _("common.fallback"))),
         (_("log_detail.parts_replaced"), log.get("parts_replaced", _("common.fallback"))),
         (_("log_detail.cost"),         f"${log['cost_usd']}" if log.get("cost_usd") else _("common.fallback")),
         (_("log_detail.next_due"),     fmt_date(log.get("next_due", ""))),
     ]
 
-    # Botón editar solo si hay sesión con rol técnico/admin
+    # Only the log starter or assigned resolver can edit.
     edit_btn = ""
     token = auth_helper.get_token(req)
     if token:
@@ -62,7 +60,7 @@ async def get_log_public(req, device_id: str, log_id: str):
             me = await auth_api.get_me(token)
         except Exception:
             me = {}
-        if auth_helper.user_can_edit(me, device.get("organization_id")):
+        if auth_helper.user_can_edit_log(me, log):
             edit_btn = Div(
                 A(_("log_detail.edit"), href=f"/d/{device_id}/log/{log['id']}/edit",
                   cls="btn btn-primary", style="width:100%;justify-content:center;"),
@@ -122,8 +120,7 @@ async def get_log_edit(req, device_id: str, log_id: str):
     except Exception:
         me = {}
     log_obj = await maintenance_api.get_maintenance_log_public(log_id)
-    log_device = (log_obj.get("device") or {}) if isinstance(log_obj, dict) else {}
-    if not auth_helper.user_can_edit(me, log_device.get("organization_id")):
+    if not auth_helper.user_can_edit_log(me, log_obj):
         return RedirectResponse(f"/d/{device_id}/log/{log_id}", status_code=302)
 
     try:
@@ -182,6 +179,9 @@ async def post_log_edit(req, device_id: str, log_id: str, type: str = "",
     if next_due:
         data["next_due"] = next_due
     try:
+        log_obj = await maintenance_api.get_maintenance_log_public(log_id)
+        if not auth_helper.user_can_edit_log(await auth_api.get_me(token), log_obj):
+            return RedirectResponse(f"/d/{device_id}/log/{log_id}", status_code=302)
         await maintenance_api.update_maintenance_log(token, log_id, data)
     except Exception:
         pass
@@ -250,4 +250,5 @@ def _log_edit_form(log, device_id, assignees, lang):
                    style="width:100%;justify-content:center;margin-top:14px;"),
         ),
         method="post", action=f"/d/{device_id}/log/{log['id']}/edit",
+        cls="pub-section",
     )

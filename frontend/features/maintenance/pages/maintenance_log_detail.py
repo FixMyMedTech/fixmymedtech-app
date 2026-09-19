@@ -27,13 +27,11 @@ async def get(req, device_id: str, log_id: str):
         return RedirectResponse(f"/device/{device_id}", status_code=302)
 
     device = log.get("device") or {}
-    performed_by = log.get("performed_by_profile") or {}
     assigned = log.get("assigned_to_profile") or {}
 
     rows = [
         (_("log_detail.type"),         _(f"maintenance_log.type_{log.get('type', 'preventive')}")),
         (_("log_detail.performed_at"), fmt_date(log.get("performed_at", ""))),
-        (_("log_detail.technician"),   performed_by.get("full_name", _("common.fallback"))),
         (_("log_detail.assigned_to"),  assigned.get("full_name", _("common.fallback"))),
         (_("log_detail.parts_replaced"), log.get("parts_replaced", _("common.fallback"))),
         (_("log_detail.cost"),         f"${log['cost_usd']}" if log.get("cost_usd") else _("common.fallback")),

@@ -16,6 +16,7 @@ router = APIRouter()
 
 class OrgUpdate(BaseModel):
     name: Optional[str] = None
+    type: Optional[str] = None
     country: Optional[str] = None
     region: Optional[str] = None
     address: Optional[str] = None
@@ -86,6 +87,10 @@ async def update_organization(
 
     if body.name is not None:
         org.name = body.name
+    if body.type is not None:
+        if body.type not in ("hospital", "clinic", "health_centre", "lab", "engineering"):
+            raise HTTPException(status_code=400, detail="Invalid organization type")
+        org.type = body.type
     if body.country is not None:
         org.country = body.country
     if body.region is not None:

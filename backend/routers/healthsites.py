@@ -185,6 +185,7 @@ def _org_dict(o: Organization) -> dict:
 
 class HealthsiteCreate(BaseModel):
     name: str
+    contact_email: Optional[str] = ""
     country: Optional[str] = ""
     region: Optional[str] = ""
     address: Optional[str] = ""
@@ -234,6 +235,7 @@ async def create_healthsite(
 
     org = Organization(
         name=body.name.strip(),
+        contact_email=(body.contact_email or "").strip(),
         country=(body.country or "").strip(),
         region=(body.region or "").strip(),
         address=(body.address or "").strip(),

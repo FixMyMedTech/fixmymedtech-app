@@ -62,32 +62,15 @@ def _loc_str(org: dict) -> str:
 
 
 def _org_card(org: dict, _):
-    org_id = str(org.get("id", ""))
     is_admin = org.get("role") == "admin"
     loc = _loc_str(org)
-
-    edit_form = Form(
-        Div(
-            Div(Label(_("groups.name"), cls="label"),
-                Div(Input(name="name", value=org.get("name", ""), cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.country"), cls="label"),
-                Div(Input(name="country", value=org.get("country", ""), cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.region"), cls="label"),
-                Div(Input(name="region", value=org.get("region", "") or "", cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.address"), cls="label"),
-                Div(Input(name="address", value=org.get("address", "") or "", cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            cls="hs-grid",
-        ),
-        Button(_("groups.save"), type="submit", cls="btn btn-primary btn-sm",
-               style="margin-top:8px;"),
-        method="post",
-        action=f"/groups/{org_id}/edit",
-        style="margin-top:12px;",
-    ) if is_admin else ""
+    card_actions = Div(
+        A(_("groups.view"), href=f"/groups/{org['id']}/view",
+          cls="btn btn-secondary btn-sm"),
+        A(_("groups.manage"), href=f"/groups/{org['id']}",
+          cls="btn btn-primary btn-sm") if is_admin else "",
+        style="display:flex;gap:8px;margin-top:12px;",
+    )
 
     return Div(
         Div(
@@ -104,7 +87,7 @@ def _org_card(org: dict, _):
             ),
             style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px;",
         ),
-        edit_form,
+        card_actions,
         cls="card",
     )
 
@@ -117,19 +100,46 @@ def _org_dialog(_):
               style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 10px 0;"),
             Form(
                 Div(
-                    Div(Label(_("groups.name"), cls="label"),
-                        Div(Input(name="name", cls="input", placeholder=_("groups.site_name_placeholder")),
-                            style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.country"), cls="label"),
-                        Div(Input(name="country", cls="input", placeholder="HN"),
-                            style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.region"), cls="label"),
-                        Div(Input(name="region", cls="input", placeholder=_("groups.region_placeholder")),
-                            style="display:flex;flex-direction:column;")),
+                    Div(
+                        Div(Label(_("groups.name"), cls="label"),
+                            Div(Input(name="name", cls="input", placeholder=_("groups.site_name_placeholder")),
+                                style="display:flex;flex-direction:column;")),
+                        Div(Label(_("groups.type"), cls="label"),
+                            Div(Select(
+                                    Option(_("groups.type_hospital"), value="hospital", selected=True),
+                                    Option(_("groups.type_clinic"), value="clinic"),
+                                    Option(_("groups.type_health_centre"), value="health_centre"),
+                                    Option(_("groups.type_lab"), value="lab"),
+                                    Option(_("groups.type_engineering"), value="engineering"),
+                                    name="type", cls="input"),
+                                style="display:flex;flex-direction:column;")),
+                        cls="form-row",
+                    ),
+                    cls="form-group",
+                ),
+                Div(
+                    Div(
+                        Div(Label(_("groups.country"), cls="label"),
+                            Div(Input(name="country", cls="input", placeholder="HN"),
+                                style="display:flex;flex-direction:column;")),
+                        Div(Label(_("groups.region"), cls="label"),
+                            Div(Input(name="region", cls="input", placeholder=_("groups.region_placeholder")),
+                                style="display:flex;flex-direction:column;")),
+                        cls="form-row",
+                    ),
+                    cls="form-group",
+                ),
+                Div(
                     Div(Label(_("groups.address"), cls="label"),
                         Div(Input(name="address", cls="input", placeholder=_("groups.address_placeholder")),
                             style="display:flex;flex-direction:column;")),
-                    cls="hs-grid",
+                    cls="form-group",
+                ),
+                Div(
+                    Div(Label(_("groups.contact_email"), cls="label"),
+                        Div(Input(name="contact_email", type="email", cls="input"),
+                            style="display:flex;flex-direction:column;")),
+                    cls="form-group",
                 ),
                 Div(
                     Button(_("groups.org_create_btn"), type="submit", cls="btn btn-primary btn-sm"),
@@ -139,6 +149,7 @@ def _org_dialog(_):
                 ),
                 method="post",
                 action="/groups/add-organization",
+                cls="form-group"
             ),
             style="padding:18px;max-width:420px;",
         ),
@@ -374,38 +385,20 @@ async def get(req):
     return await _build_page(req, token, lang, orgs)
 
 
-@rt("/groups/{org_id}/edit")
-async def post(req, org_id: str, name: str = "", country: str = "", region: str = "", address: str = ""):
-    token, redirect = auth_helper.require_auth(req)
-    if redirect:
-        return redirect
-
-    data = {
-        "name": name.strip(),
-        "country": country.strip(),
-    }
-    if region.strip():
-        data["region"] = region.strip()
-    if address.strip():
-        data["address"] = address.strip()
-    try:
-        await groups_api.update_organization(token, org_id, data)
-    except Exception:
-        pass
-    return RedirectResponse("/groups", status_code=302)
-
-
 @rt("/groups/add-organization")
-async def post(req, name: str = "", country: str = "", region: str = "", address: str = ""):
+async def post(req, name: str = "", type: str = "hospital", country: str = "",
+               region: str = "", address: str = "", contact_email: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
 
-    data = {"name": name.strip(), "country": country.strip(), "type": "hospital"}
+    data = {"name": name.strip(), "country": country.strip(), "type": type}
     if region.strip():
         data["region"] = region.strip()
     if address.strip():
         data["address"] = address.strip()
+    if contact_email.strip():
+        data["contact_email"] = contact_email.strip()
     try:
         await groups_api.create_healthsite(token, data)
     except Exception:

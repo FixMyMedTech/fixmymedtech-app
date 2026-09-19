@@ -14,6 +14,7 @@ function fillLocation(){
   navigator.geolocation.getCurrentPosition(function(p){
     document.getElementById('hs-lat').value = p.coords.latitude.toFixed(6);
     document.getElementById('hs-lng').value = p.coords.longitude.toFixed(6);
+    scheduleHealthsiteSearch();
   }, function(){ alert('Unable to get your location'); });
 }
 function pickHS(el){
@@ -33,6 +34,22 @@ document.addEventListener('submit', function(e){
     if (l) l.style.display = 'flex';
     if (b) b.disabled = true;
   }
+});
+var hsSearchTimer = null;
+function scheduleHealthsiteSearch(){
+  clearTimeout(hsSearchTimer);
+  var lat = document.getElementById('hs-lat');
+  var lng = document.getElementById('hs-lng');
+  var form = document.getElementById('hs-search-form');
+  if (!lat || !lng || !form || !lat.value.trim() || !lng.value.trim()) return;
+  hsSearchTimer = setTimeout(function(){
+    if (form.requestSubmit) form.requestSubmit();
+    else form.submit();
+  }, 700);
+}
+['hs-lat', 'hs-lng', 'hs-radius'].forEach(function(id){
+  var input = document.getElementById(id);
+  if (input) input.addEventListener('input', scheduleHealthsiteSearch);
 });
 """
 
@@ -252,8 +269,8 @@ def _hs_dialog(_, results=None, search=None, error="",
                     Div(Label(_("groups.longitude"), cls="label"),
                         Div(Input(id="hs-lng", name="lng", cls="input", value=lng, placeholder="-70.0"),
                             style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.radius"), cls="label"),
-                        Div(Input(name="radius_km", cls="input", value=radius, style="max-width:100px;"),
+                     Div(Label(_("groups.radius"), cls="label"),
+                         Div(Input(id="hs-radius", name="radius_km", cls="input", value=radius, style="max-width:100px;"),
                             style="display:flex;flex-direction:column;")),
                     cls="hs-grid",
                 ),

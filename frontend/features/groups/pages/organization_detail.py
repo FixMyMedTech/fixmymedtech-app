@@ -53,7 +53,12 @@ async def view_organization(req, org_id: str):
     content = Div(
         A(_("groups.back_to_groups"), href="/groups",
           style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;display:inline-block;margin-bottom:16px;"),
-        H1(org.get("name", "")),
+        Div(
+            H1(org.get("name", ""), style="margin:0;"),
+            A(_("groups.manage"), href=f"/groups/{org_id}",
+              cls="btn btn-primary btn-sm") if org.get("role") == "admin" else "",
+            style="display:flex;align-items:center;justify-content:space-between;gap:16px;",
+        ),
         Div(
             Div(
                 H3(_("groups.basic_info"), style="margin-bottom:12px;"),

@@ -234,7 +234,7 @@ async def get(req, device_id: str):
         Div(
             H3(_("Photo"),
                 style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            Img(src=f"/d/{device_id}/photo?v={d.get('photo_processed_key') or 'original'}",
+            Img(src=f"/d/{device_id}/photo?v={(d.get('photo_key') if d.get('photo_public_variant') == 'original' else d.get('photo_processed_key') or d.get('photo_key')) or 'original'}",
                 alt=d.get("name", ""),
                 style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
             cls="pub-section",

@@ -223,6 +223,7 @@ class Device(Base):
     longitude                   = Column(Float)
     photo_key                   = Column(Text)
     photo_processed_key         = Column(Text)
+    photo_public_variant        = Column(Text, nullable=False, default="processed")
     status                      = Column(Text, default="operational")
     registered_by               = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"), nullable=True)
     last_maintenance            = Column(Date)

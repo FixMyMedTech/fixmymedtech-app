@@ -51,5 +51,8 @@ async def get_device_photo(token: str, device_id: str):
         r.raise_for_status()
         return r.content, r.headers.get("content-type", "image/jpeg")
 
+async def update_device_photo_variant(token: str, device_id: str, variant: str):
+    return await _post(f"/api/devices/{device_id}/photo-variant", {"variant": variant}, token)
+
 async def update_location_device(token: str, device_id: str, data: dict):
     return await _patch(f"/api/devices/{device_id}/location", data, token)

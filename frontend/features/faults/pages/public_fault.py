@@ -1,5 +1,6 @@
 from fasthtml.common import *
 from starlette.responses import RedirectResponse, Response
+import json
 
 # __ API imports __
 import features.auth.helper as auth_helper
@@ -67,13 +68,41 @@ async def get_fault_public(req, device_id: str, fault_id: str):
             )
 
     content = Div(
+        Script(f"""
+        async function shareFaultReport(button) {{
+            const original = button.textContent;
+            const originalClass = button.className;
+            const originalStyle = button.getAttribute('style');
+            try {{
+                await navigator.clipboard.writeText(window.location.href);
+                button.textContent = {json.dumps(_("fault_detail.copied"))};
+                button.className = 'btn btn-sm';
+                button.style.background = 'var(--c-green)';
+                button.style.borderColor = 'var(--c-green)';
+                button.style.color = '#fff';
+                setTimeout(() => {{
+                    button.textContent = original;
+                    button.className = originalClass;
+                    if (originalStyle) button.setAttribute('style', originalStyle);
+                    else button.removeAttribute('style');
+                }}, 2000);
+            }} catch (err) {{
+                window.prompt('Copy this link:', window.location.href);
+            }}
+        }}
+        """),
         # Title
         Div(
-            A(_("public_qr.back"), href=f"/d/{device_id}",
-              style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:10px;display:inline-block;"),
-            Div(f"{device.get('name','')}",
-                style="font-size:0.78rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;"),
-            H1(_("fault_detail.heading"), style="font-family:var(--font-display);font-size:1.25rem;margin:2px 0 0;"),
+            Div(
+                A(_("public_qr.back"), href=f"/d/{device_id}",
+                  style="font-size:0.8rem;color:var(--c-text-3);text-decoration:none;margin-bottom:10px;display:inline-block;"),
+                Div(f"{device.get('name','')}",
+                    style="font-size:0.78rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;"),
+                H1(_("fault_detail.heading"), style="font-family:var(--font-display);font-size:1.25rem;margin:2px 0 0;"),
+            ),
+            Button(_("fault_detail.share"), type="button", onclick="shareFaultReport(this)",
+                   cls="btn btn-secondary btn-sm", style="flex-shrink:0;margin-top:16px;"),
+            style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;",
             cls="pub-section"
         ),
         # Details

@@ -59,7 +59,7 @@ async def get_fault_public(req, device_id: str, fault_id: str):
             me = await auth_api.get_me(token)
         except Exception:
             me = {}
-        if auth_helper.user_can_edit(me, device.get("organization_id")):
+        if auth_helper.user_can_edit_fault(me, fault):
             edit_btn = Div(
                 A(_("fault_detail.edit"), href=f"/d/{device_id}/fault/{fault['id']}/edit",
                   cls="btn btn-primary", style="width:100%;justify-content:center;"),
@@ -142,8 +142,7 @@ async def get_fault_edit(req, device_id: str, fault_id: str):
     except Exception:
         me = {}
     fault_obj = await faults_api.get_fault_public(fault_id)
-    fault_device = (fault_obj.get("device") or {}) if isinstance(fault_obj, dict) else {}
-    if not auth_helper.user_can_edit(me, fault_device.get("organization_id")):
+    if not auth_helper.user_can_edit_fault(me, fault_obj):
         return RedirectResponse(f"/d/{device_id}/fault/{fault_id}", status_code=302)
 
     try:
@@ -195,6 +194,9 @@ async def post_fault_edit(req, device_id: str, fault_id: str, status: str = "",
     data["description"] = description
     data["resolution_notes"] = resolution_notes
     try:
+        fault_obj = await faults_api.get_fault_public(fault_id)
+        if not auth_helper.user_can_edit_fault(await auth_api.get_me(token), fault_obj):
+            return RedirectResponse(f"/d/{device_id}/fault/{fault_id}", status_code=302)
         await faults_api.update_fault(token, fault_id, data)
     except Exception:
         pass
@@ -298,4 +300,5 @@ def _fault_edit_form(fault, device_id, assignees, lang):
         ),
         method="post", action=f"/d/{device_id}/fault/{fault['id']}/edit",
         enctype="multipart/form-data",
+        cls="pub-section"
     )

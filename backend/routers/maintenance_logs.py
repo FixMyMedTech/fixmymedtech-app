@@ -21,6 +21,10 @@ LOG_TYPES = ("preventive", "corrective", "inspection")
 LOG_STATUSES = ("open", "in_progress", "closed")
 
 
+def _can_edit_log(log: MaintenanceLog, profile: Profile) -> bool:
+    return log.performed_by == profile.id or log.assigned_to == profile.id
+
+
 @router.get("/{log_id}")
 async def get_maintenance_log(
     log_id: UUID,
@@ -115,9 +119,8 @@ async def update_maintenance_log(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    role = profile.get_role_for_org(device.organization_id)
-    if role not in ("admin", "technician"):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if not _can_edit_log(log, profile):
+        raise HTTPException(status_code=403, detail="Only the starter or assignee can edit this maintenance log")
 
     if body.type is not None:
         if body.type not in LOG_TYPES:
@@ -179,6 +182,7 @@ async def create_maintenance_log(
 
     log = MaintenanceLog(
         device_id=body.device_id,
+        performed_by=profile.id,
         type=body.type,
         description=body.description,
         assigned_to=body.assigned_to,

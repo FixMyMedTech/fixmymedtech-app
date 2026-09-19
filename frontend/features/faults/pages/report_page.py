@@ -241,7 +241,7 @@ async def post(req, device_id: str, description: str,
 
     fault_id = None
     try:
-        result = await faults_api.submit_fault_public(data)
+        result = await faults_api.submit_fault_public(data, token)
         fault_id = (result or {}).get("id")
     except Exception:
         pass

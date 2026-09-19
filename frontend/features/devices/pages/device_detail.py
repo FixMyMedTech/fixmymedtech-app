@@ -127,7 +127,6 @@ async def get(req, device_id: str):
             Td(fmt_date(l.get("performed_at", "")), style="font-size:0.875rem;"),
             Td(Span(l.get("type",""), cls="badge badge-blue")),
             Td(l.get("description",_("common.fallback")), style="font-size:0.875rem;"),
-            Td((l.get("performed_by_profile") or {}).get("full_name",_("common.fallback")), style="font-size:0.875rem;"),
             Td(f"${l['cost_usd']}" if l.get("cost_usd") else _("common.fallback"), style="font-size:0.875rem;"),
             Td(A(_("device_list.view"), href=f"/d/{device_id}/log/{l['id']}",
                  cls="btn btn-secondary btn-sm")),
@@ -407,9 +406,9 @@ async def get(req, device_id: str):
             ),
             Div(
                 Table(
-                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_technician")), Th(_("device_detail.col_cost")), Th(""))),
+                    Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_cost")), Th(""))),
                     Tbody(*log_rows) if log_rows else Tbody(
-                        Tr(Td(_("device_detail.no_maint"), colspan="6",
+                        Tr(Td(_("device_detail.no_maint"), colspan="5",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
                 style="border:none;border-radius:0;"

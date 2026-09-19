@@ -3,8 +3,8 @@ import httpx
 
 
 # ── Faults ───────────────────────────────────────────────────
-async def submit_fault_public(data: dict):
-    return await _post("/api/faults/public", data)
+async def submit_fault_public(data: dict, token: str = None):
+    return await _post("/api/faults/public", data, token)
 
 async def upload_fault_photo(token: str, fault_id: str, filename: str, content: bytes, content_type: str = None):
     headers = {"Authorization": f"Bearer {token}"}

@@ -8,6 +8,7 @@ load_dotenv()
 
 # __ API imports __
 import features.auth.helper as auth_helper
+import features.auth.api as auth_api
 import features.devices.api as devices_api
 
 from components import page_shell, status_badge, fmt_date, map_component
@@ -39,6 +40,19 @@ async def post_location(req, device_id: str, latitude: float = 0, longitude: flo
         await devices_api.update_location_device(token, device_id, {"latitude": latitude, "longitude": longitude})
     except Exception:
         pass
+    return RedirectResponse(f"/device/{device_id}", status_code=303)
+
+
+@rt("/device/{device_id}/photo-variant")
+async def post_photo_variant(req, device_id: str, variant: str = "processed"):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect: return redirect
+    try:
+        await devices_api.update_device_photo_variant(token, device_id, variant)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            auth_helper.clear_session(req)
+            return RedirectResponse("/login?expired=1", status_code=302)
     return RedirectResponse(f"/device/{device_id}", status_code=303)
 
 
@@ -79,6 +93,32 @@ async def get(req, device_id: str):
     faults = data.get("fault_reports", [])
     docs = data.get("documents", [])
 
+    can_choose_photo = False
+    if d.get("photo_key"):
+        try:
+            me = await auth_api.get_me(token)
+            can_choose_photo = (
+                str(d.get("registered_by")) == str(me.get("id"))
+                or any(o.get("id") == d.get("organization_id") and o.get("role") == "admin"
+                       for o in me.get("organizations", []))
+            )
+        except Exception:
+            can_choose_photo = False
+
+    photo_variant = d.get("photo_public_variant", "processed")
+    photo_cache_key = d.get("photo_key") if photo_variant == "original" else (
+        d.get("photo_processed_key") or d.get("photo_key")
+    )
+    photo_controls = Form(
+        P(_("device_detail.photo_public_choice"), style="font-size:0.8rem;color:var(--c-text-3);margin:8px 0;"),
+        Button(_("device_detail.photo_processed"), type="submit", name="variant", value="processed",
+               cls="btn btn-primary btn-sm" if photo_variant == "processed" else "btn btn-secondary btn-sm"),
+        Button(_("device_detail.photo_original"), type="submit", name="variant", value="original",
+               cls="btn btn-primary btn-sm" if photo_variant == "original" else "btn btn-secondary btn-sm"),
+        method="post", action=f"/device/{device_id}/photo-variant",
+        style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;",
+    ) if can_choose_photo else ""
+
     qr_url = f"{req.base_url}d/{device_id}"
 
     # Maintenance log rows
@@ -89,7 +129,7 @@ async def get(req, device_id: str):
             Td(l.get("description",_("common.fallback")), style="font-size:0.875rem;"),
             Td((l.get("performed_by_profile") or {}).get("full_name",_("common.fallback")), style="font-size:0.875rem;"),
             Td(f"${l['cost_usd']}" if l.get("cost_usd") else _("common.fallback"), style="font-size:0.875rem;"),
-            Td(A(_("device_list.view"), href=f"/device/{device_id}/log/{l['id']}",
+            Td(A(_("device_list.view"), href=f"/d/{device_id}/log/{l['id']}",
                  cls="btn btn-secondary btn-sm")),
         ) for l in logs
     ]
@@ -102,7 +142,7 @@ async def get(req, device_id: str):
             Td(f.get("description",""), style="font-size:0.875rem;"),
             Td(status_badge(f.get("severity","medium"), "severity", lang=lang)),
             Td(status_badge(f.get("status","open"), "fault", lang=lang)),
-            Td(A(_("device_list.view"), href=f"/device/{device_id}/fault/{f['id']}",
+            Td(A(_("device_list.view"), href=f"/d/{device_id}/fault/{f['id']}",
                  cls="btn btn-secondary btn-sm")),
         ) for f in faults
     ]
@@ -309,9 +349,11 @@ async def get(req, device_id: str):
         Div(
             # Photo
             Div(
-                Img(src=f"/device/{device_id}/photo?v={d.get('photo_processed_key') or 'original'}", alt=d.get("name", ""),
+                H3(_("device_detail.photo"), style="margin-bottom:12px;"),
+                Img(src=f"/device/{device_id}/photo?v={photo_cache_key or 'original'}", alt=d.get("name", ""),
                     style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
-                cls="card", style="padding:6px;margin-bottom:16px;",
+                photo_controls,
+                cls="card", style="margin-bottom:16px;",
             ) if d.get("photo_key") else "",
             # Map
             Div(
@@ -357,7 +399,12 @@ async def get(req, device_id: str):
         ),
         # Maintenance logs
         Div(
-            H3(_("device_detail.history"), style="margin-bottom:12px;"),
+            Div(
+                H3(_("device_detail.history"), style="margin:0;"),
+                A(_("maintenance_log.submit"), href=f"/d/{device_id}/maintenance-log",
+                  cls="btn btn-primary btn-sm"),
+                style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;",
+            ),
             Div(
                 Table(
                     Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_type")), Th(_("device_detail.col_description")), Th(_("device_detail.col_technician")), Th(_("device_detail.col_cost")), Th(""))),
@@ -371,7 +418,12 @@ async def get(req, device_id: str):
         ),
         # Fault reports
         Div(
-            H3(_("device_detail.faults"), style="margin-bottom:12px;"),
+            Div(
+                H3(_("device_detail.faults"), style="margin:0;"),
+                A(_("report_fault.heading"), href=f"/d/{device_id}/report",
+                  cls="btn btn-primary btn-sm"),
+                style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;",
+            ),
             Div(
                 Table(
                     Thead(Tr(Th(_("device_detail.col_date")), Th(_("device_detail.col_reported_by")), Th(_("device_detail.col_description")), Th(_("device_detail.col_severity")), Th(_("device_detail.col_status")), Th(""))),
@@ -386,4 +438,3 @@ async def get(req, device_id: str):
     )
 
     return page_shell(content, current="/devices", lang=lang, title=f"{d.get('name',_('common.device'))}{_('title.device_detail')}")
-

@@ -1,4 +1,5 @@
 from fasthtml.common import *
+from starlette.responses import Response
 
 # __ API imports __
 import features.auth.helper as auth_helper
@@ -12,9 +13,29 @@ from i18n import t as make_t
 
 rt = APIRouter()
 
+
+def _org_loc(org: dict) -> str:
+    bits = []
+    if org.get("country"):
+        bits.append(str(org["country"]))
+    if org.get("region"):
+        bits.append(str(org["region"]))
+    if org.get("address"):
+        bits.append(str(org["address"]))
+    return " · ".join(bits)
+
 # ══════════════════════════════════════════════════════════════
 # PUBLIC QR PAGE
 # ══════════════════════════════════════════════════════════════
+
+@rt("/d/{device_id}/photo")
+async def get_device_photo_public(device_id: str):
+    try:
+        content, ctype = await devices_api.get_device_photo_public(device_id)
+        return Response(content=content, media_type=ctype)
+    except Exception:
+        return Response(status_code=404)
+
 
 @rt("/d/{device_id}")
 async def get(req, device_id: str):
@@ -40,6 +61,7 @@ async def get(req, device_id: str):
     faults = data.get("recent_faults", [])
     logs = data.get("recent_logs", [])
     cat = d.get("category") or {}
+    hs = d.get("healthsite") or {}
 
     maint_slug = cat.get("slug") or d.get("category_id") or ""
     if maint_slug in GUIDE_INDEX:
@@ -198,7 +220,6 @@ async def get(req, device_id: str):
                 *[Div(Dt(k), Dd(v), cls="info-row")
                   for k, v in [
                       (_("public_qr.status"),       d.get("status", _("common.fallback"))),
-                      (_("public_qr.location"),     d.get("location", _("common.fallback"))),
                       (_("public_qr.manufacturer"), d.get("manufacturer", _("common.fallback"))),
                       (_("public_qr.model"),        d.get("model", _("common.fallback"))),
                       (_("public_qr.serial"),       d.get("serial_number", _("common.fallback"))),
@@ -209,10 +230,29 @@ async def get(req, device_id: str):
             ),
             cls="pub-section"
         ),
+        # Device photo
+        Div(
+            H3(_("Photo"),
+                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
+            Img(src=f"/d/{device_id}/photo?v={(d.get('photo_key') if d.get('photo_public_variant') == 'original' else d.get('photo_processed_key') or d.get('photo_key')) or 'original'}",
+                alt=d.get("name", ""),
+                style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
+            cls="pub-section",
+        ) if d.get("photo_key") else "",
         # Map
         Div(
             H3(_("public_qr.location_map"),
                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
+            Div(
+                P(d.get("location",_("common.fallback")), style="font-size:0.85rem;margin:2px 0 0;"),
+                Div(hs.get("name", ""), style="font-weight:600;font-size:0.9rem;"),
+                P(_org_loc(hs), style="color:var(--c-text-3);font-size:0.85rem;margin:2px 0 0;")
+                if _org_loc(hs) else "",
+                # style="background:var(--c-bg-soft,#f4f4f4);border-radius:8px;padding:10px 12px;margin-bottom:12px;"
+            ) if hs.get("name") else "",
+            cls="pub-section"
+        ) if hs.get("name") else "",
+        Div(
             map_component(
                 lat=d.get("latitude", 0),
                 lng=d.get("longitude", 0),

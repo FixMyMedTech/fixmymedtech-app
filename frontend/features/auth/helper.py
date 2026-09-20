@@ -44,6 +44,24 @@ def user_can_edit(me, device_org_id):
             return True
     return False
 
+
+def user_can_edit_fault(me, fault):
+    """Only the profile that reported or is assigned to a fault may edit it."""
+    user_id = str(me.get("id", ""))
+    return user_id and (
+        user_id == str(fault.get("reported_by", ""))
+        or user_id == str(fault.get("assigned_to", ""))
+    )
+
+
+def user_can_edit_log(me, log):
+    """Only the profile that started or is assigned to a maintenance log may edit it."""
+    user_id = str(me.get("id", ""))
+    return user_id and (
+        user_id == str(log.get("performed_by", ""))
+        or user_id == str(log.get("assigned_to", ""))
+    )
+
 def require_auth(req):
     """
     Fast check — just verifies session has a token.

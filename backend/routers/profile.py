@@ -15,7 +15,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File as FileParam
 from fastapi.responses import Response as FastAPIResponse
 from pydantic import BaseModel
-from sqlalchemy import select, text, func, or_
+from sqlalchemy import select, text, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import Optional
@@ -213,18 +213,11 @@ async def get_profile_stats(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    org_ids = profile.org_ids()
-    if org_ids:
-        devices_count = (
-            await db.execute(
-                select(func.count(Device.id)).where(or_(
-                    Device.organization_id.in_(org_ids),
-                    Device.organization_maintenance_id.in_(org_ids),
-                ))
-            )
-        ).scalar_one()
-    else:
-        devices_count = 0
+    devices_count = (
+        await db.execute(
+            select(func.count(Device.id)).where(Device.registered_by == profile.id)
+        )
+    ).scalar_one()
 
     faults_resolved = (
         await db.execute(

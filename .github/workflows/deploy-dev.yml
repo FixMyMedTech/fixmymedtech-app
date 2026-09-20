@@ -52,6 +52,7 @@ jobs:
             GEMINI_PHOTO_MODEL=gemini-2.5-flash-image
             PHOTO_MAX_DIMENSION=1600
             PHOTO_JPEG_QUALITY=85
+            HEALTHSITES_API_KEY=${{ secrets.DEV_HEALTHSITES_API_KEY }}
             EOF
 
       - name: Copy code to server

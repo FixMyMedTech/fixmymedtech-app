@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
 from utils.create_superuser import bootstrap_superuser_from_env
@@ -74,6 +74,7 @@ app.include_router(maintenance_logs.router, prefix="/api/maintenance-logs",  tag
 app.include_router(dashboard.router,        prefix="/api/dashboard",         tags=["dashboard"])
 app.include_router(organizations.router,    prefix="/api/organizations",     tags=["organizations"])
 app.include_router(admin_email_router,      prefix="/admin-panel",           tags=["admin"])
+app.include_router(healthsites.router,      prefix="/api/healthsites",       tags=["healthsites"])
 
 # ── SQLAdmin (browsable admin UI at /admin) ─────────────────
 from sqladmin import Admin, ModelView

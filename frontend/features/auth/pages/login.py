@@ -94,7 +94,7 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
                     _("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
                     cls="auth-link", style="margin-top:12px;"
                 ),
-                _oauth_buttons(_),
+                # _oauth_buttons(_),
                 cls="auth-card"
             ),
             Div(

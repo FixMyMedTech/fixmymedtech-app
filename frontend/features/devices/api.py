@@ -3,8 +3,13 @@ import httpx
 
 
 # ── Devices ──────────────────────────────────────────────────
-async def get_devices(token: str, status: str = None):
-    path = f"/api/devices/?status={status}" if status else "/api/devices/"
+async def get_devices(token: str, status: str = None, healthsite_id: str = None):
+    params = []
+    if status:
+        params.append(f"status={status}")
+    if healthsite_id:
+        params.append(f"healthsite_id={healthsite_id}")
+    path = f"/api/devices/?{'&'.join(params)}" if params else "/api/devices/"
     return await _get(path, token)
 
 async def get_device(token: str, device_id: str):
@@ -12,6 +17,12 @@ async def get_device(token: str, device_id: str):
 
 async def get_device_public(device_id: str):
     return await _get(f"/api/devices/public/{device_id}")
+
+async def get_device_photo_public(device_id: str):
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{API_URL}/api/devices/public/{device_id}/photo")
+        r.raise_for_status()
+        return r.content, r.headers.get("content-type", "image/jpeg")
 
 async def get_categories():
     return await _get("/api/devices/categories")
@@ -39,6 +50,9 @@ async def get_device_photo(token: str, device_id: str):
         r = await client.get(f"{API_URL}/api/devices/{device_id}/photo", headers=headers)
         r.raise_for_status()
         return r.content, r.headers.get("content-type", "image/jpeg")
+
+async def update_device_photo_variant(token: str, device_id: str, variant: str):
+    return await _post(f"/api/devices/{device_id}/photo-variant", {"variant": variant}, token)
 
 async def update_location_device(token: str, device_id: str, data: dict):
     return await _patch(f"/api/devices/{device_id}/location", data, token)

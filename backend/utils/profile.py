@@ -9,8 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from config.db_config import get_db
-from config.users import current_active_user
+from config.users import current_active_user, fastapi_users
 from models.models import User, Profile, OrgUser
+
+current_optional_user = fastapi_users.current_user(optional=True)
 
 
 async def get_current_profile(
@@ -31,3 +33,13 @@ async def get_current_profile(
         raise HTTPException(status_code=403, detail="User has no organization assigned")
 
     return profile
+
+
+async def get_optional_profile(
+    user: User | None = Depends(current_optional_user),
+    db: AsyncSession = Depends(get_db),
+) -> Profile | None:
+    if user is None:
+        return None
+    result = await db.execute(select(Profile).where(Profile.id == user.id))
+    return result.scalar_one_or_none()

@@ -124,6 +124,9 @@ function previewAvatar(input) {
         var reader = new FileReader();
         reader.onload = function (e) { img.src = e.target.result; };
         reader.readAsDataURL(input.files[0]);
+        fmmCompressImage(input.files[0], 1024, 0.8).then(function (blob) {
+            fmmSetFiles(input, blob, input.files[0].name.replace(/\\.[^.]+$/, '') + '.jpg');
+        }).catch(function () {});
     }
 }
 """),

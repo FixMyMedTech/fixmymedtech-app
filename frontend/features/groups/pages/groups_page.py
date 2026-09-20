@@ -14,6 +14,7 @@ function fillLocation(){
   navigator.geolocation.getCurrentPosition(function(p){
     document.getElementById('hs-lat').value = p.coords.latitude.toFixed(6);
     document.getElementById('hs-lng').value = p.coords.longitude.toFixed(6);
+    scheduleHealthsiteSearch();
   }, function(){ alert('Unable to get your location'); });
 }
 function pickHS(el){
@@ -33,6 +34,22 @@ document.addEventListener('submit', function(e){
     if (l) l.style.display = 'flex';
     if (b) b.disabled = true;
   }
+});
+var hsSearchTimer = null;
+function scheduleHealthsiteSearch(){
+  clearTimeout(hsSearchTimer);
+  var lat = document.getElementById('hs-lat');
+  var lng = document.getElementById('hs-lng');
+  var form = document.getElementById('hs-search-form');
+  if (!lat || !lng || !form || !lat.value.trim() || !lng.value.trim()) return;
+  hsSearchTimer = setTimeout(function(){
+    if (form.requestSubmit) form.requestSubmit();
+    else form.submit();
+  }, 700);
+}
+['hs-lat', 'hs-lng', 'hs-radius'].forEach(function(id){
+  var input = document.getElementById(id);
+  if (input) input.addEventListener('input', scheduleHealthsiteSearch);
 });
 """
 
@@ -61,33 +78,50 @@ def _loc_str(org: dict) -> str:
     return (" · " + " · ".join(bits)) if bits else ""
 
 
+def _organization_action_dialog(org_id: str, action: str, _, *, destructive=False, has_devices=False):
+    is_leave = action == "leave"
+    blocked = action == "delete" and has_devices
+    dialog_id = f"{action}-org-{org_id}"
+    return Dialog(
+        Div(
+            H3(_("groups.leave_title" if is_leave else "groups.delete_blocked_title" if blocked else "groups.delete_title"),
+               style="margin:0 0 4px 0;font-size:1.05rem;"),
+            P(_("groups.leave_message" if is_leave else "groups.delete_blocked_message" if blocked else "groups.delete_message"),
+              style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 14px 0;"),
+            Form(
+                Button(_("groups.cancel"), type="button", cls="btn btn-secondary btn-sm",
+                       onclick=f"document.getElementById('{dialog_id}').close()"),
+                Button(_("groups.accept"), type="submit",
+                       cls="btn btn-danger btn-sm" if destructive else "btn btn-warning btn-sm"),
+                method="post", action=f"/groups/{org_id}/{action}",
+                style="display:flex;justify-content:flex-end;gap:8px;",
+            ) if not blocked else
+            Div(
+                Button(_("groups.cancel"), type="button", cls="btn btn-secondary btn-sm",
+                       onclick=f"document.getElementById('{dialog_id}').close()"),
+                style="display:flex;justify-content:flex-end;",
+            ),
+            style="padding:18px;max-width:420px;",
+        ),
+        id=dialog_id,
+        style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);",
+    )
+
+
 def _org_card(org: dict, _):
-    org_id = str(org.get("id", ""))
     is_admin = org.get("role") == "admin"
     loc = _loc_str(org)
-
-    edit_form = Form(
-        Div(
-            Div(Label(_("groups.name"), cls="label"),
-                Div(Input(name="name", value=org.get("name", ""), cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.country"), cls="label"),
-                Div(Input(name="country", value=org.get("country", ""), cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.region"), cls="label"),
-                Div(Input(name="region", value=org.get("region", "") or "", cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            Div(Label(_("groups.address"), cls="label"),
-                Div(Input(name="address", value=org.get("address", "") or "", cls="input"),
-                    style="display:flex;flex-direction:column;")),
-            cls="hs-grid",
-        ),
-        Button(_("groups.save"), type="submit", cls="btn btn-primary btn-sm",
-               style="margin-top:8px;"),
-        method="post",
-        action=f"/groups/{org_id}/edit",
-        style="margin-top:12px;",
-    ) if is_admin else ""
+    card_actions = Div(
+        A(_("groups.view"), href=f"/groups/{org['id']}/view",
+          cls="btn btn-secondary btn-sm"),
+        A(_("groups.manage"), href=f"/groups/{org['id']}",
+          cls="btn btn-primary btn-sm") if is_admin else "",
+        Button(_("groups.leave"), type="button", cls="btn btn-warning btn-sm",
+               onclick=f"document.getElementById('leave-org-{org['id']}').showModal()"),
+        Button(_("groups.delete"), type="button", cls="btn btn-danger btn-sm",
+               onclick=f"document.getElementById('delete-org-{org['id']}').showModal()") if is_admin else "",
+        style="display:flex;gap:8px;margin-top:12px;",
+    )
 
     return Div(
         Div(
@@ -104,7 +138,10 @@ def _org_card(org: dict, _):
             ),
             style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px;",
         ),
-        edit_form,
+        card_actions,
+        _organization_action_dialog(org["id"], "leave", _),
+        _organization_action_dialog(org["id"], "delete", _, destructive=True,
+                                    has_devices=org.get("has_devices", False)) if is_admin else "",
         cls="card",
     )
 
@@ -117,19 +154,46 @@ def _org_dialog(_):
               style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 10px 0;"),
             Form(
                 Div(
-                    Div(Label(_("groups.name"), cls="label"),
-                        Div(Input(name="name", cls="input", placeholder=_("groups.site_name_placeholder")),
-                            style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.country"), cls="label"),
-                        Div(Input(name="country", cls="input", placeholder="HN"),
-                            style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.region"), cls="label"),
-                        Div(Input(name="region", cls="input", placeholder=_("groups.region_placeholder")),
-                            style="display:flex;flex-direction:column;")),
+                    Div(
+                        Div(Label(_("groups.name"), cls="label"),
+                            Div(Input(name="name", cls="input", placeholder=_("groups.site_name_placeholder")),
+                                style="display:flex;flex-direction:column;")),
+                        Div(Label(_("groups.type"), cls="label"),
+                            Div(Select(
+                                    Option(_("groups.type_hospital"), value="hospital", selected=True),
+                                    Option(_("groups.type_clinic"), value="clinic"),
+                                    Option(_("groups.type_health_centre"), value="health_centre"),
+                                    Option(_("groups.type_lab"), value="lab"),
+                                    Option(_("groups.type_engineering"), value="engineering"),
+                                    name="type", cls="input"),
+                                style="display:flex;flex-direction:column;")),
+                        cls="form-row",
+                    ),
+                    cls="form-group",
+                ),
+                Div(
+                    Div(
+                        Div(Label(_("groups.country"), cls="label"),
+                            Div(Input(name="country", cls="input", placeholder="HN"),
+                                style="display:flex;flex-direction:column;")),
+                        Div(Label(_("groups.region"), cls="label"),
+                            Div(Input(name="region", cls="input", placeholder=_("groups.region_placeholder")),
+                                style="display:flex;flex-direction:column;")),
+                        cls="form-row",
+                    ),
+                    cls="form-group",
+                ),
+                Div(
                     Div(Label(_("groups.address"), cls="label"),
                         Div(Input(name="address", cls="input", placeholder=_("groups.address_placeholder")),
                             style="display:flex;flex-direction:column;")),
-                    cls="hs-grid",
+                    cls="form-group",
+                ),
+                Div(
+                    Div(Label(_("groups.contact_email"), cls="label"),
+                        Div(Input(name="contact_email", type="email", cls="input"),
+                            style="display:flex;flex-direction:column;")),
+                    cls="form-group",
                 ),
                 Div(
                     Button(_("groups.org_create_btn"), type="submit", cls="btn btn-primary btn-sm"),
@@ -139,6 +203,7 @@ def _org_dialog(_):
                 ),
                 method="post",
                 action="/groups/add-organization",
+                cls="form-group"
             ),
             style="padding:18px;max-width:420px;",
         ),
@@ -241,8 +306,8 @@ def _hs_dialog(_, results=None, search=None, error="",
                     Div(Label(_("groups.longitude"), cls="label"),
                         Div(Input(id="hs-lng", name="lng", cls="input", value=lng, placeholder="-70.0"),
                             style="display:flex;flex-direction:column;")),
-                    Div(Label(_("groups.radius"), cls="label"),
-                        Div(Input(name="radius_km", cls="input", value=radius, style="max-width:100px;"),
+                     Div(Label(_("groups.radius"), cls="label"),
+                         Div(Input(id="hs-radius", name="radius_km", cls="input", value=radius, style="max-width:100px;"),
                             style="display:flex;flex-direction:column;")),
                     cls="hs-grid",
                 ),
@@ -374,38 +439,20 @@ async def get(req):
     return await _build_page(req, token, lang, orgs)
 
 
-@rt("/groups/{org_id}/edit")
-async def post(req, org_id: str, name: str = "", country: str = "", region: str = "", address: str = ""):
-    token, redirect = auth_helper.require_auth(req)
-    if redirect:
-        return redirect
-
-    data = {
-        "name": name.strip(),
-        "country": country.strip(),
-    }
-    if region.strip():
-        data["region"] = region.strip()
-    if address.strip():
-        data["address"] = address.strip()
-    try:
-        await groups_api.update_organization(token, org_id, data)
-    except Exception:
-        pass
-    return RedirectResponse("/groups", status_code=302)
-
-
 @rt("/groups/add-organization")
-async def post(req, name: str = "", country: str = "", region: str = "", address: str = ""):
+async def post(req, name: str = "", type: str = "hospital", country: str = "",
+               region: str = "", address: str = "", contact_email: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
 
-    data = {"name": name.strip(), "country": country.strip(), "type": "hospital"}
+    data = {"name": name.strip(), "country": country.strip(), "type": type}
     if region.strip():
         data["region"] = region.strip()
     if address.strip():
         data["address"] = address.strip()
+    if contact_email.strip():
+        data["contact_email"] = contact_email.strip()
     try:
         await groups_api.create_healthsite(token, data)
     except Exception:

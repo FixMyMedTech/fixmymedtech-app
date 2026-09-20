@@ -173,6 +173,8 @@ body.sidebar-collapsed .sb-foot { display: none; }
 .btn-secondary { background:var(--c-surface); color:var(--c-text); border-color:var(--c-border); }
 .btn-secondary:hover { border-color:var(--c-primary); color:var(--c-primary); }
 .btn-danger { background:var(--c-red-lt); color:var(--c-red); border:1px solid transparent; }
+.btn-warning { background:var(--c-amber-lt); color:var(--c-amber); border:1px solid transparent; }
+.btn-warning:hover { filter:brightness(.96); }
 .btn-sm { padding:4px 10px; font-size:.8rem; }
 .btn-outline { background:var(--c-surface); color:var(--c-text-2); border:1px solid var(--c-border); }
 .btn-outline:hover { background:var(--c-bg-2); border-color:var(--c-primary); color:var(--c-primary); }

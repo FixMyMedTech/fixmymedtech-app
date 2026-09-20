@@ -1,4 +1,5 @@
 from typing import Optional
+import json
 
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
@@ -314,6 +315,38 @@ async def update_member_role(req, org_id: str, member_id: str, role: str = ""):
         except Exception:
             pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)
+
+
+@rt("/groups/{org_id}/leave")
+async def leave_group(req, org_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    try:
+        await groups_api.leave_organization(token, org_id)
+    except Exception:
+        pass
+    return RedirectResponse("/groups", status_code=303)
+
+
+@rt("/groups/{org_id}/delete")
+async def delete_group(req, org_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+    try:
+        await groups_api.delete_organization(token, org_id)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 400:
+            return page_shell(
+                Script(f"alert({json.dumps(_('groups.delete_has_devices'))}); window.location='/groups';"),
+                current="/groups", lang=lang,
+            )
+    except Exception:
+        pass
+    return RedirectResponse("/groups", status_code=303)
 
 
 @rt("/groups/{org_id}/search")

@@ -78,6 +78,36 @@ def _loc_str(org: dict) -> str:
     return (" · " + " · ".join(bits)) if bits else ""
 
 
+def _organization_action_dialog(org_id: str, action: str, _, *, destructive=False, has_devices=False):
+    is_leave = action == "leave"
+    blocked = action == "delete" and has_devices
+    dialog_id = f"{action}-org-{org_id}"
+    return Dialog(
+        Div(
+            H3(_("groups.leave_title" if is_leave else "groups.delete_blocked_title" if blocked else "groups.delete_title"),
+               style="margin:0 0 4px 0;font-size:1.05rem;"),
+            P(_("groups.leave_message" if is_leave else "groups.delete_blocked_message" if blocked else "groups.delete_message"),
+              style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 14px 0;"),
+            Form(
+                Button(_("groups.cancel"), type="button", cls="btn btn-secondary btn-sm",
+                       onclick=f"document.getElementById('{dialog_id}').close()"),
+                Button(_("groups.accept"), type="submit",
+                       cls="btn btn-danger btn-sm" if destructive else "btn btn-warning btn-sm"),
+                method="post", action=f"/groups/{org_id}/{action}",
+                style="display:flex;justify-content:flex-end;gap:8px;",
+            ) if not blocked else
+            Div(
+                Button(_("groups.cancel"), type="button", cls="btn btn-secondary btn-sm",
+                       onclick=f"document.getElementById('{dialog_id}').close()"),
+                style="display:flex;justify-content:flex-end;",
+            ),
+            style="padding:18px;max-width:420px;",
+        ),
+        id=dialog_id,
+        style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);",
+    )
+
+
 def _org_card(org: dict, _):
     is_admin = org.get("role") == "admin"
     loc = _loc_str(org)
@@ -86,6 +116,10 @@ def _org_card(org: dict, _):
           cls="btn btn-secondary btn-sm"),
         A(_("groups.manage"), href=f"/groups/{org['id']}",
           cls="btn btn-primary btn-sm") if is_admin else "",
+        Button(_("groups.leave"), type="button", cls="btn btn-warning btn-sm",
+               onclick=f"document.getElementById('leave-org-{org['id']}').showModal()"),
+        Button(_("groups.delete"), type="button", cls="btn btn-danger btn-sm",
+               onclick=f"document.getElementById('delete-org-{org['id']}').showModal()") if is_admin else "",
         style="display:flex;gap:8px;margin-top:12px;",
     )
 
@@ -105,6 +139,9 @@ def _org_card(org: dict, _):
             style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px;",
         ),
         card_actions,
+        _organization_action_dialog(org["id"], "leave", _),
+        _organization_action_dialog(org["id"], "delete", _, destructive=True,
+                                    has_devices=org.get("has_devices", False)) if is_admin else "",
         cls="card",
     )
 

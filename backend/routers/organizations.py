@@ -3,13 +3,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from utils.profile import get_current_profile
 from config.db_config import get_db
-from models.models import Organization, Profile, OrgUser, User
+from models.models import Organization, Profile, OrgUser, User, Device
 
 router = APIRouter()
 
@@ -54,6 +54,13 @@ async def get_my_organizations(
     orgs = result.scalars().all()
     if not orgs:
         raise HTTPException(status_code=403, detail="No organizations found")
+    device_org_ids = set((await db.execute(
+        select(Device.organization_id).where(or_(
+            Device.organization_id.in_([o.id for o in orgs]),
+            Device.organization_maintenance_id.in_([o.id for o in orgs]),
+            Device.healthsite_id.in_([o.id for o in orgs]),
+        ))
+    )).scalars().all())
     return [
         {
             "id": str(o.id),
@@ -67,9 +74,46 @@ async def get_my_organizations(
             "osm_type": o.osm_type,
             "source": o.source,
             "role": profile.get_role_for_org(o.id),
+            "has_devices": o.id in device_org_ids,
         }
         for o in orgs
     ]
+
+
+@router.delete("/{org_id}")
+async def delete_organization(
+    org_id: str,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid organization id")
+
+    if profile.get_role_for_org(org_uuid) != "admin":
+        raise HTTPException(status_code=403, detail="Only organization admins can delete organizations")
+
+    result = await db.execute(select(Organization).where(Organization.id == org_uuid))
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    devices = await db.scalar(
+        select(Device.id).where(or_(
+            Device.organization_id == org_uuid,
+            Device.organization_maintenance_id == org_uuid,
+            Device.healthsite_id == org_uuid,
+        )).limit(1)
+    )
+    if devices:
+        raise HTTPException(status_code=400, detail="Organization has registered devices")
+
+    await db.execute(delete(OrgUser).where(OrgUser.organization_id == org_uuid))
+    await db.delete(org)
+    await db.commit()
+    return {"message": "Organization deleted"}
 
 
 def _member_org_check(profile: Profile, org_uuid) -> None:
@@ -199,6 +243,43 @@ async def add_organization_member(
     ))
     await db.commit()
     return {"message": "Organization member added"}
+
+
+@router.delete("/{org_id}/members/me")
+async def leave_organization(
+    org_id: str,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid organization id")
+
+    result = await db.execute(
+        select(OrgUser).where(
+            OrgUser.organization_id == org_uuid,
+            OrgUser.profile_id == profile.id,
+        )
+    )
+    membership = result.scalar_one_or_none()
+    if not membership:
+        raise HTTPException(status_code=404, detail="Organization membership not found")
+
+    if membership.role == "admin":
+        admin_count = await db.scalar(
+            select(func.count()).select_from(OrgUser).where(
+                OrgUser.organization_id == org_uuid,
+                OrgUser.role == "admin",
+            )
+        )
+        if admin_count <= 1:
+            raise HTTPException(status_code=400, detail="Add another organization admin before leaving")
+
+    await db.delete(membership)
+    await db.commit()
+    return {"message": "You left the organization"}
 
 
 @router.delete("/{org_id}/members/{member_id}")

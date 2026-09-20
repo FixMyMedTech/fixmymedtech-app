@@ -52,6 +52,13 @@ async def get(req, status: str = "", healthsite_id: str = ""):
     except Exception:
         devices = []
 
+    all_devices = devices
+    if status or healthsite_id:
+        try:
+            all_devices = await devices_api.get_devices(token)
+        except Exception:
+            all_devices = devices
+
     status_filters = [
         ("", _("device_list.filter_all")),
         ("operational", _("device_list.filter_operational")),
@@ -83,11 +90,18 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         for val, label in status_filters
     ]
 
+    device_healthsites = {}
+    for device in all_devices:
+        healthsite = device.get("healthsite") or {}
+        if healthsite.get("id"):
+            device_healthsites[str(healthsite["id"])] = healthsite
+    healthsites = sorted(device_healthsites.values(), key=lambda site: site.get("name", "").lower())
+
     healthsite_options = [
         Option(_("device_list.filter_healthsite_all"), value="", selected=not healthsite_id),
         *[
             Option(f"{o['name']} ({o['country']})", value=o["id"], selected=(o["id"] == healthsite_id))
-            for o in my_orgs
+            for o in healthsites
         ],
     ]
     healthsite_filter = Form(

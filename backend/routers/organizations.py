@@ -1,7 +1,7 @@
 # routers/organizations.py
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 from sqlalchemy import select, or_, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,6 +31,11 @@ class MemberRoleUpdate(BaseModel):
 
 class MemberAdd(BaseModel):
     profile_id: str
+    role: str = "technician"
+
+
+class MemberInvite(BaseModel):
+    email: EmailStr
     role: str = "technician"
 
 
@@ -243,6 +248,118 @@ async def add_organization_member(
     ))
     await db.commit()
     return {"message": "Organization member added"}
+
+
+def _username_base(email: str) -> str:
+    local = email.split("@")[0].lower()
+    cleaned = "".join(ch if (ch.isalnum() or ch in "._-") else "_" for ch in local)
+    return (cleaned.strip("._-") or "user")[:60]
+
+
+async def _unique_username(db: AsyncSession, base: str) -> str:
+    candidate = base
+    suffix = 1
+    while await db.scalar(select(Profile.id).where(Profile.username == candidate)):
+        suffix += 1
+        candidate = f"{base}{suffix}"
+    return candidate
+
+
+@router.post("/{org_id}/invite")
+async def invite_organization_member(
+    org_id: str,
+    body: MemberInvite,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Add a user to the organization and email them a link to set a password.
+
+    Works both for people who already have a FixMyMedTech account and for those
+    who do not: a missing account is created (verified, with a random password
+    that the emailed link replaces) and joined to this organization.
+    """
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid organization id")
+
+    if profile.get_role_for_org(org_uuid) != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can invite users")
+
+    if body.role not in VALID_MEMBER_ROLES:
+        raise HTTPException(status_code=400, detail="Invalid organization role")
+
+    email = str(body.email).strip().lower()
+
+    if not await db.scalar(select(Organization.id).where(Organization.id == org_uuid)):
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    # Case-insensitive: avoids a unique-constraint error on legacy mixed-case rows.
+    user = await db.scalar(select(User).where(func.lower(User.email) == email))
+    created_user = False
+
+    if user:
+        already_member = await db.scalar(
+            select(OrgUser.id).where(
+                OrgUser.organization_id == org_uuid,
+                OrgUser.profile_id == user.id,
+            )
+        )
+        if already_member:
+            raise HTTPException(status_code=409, detail="User is already an organization member")
+    else:
+        from pwdlib import PasswordHash
+        from pwdlib.hashers.bcrypt import BcryptHasher
+        user = User(
+            email=email,
+            hashed_password=PasswordHash(hashers=[BcryptHasher()]).hash(_uuid.uuid4().hex),
+            is_active=True,
+            is_superuser=False,
+            # The emailed link authenticates them, so no separate verification step.
+            is_verified=True,
+            full_name=email.split("@")[0].replace(".", " ").title(),
+        )
+        db.add(user)
+        await db.flush()
+        db.add(Profile(
+            id=user.id,
+            username=await _unique_username(db, _username_base(email)),
+            full_name=user.full_name,
+        ))
+        created_user = True
+
+    db.add(OrgUser(profile_id=user.id, organization_id=org_uuid, role=body.role))
+    await db.commit()
+
+    # Password-setup link, using the fastapi-users reset-password contract.
+    from fastapi_users.jwt import generate_jwt
+    from config.email import send_invitation_email
+    from config.users import FRONTEND_URL, JWT_SECRET, _password_helper
+
+    email_sent = True
+    try:
+        token = generate_jwt(
+            {
+                "sub": str(user.id),
+                "password_fgpt": _password_helper.hash(user.hashed_password),
+                "aud": "fastapi-users:reset",
+            },
+            JWT_SECRET,
+            3600,
+        )
+        await send_invitation_email(email, token, FRONTEND_URL)
+    except Exception:
+        import logging
+        logging.getLogger("email").exception("Failed to send invitation email to %s", email)
+        email_sent = False
+
+    return {
+        "message": "Invitation sent",
+        "email": email,
+        "created_user": created_user,
+        "email_sent": email_sent,
+    }
 
 
 @router.delete("/{org_id}/members/me")

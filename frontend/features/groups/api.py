@@ -22,8 +22,8 @@ async def add_organization_member(token: str, org_id: str, data: dict):
     return await _post(f"/api/organizations/{org_id}/members", data, token=token)
 
 
-async def add_organization_member(token: str, org_id: str, data: dict):
-    return await _post(f"/api/organizations/{org_id}/members", data, token=token)
+async def invite_organization_member(token: str, org_id: str, data: dict):
+    return await _post(f"/api/organizations/{org_id}/invite", data, token=token)
 
 
 async def remove_organization_member(token: str, org_id: str, member_id: str):

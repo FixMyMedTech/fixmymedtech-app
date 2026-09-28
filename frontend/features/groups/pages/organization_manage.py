@@ -8,6 +8,7 @@ import httpx
 import features.auth.helper as auth_helper
 import features.groups.api as groups_api
 from components import page_shell
+from components import alert as alert_box
 from i18n import t as make_t
 
 rt = APIRouter()
@@ -173,6 +174,46 @@ def _add_member_dialog(org, _, org_id):
     )
 
 
+def _invite_member_dialog(_, org_id):
+    return Dialog(
+        Div(
+            H3(_("groups.invite_user_title"), style="margin:0 0 4px 0;font-size:1.05rem;"),
+            P(_("groups.invite_user_desc"),
+              style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 14px 0;"),
+            Form(
+                Div(
+                    Label(_("groups.invite_email"), for_="invite-email", style="font-size:0.8rem;color:var(--c-text-3);"),
+                    Input(id="invite-email", name="email", type="email", required=True,
+                          cls="input", placeholder=_("groups.invite_email_placeholder"),
+                          style="width:100%;margin-top:4px;"),
+                    style="margin-bottom:12px;",
+                ),
+                Div(
+                    Label(_("groups.member_role"), for_="invite-role", style="font-size:0.8rem;color:var(--c-text-3);"),
+                    Select(
+                        Option(_("signup.role_admin"), value="admin"),
+                        Option(_("signup.role_technician"), value="technician", selected=True),
+                        Option(_("signup.role_clinical"), value="clinical_staff"),
+                        Option(_("role.engineering_staff"), value="engineering_staff"),
+                        id="invite-role", name="role", cls="input", style="width:100%;margin-top:4px;",
+                    ),
+                    style="margin-bottom:14px;",
+                ),
+                Div(
+                    Button(_("groups.invite_send"), type="submit", cls="btn btn-primary btn-sm"),
+                    Button(_("groups.close"), type="button", cls="btn btn-secondary btn-sm",
+                           onclick="document.getElementById('imDialog').close()"),
+                    style="display:flex;justify-content:flex-end;gap:8px;",
+                ),
+                method="post", action=f"/groups/{org_id}/invite",
+            ),
+            style="padding:18px;max-width:480px;width:90%;",
+        ),
+        id="imDialog",
+        style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);",
+    )
+
+
 async def _get_member_organization(req, token, org_id):
     try:
         orgs = await groups_api.get_my_organizations(token)
@@ -244,6 +285,8 @@ async def get_organization(req, org_id: str):
     content = Div(
         Script(EDIT_ORG_JS),
         Script(_member_manage_js(org_id)),
+        alert_box(_("groups.invite_sent"), "success") if req.query_params.get("invited") else
+        alert_box(_("groups.invite_email_required"), "error") if req.query_params.get("invite_error") else "",
         A(_("groups.back_to_groups"), href="/groups",
           style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;display:inline-block;margin-bottom:16px;"),
         H1(org.get("name", "")),
@@ -253,14 +296,20 @@ async def get_organization(req, org_id: str):
         Div(
             Div(
                 H3(_("groups.members"), style="margin:0;"),
-                Button(_("groups.add_user_btn"), type="button", cls="btn btn-primary btn-sm",
-                       onclick="document.getElementById('amDialog').showModal()"),
+                Div(
+                    Button(_("groups.invite_user_btn"), type="button", cls="btn btn-primary btn-sm",
+                           onclick="document.getElementById('imDialog').showModal()"),
+                    Button(_("groups.add_user_btn"), type="button", cls="btn btn-secondary btn-sm",
+                           onclick="document.getElementById('amDialog').showModal()"),
+                    style="display:flex;gap:8px;",
+                ),
                 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;",
             ),
             Div(members_table, cls="table-wrap"),
             cls="card", style="max-width:960px;margin-top:16px;",
         ),
         _add_member_dialog(org, _, org_id),
+        _invite_member_dialog(_, org_id),
     )
     return page_shell(content, current="/groups", title=org.get("name", ""), lang=lang)
 
@@ -374,3 +423,36 @@ async def add_member(req, org_id: str, profile_id: str):
     except Exception:
         pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)
+
+
+@rt("/groups/{org_id}/invite")
+async def invite_member(req, org_id: str, email: str = "", role: str = "technician"):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+    if not email.strip():
+        return RedirectResponse(f"/groups/{org_id}?invite_error=1", status_code=303)
+    try:
+        await groups_api.invite_organization_member(
+            token, org_id, {"email": email.strip(), "role": role},
+        )
+    except httpx.HTTPStatusError as e:
+        detail = ""
+        try:
+            detail = e.response.json().get("detail", "")
+        except Exception:
+            detail = ""
+        return page_shell(
+            Script(f"alert({json.dumps(detail or _('groups.invite_failed'))});"
+                   f" window.location={json.dumps(f'/groups/{org_id}')};"),
+            current="/groups", lang=lang,
+        )
+    except Exception:
+        return page_shell(
+            Script(f"alert({json.dumps(_('groups.invite_failed'))});"
+                   f" window.location={json.dumps(f'/groups/{org_id}')};"),
+            current="/groups", lang=lang,
+        )
+    return RedirectResponse(f"/groups/{org_id}?invited=1", status_code=303)

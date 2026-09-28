@@ -356,7 +356,16 @@ def _action_buttons(_):
     )
 
 
-async def _build_page(req, token, lang, orgs, *, results=None, search=None, error="", open_hs=False):
+def _sort_orgs(orgs):
+    """Admin organizations first, then alphabetical by name."""
+    return sorted(
+        orgs,
+        key=lambda o: (0 if o.get("role") == "admin" else 1,
+                       (o.get("name") or "").strip().lower()),
+    )
+
+
+async def _build_page(req, token, lang, orgs, *, results=None, search=None, error="", open_hs=False, source=""):
     _ = make_t(lang)
 
     if not orgs:
@@ -367,27 +376,36 @@ async def _build_page(req, token, lang, orgs, *, results=None, search=None, erro
             style="text-align:center;padding:40px 24px;"
         )
     else:
-        default_org = next((o for o in orgs if o.get("role") == "admin"), None) or orgs[0]
-        other_orgs = [o for o in orgs if o.get("id") != default_org.get("id")]
-
-        sections = [
-            Div(
-                H2(_("groups.default_heading"), style="margin:8px 0 8px 0;font-size:1rem;color:var(--c-text-3);"),
-                _org_card(default_org, _),
-            )
+        pills = [
+            A(label, href=f"/groups?source={val}" if val else "/groups",
+              cls=f"pill {'active' if source == val else ''}")
+            for val, label in [
+                ("", _("groups.filter_all")),
+                ("app", _("groups.from_app_heading")),
+                ("imported", _("groups.imported_heading")),
+            ]
         ]
-        if other_orgs:
-            sections.append(
-                Div(
-                    H2(_("groups.other_heading"), style="margin:0 0 8px 0;font-size:1rem;color:var(--c-text-3);"),
-                    Div(*[_org_card(o, _) for o in other_orgs],
-                        style="display:flex;flex-direction:column;gap:12px;"),
-                )
-            )
+
+        if source == "app":
+            shown = [o for o in orgs if o.get("source") != "healthsites.io"]
+        elif source == "imported":
+            shown = [o for o in orgs if o.get("source") == "healthsites.io"]
+        else:
+            shown = orgs
+        shown = _sort_orgs(shown)
+
+        cards = (
+            Div(*[_org_card(o, _) for o in shown],
+                style="display:flex;flex-direction:column;gap:12px;")
+            if shown else
+            P(_("groups.no_orgs_match"),
+              style="color:var(--c-text-3);font-size:0.9rem;text-align:center;padding:32px 0;")
+        )
 
         body = Div(
             _flash(req),
-            *sections,
+            Div(*pills, cls="toolbar"),
+            cards,
             style="display:flex;flex-direction:column;gap:14px;max-width:760px;",
         )
 
@@ -397,9 +415,10 @@ async def _build_page(req, token, lang, orgs, *, results=None, search=None, erro
 
     content = Div(
         Div(
-            Div(H1(_("groups.heading")), cls="page-header"),
+            Div(H1(_("groups.heading"))),
             _action_buttons(_),
-            style="display:flex;flex-direction:column;gap:10px;",
+            style="display:flex;flex-direction:column;gap:10px;justify-content:space-between;",
+            cls="page-header"
         ),
         body,
         _org_dialog(_),
@@ -436,7 +455,7 @@ async def get(req):
     except Exception:
         orgs = []
 
-    return await _build_page(req, token, lang, orgs)
+    return await _build_page(req, token, lang, orgs, source=req.query_params.get("source", ""))
 
 
 @rt("/groups/add-organization")

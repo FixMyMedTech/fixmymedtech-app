@@ -13,7 +13,9 @@ from sqlalchemy.orm import selectinload
 
 from config.db_config import get_db
 from utils.profile import get_current_profile
-from models.models import Device, DeviceCategory, Document, MaintenanceLog, FaultReport, Profile
+from models.models import (
+    Device, DeviceCategory, Document, MaintenanceLog, FaultReport, Profile, OrgJoinRequest,
+)
 from config.storage import upload_file, get_file
 from config.db_config import AsyncSessionLocal
 from utils.photo_processing import process_photo_to_white, compress_device_photo
@@ -225,17 +227,39 @@ async def get_device(
     }
 
 
+async def _pending_request_role(db: AsyncSession, profile_id, org_id):
+    """Role carried by the caller's pending join request for this org, if any."""
+    result = await db.execute(
+        select(OrgJoinRequest.role).where(
+            OrgJoinRequest.profile_id == profile_id,
+            OrgJoinRequest.organization_id == org_id,
+            OrgJoinRequest.status == "pending",
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 @router.post("/")
 async def create_device(
     body: DeviceCreate,
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    if not profile.org_memberships:
+    org_id = (
+        body.organization_id
+        or (profile.org_memberships[0].organization_id if profile.org_memberships else None)
+    )
+    if not org_id:
         raise HTTPException(status_code=403, detail="No organization membership")
 
-    org_id = body.organization_id or profile.org_memberships[0].organization_id
     role = profile.get_role_for_org(org_id)
+    if role is None:
+        # Not a member yet. A pending join request allows registering a device
+        # in that clinic, carrying the role that was requested. Device *listing*
+        # stays membership-gated, so nothing else in the org is exposed.
+        role = await _pending_request_role(db, profile.id, org_id)
+        if role is None:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     if role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")

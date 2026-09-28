@@ -227,6 +227,27 @@ async def _get_member_organization(req, token, org_id):
     return next((o for o in orgs if str(o.get("id")) == str(org_id)), None), None
 
 
+ROLE_VALUES = ("admin", "technician", "clinical_staff", "engineering_staff")
+
+
+def _role_label(_, role: str) -> str:
+    return {
+        "admin": _("signup.role_admin"),
+        "technician": _("signup.role_technician"),
+        "clinical_staff": _("signup.role_clinical"),
+        "engineering_staff": _("role.engineering_staff"),
+    }.get(role, role)
+
+
+def _role_select(_, selected: str, onchange: str = "",
+                 style: str = "max-width:180px;padding:5px 8px;"):
+    return Select(
+        *(Option(_role_label(_, v), value=v, selected=v == selected) for v in ROLE_VALUES),
+        name="role", cls="input", style=style,
+        **({"onchange": onchange} if onchange else {}),
+    )
+
+
 @rt("/groups/{org_id}")
 async def get_organization(req, org_id: str):
     token, redirect = auth_helper.require_auth(req)
@@ -247,7 +268,7 @@ async def get_organization(req, org_id: str):
     member_rows = [
         Tr(
             Td(member.get("name", ""), style="font-size:0.875rem;"),
-            Td(member.get("email", ""), style="font-size:0.875rem;"),
+            Td(member.get("username") or member.get("email", ""), style="font-size:0.875rem;"),
             Td(Form(
                 Select(
                     Option(_("signup.role_admin"), value="admin", selected=member.get("role") == "admin"),
@@ -272,7 +293,7 @@ async def get_organization(req, org_id: str):
     members_table = Table(
         Thead(Tr(
             Th(_("groups.member_name")),
-            Th(_("groups.member_email")),
+            Th(_("groups.member_username")),
             Th(_("groups.member_role")),
             Th(_("groups.member_action")),
         )),
@@ -280,6 +301,62 @@ async def get_organization(req, org_id: str):
             Tr(Td(_("groups.no_members"), colspan="4",
                   style="text-align:center;padding:20px;color:var(--c-text-3);"))
         ),
+    )
+
+    try:
+        join_requests = await groups_api.get_join_requests(token, org_id)
+    except Exception:
+        join_requests = []
+
+    request_rows = [
+        Tr(
+            Td(req.get("name", ""), style="font-size:0.875rem;"),
+            Td(req.get("username") or req.get("email", ""), style="font-size:0.875rem;"),
+            Td(_role_label(_, req.get("role", "")), style="font-size:0.875rem;"),
+            Td(
+                Form(
+                    _role_select(_, req.get("role", ""), style="max-width:150px;padding:4px 6px;"),
+                    Button(_("groups.approve_btn"), type="submit", cls="btn btn-primary btn-sm"),
+                    method="post",
+                    action=f"/groups/{org_id}/join-requests/{req['id']}/approve",
+                    style="display:flex;gap:6px;align-items:center;",
+                ),
+                Form(
+                    Button(_("groups.reject_btn"), type="submit", cls="btn btn-secondary btn-sm"),
+                    method="post",
+                    action=f"/groups/{org_id}/join-requests/{req['id']}/reject",
+                ),
+                style="display:flex;gap:8px;justify-content:flex-end;",
+            ),
+        )
+        for req in join_requests
+    ]
+
+    requests_table = Table(
+        Thead(Tr(
+            Th(_("groups.member_name")),
+            Th(_("groups.member_username")),
+            Th(_("groups.requested_role")),
+            Th(_("groups.member_action"), style="text-align:right;"),
+        )),
+        Tbody(*request_rows),
+    )
+
+    pending_section = (
+        Div(
+            Div(
+                H3(_("groups.pending_requests"), style="margin:0;"),
+                Span(str(len(join_requests)), cls="badge badge-amber",
+                     style="margin-left:8px;"),
+                style="display:flex;align-items:center;margin-bottom:12px;",
+            ),
+            P(_("groups.pending_requests_desc"),
+              style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 12px 0;"),
+            Div(requests_table, cls="table-wrap"),
+            cls="card",
+            style="max-width:960px;margin-top:16px;border-left:3px solid var(--c-amber);",
+        )
+        if join_requests else ""
     )
 
     content = Div(
@@ -293,6 +370,7 @@ async def get_organization(req, org_id: str):
         P(_("groups.manage_desc"), style="color:var(--c-text-3);margin-bottom:18px;"),
         Div(_basic_card(org, _), _contact_card(org, _),
             cls="two-col", style="max-width:960px;margin-top:16px;"),
+        pending_section,
         Div(
             Div(
                 H3(_("groups.members"), style="margin:0;"),
@@ -363,6 +441,31 @@ async def update_member_role(req, org_id: str, member_id: str, role: str = ""):
             await groups_api.update_organization_member(token, org_id, member_id, role)
         except Exception:
             pass
+    return RedirectResponse(f"/groups/{org_id}", status_code=303)
+
+
+@rt("/groups/{org_id}/join-requests/{request_id}/approve")
+async def approve_join_request(req, org_id: str, request_id: str, role: str = ""):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    if role in ROLE_VALUES:
+        try:
+            await groups_api.approve_join_request(token, org_id, request_id, role)
+        except Exception:
+            pass
+    return RedirectResponse(f"/groups/{org_id}", status_code=303)
+
+
+@rt("/groups/{org_id}/join-requests/{request_id}/reject")
+async def reject_join_request(req, org_id: str, request_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    try:
+        await groups_api.reject_join_request(token, org_id, request_id)
+    except Exception:
+        pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)
 
 

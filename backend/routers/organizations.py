@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from utils.profile import get_current_profile
 from config.db_config import get_db
-from models.models import Organization, Profile, OrgUser, User, Device
+from models.models import Organization, Profile, OrgUser, OrgJoinRequest, User, Device
 
 router = APIRouter()
 
@@ -36,6 +36,11 @@ class MemberAdd(BaseModel):
 
 class MemberInvite(BaseModel):
     email: EmailStr
+    role: str = "technician"
+
+
+class OrgJoin(BaseModel):
+    org_id: str
     role: str = "technician"
 
 
@@ -83,6 +88,281 @@ async def get_my_organizations(
         }
         for o in orgs
     ]
+
+
+@router.post("/join")
+async def join_organization(
+    body: OrgJoin,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Request membership of an organization found in the healthsites.io search.
+
+    Affiliation is self-declared, so this only records a request: an existing
+    admin of that organization must approve it before membership is granted.
+    """
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(body.org_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid organization id")
+
+    role = (body.role or "technician").strip().lower()
+    if role not in ("technician", "clinical_staff", "engineering_staff"):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role. Joining cannot request admin.",
+        )
+
+    org = await db.get(Organization, org_uuid)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    if profile.get_role_for_org(org_uuid):
+        raise HTTPException(
+            status_code=409, detail="You are already a member of this organization"
+        )
+
+    existing = await db.execute(
+        select(OrgJoinRequest).where(
+            OrgJoinRequest.organization_id == org_uuid,
+            OrgJoinRequest.profile_id == profile.id,
+        )
+    )
+    request = existing.scalar_one_or_none()
+    if request and request.status == "pending":
+        raise HTTPException(
+            status_code=409, detail="You already have a pending request for this organization"
+        )
+    if request:
+        # Previously rejected: reopen it rather than stacking history rows.
+        request.role = role
+        request.status = "pending"
+        request.reviewed_at = None
+    else:
+        db.add(OrgJoinRequest(
+            organization_id=org_uuid,
+            profile_id=profile.id,
+            role=role,
+            status="pending",
+        ))
+    await db.commit()
+    return {"requested": 1, "name": org.name, "role": role, "status": "pending"}
+
+
+@router.get("/my_join_requests")
+async def my_join_requests(
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """The caller's own pending join requests, for status display and for
+    choosing an org when registering a device before approval."""
+    result = await db.execute(
+        select(OrgJoinRequest, Organization)
+        .join(Organization, Organization.id == OrgJoinRequest.organization_id)
+        .where(
+            OrgJoinRequest.profile_id == profile.id,
+            OrgJoinRequest.status == "pending",
+        )
+        .order_by(OrgJoinRequest.created_at)
+    )
+    return [
+        {
+            "id": str(req.id),
+            "organization_id": str(req.organization_id),
+            "organization_name": org.name,
+            "source": org.source or "app",
+            "role": req.role,
+            "status": req.status,
+            "created_at": req.created_at.isoformat() if req.created_at else None,
+            # Enough to render the org view page for a requester who is not yet
+            # a member, so the card can link to it before approval.
+            "type": org.type,
+            "country": org.country,
+            "region": org.region,
+            "address": org.address,
+            "contact_email": org.contact_email,
+        }
+        for req, org in result.all()
+    ]
+
+
+@router.get("/{org_id}/join_requests")
+async def list_join_requests(
+    org_id: str,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Pending membership requests for an organization (admins only)."""
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid organization id")
+
+    if profile.get_role_for_org(org_uuid) != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can view join requests")
+
+    result = await db.execute(
+        select(OrgJoinRequest, Profile.full_name, Profile.username, User.email)
+        .join(Profile, Profile.id == OrgJoinRequest.profile_id)
+        .join(User, User.id == Profile.id)
+        .where(
+            OrgJoinRequest.organization_id == org_uuid,
+            OrgJoinRequest.status == "pending",
+        )
+        .order_by(OrgJoinRequest.created_at)
+    )
+    return [
+        {
+            "id": str(req.id),
+            "name": full_name or username,
+            "username": username,
+            "email": email,
+            "role": req.role,
+            "created_at": req.created_at.isoformat() if req.created_at else None,
+        }
+        for req, full_name, username, email in result.all()
+    ]
+
+
+@router.post("/{org_id}/join_requests/{request_id}/approve")
+async def approve_join_request(
+    org_id: str,
+    request_id: str,
+    role: str = "",
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Approve a request: the requester becomes a member of the organization."""
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+        req_uuid = _uuid.UUID(request_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid id")
+
+    if profile.get_role_for_org(org_uuid) != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can approve requests")
+
+    result = await db.execute(
+        select(OrgJoinRequest).where(
+            OrgJoinRequest.id == req_uuid,
+            OrgJoinRequest.organization_id == org_uuid,
+        )
+    )
+    request = result.scalar_one_or_none()
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if request.status != "pending":
+        raise HTTPException(
+            status_code=409, detail=f"Request already {request.status}"
+        )
+
+    # An approver may grant a different role than requested — including admin,
+    # which a requester can never obtain on their own.
+    granted = (role or request.role or "technician").strip().lower()
+    if granted not in ("admin", "technician", "clinical_staff", "engineering_staff"):
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    # Query membership directly: get(Profile) would lazy-load org_memberships,
+    # which cannot be awaited here.
+    already_member = await db.execute(
+        select(OrgUser).where(
+            OrgUser.organization_id == org_uuid,
+            OrgUser.profile_id == request.profile_id,
+        )
+    )
+    if already_member.scalar_one_or_none():
+        # Joined through another path in the meantime; just close the request.
+        request.status = "approved"
+        request.reviewed_at = func.now()
+        await db.commit()
+        return {"added": 0, "skipped": 1}
+
+    request.status = "approved"
+    request.reviewed_at = func.now()
+    # request.role keeps the role that was *requested* (history); the granted
+    # role lives on the org_users row. The table's CHECK forbids admin here.
+    db.add(OrgUser(
+        organization_id=org_uuid,
+        profile_id=request.profile_id,
+        role=granted,
+    ))
+    await db.commit()
+    return {"added": 1, "skipped": 0, "role": granted}
+
+
+@router.post("/{org_id}/join_requests/{request_id}/reject")
+async def reject_join_request(
+    org_id: str,
+    request_id: str,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Reject a pending request. The requester may request again later."""
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+        req_uuid = _uuid.UUID(request_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid id")
+
+    if profile.get_role_for_org(org_uuid) != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can reject requests")
+
+    result = await db.execute(
+        select(OrgJoinRequest).where(
+            OrgJoinRequest.id == req_uuid,
+            OrgJoinRequest.organization_id == org_uuid,
+        )
+    )
+    request = result.scalar_one_or_none()
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if request.status != "pending":
+        raise HTTPException(
+            status_code=409, detail=f"Request already {request.status}"
+        )
+
+    request.status = "rejected"
+    request.reviewed_at = func.now()
+    await db.commit()
+    return {"rejected": 1}
+
+
+@router.delete("/join_requests/{request_id}")
+async def cancel_join_request(
+    request_id: str,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Withdraw one's own pending request. Kept as a history row so the same
+    user can request again later."""
+    import uuid as _uuid
+    try:
+        req_uuid = _uuid.UUID(request_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid id")
+
+    result = await db.execute(
+        select(OrgJoinRequest).where(
+            OrgJoinRequest.id == req_uuid,
+            OrgJoinRequest.profile_id == profile.id,
+        )
+    )
+    request = result.scalar_one_or_none()
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if request.status != "pending":
+        raise HTTPException(
+            status_code=409, detail=f"Request already {request.status}"
+        )
+
+    request.status = "cancelled"
+    request.reviewed_at = func.now()
+    await db.commit()
+    return {"cancelled": 1}
 
 
 @router.delete("/{org_id}")

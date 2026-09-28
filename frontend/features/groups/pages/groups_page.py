@@ -1,5 +1,6 @@
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
+from urllib.parse import quote
 import httpx
 import features.groups.api as groups_api
 import features.auth.helper as auth_helper
@@ -24,6 +25,7 @@ function pickHS(el){
   document.getElementById('hs-country').value = el.dataset.country || '';
   document.getElementById('hs-region').value = el.dataset.region || '';
   document.getElementById('hs-address').value = el.dataset.address || '';
+  document.getElementById('hs-existing-org-id').value = el.dataset.existingOrgId || '';
   document.getElementById('hs-submit').disabled = false;
 }
 document.addEventListener('submit', function(e){
@@ -146,6 +148,76 @@ def _org_card(org: dict, _):
     )
 
 
+def _cancel_request_dialog(req: dict, _):
+    dialog_id = f"cancel-req-{req['id']}"
+    return Dialog(
+        Div(
+            H3(_("groups.cancel_request_title"),
+               style="margin:0 0 4px 0;font-size:1.05rem;"),
+            P(_("groups.cancel_request_message").format(name=req.get("organization_name", "")),
+              style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 14px 0;"),
+            Form(
+                Button(_("groups.cancel"), type="button", cls="btn btn-secondary btn-sm",
+                       onclick=f"document.getElementById('{dialog_id}').close()"),
+                Button(_("groups.cancel_request"), type="submit", cls="btn btn-warning btn-sm"),
+                method="post", action=f"/groups/cancel-request/{req['id']}",
+                style="display:flex;justify-content:flex-end;gap:8px;",
+            ),
+            style="padding:18px;max-width:420px;",
+        ),
+        id=dialog_id,
+        style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);",
+    )
+
+
+def _pending_request_card(req: dict, _):
+    created = (req.get("created_at") or "")[:10]
+    details = [_("groups.requested_role")]
+    details.append({
+        "admin": _("signup.role_admin"),
+        "technician": _("signup.role_technician"),
+        "clinical_staff": _("signup.role_clinical"),
+        "engineering_staff": _("role.engineering_staff"),
+    }.get(req.get("role", ""), req.get("role", "")))
+    if created:
+        details.append(created)
+
+    org_id = req.get("organization_id", "")
+    return Div(
+        Div(
+            Div(
+                H3(req.get("organization_name", ""), style="margin:0 0 4px 0;font-size:1.1rem;"),
+                P(" · ".join(details), style="color:var(--c-text-3);font-size:0.85rem;margin:0;"),
+                style="flex:1;min-width:0;",
+            ),
+            Div(
+                Span(_("groups.requested_access"), cls="badge badge-amber",
+                     style="flex-shrink:0;"),
+                _source_badge(req.get("source", "app"), _),
+                style="flex-shrink:0;margin-left:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;",
+            ),
+            style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px;",
+        ),
+        P(_("groups.requested_access_desc"),
+          style="color:var(--c-text-3);font-size:0.8rem;margin:12px 0 0 0;"),
+        Div(
+            A(_("groups.view"), href=f"/groups/{org_id}/view", cls="btn btn-secondary btn-sm"),
+            Button(_("groups.cancel_request"), type="button", cls="btn btn-warning btn-sm",
+                   onclick=f"document.getElementById('cancel-req-{req['id']}').showModal()"),
+            style="display:flex;gap:8px;margin-top:12px;",
+        ),
+        _cancel_request_dialog(req, _),
+        cls="card",
+        style="border-left:3px solid var(--c-amber);",
+    )
+
+
+def _pending_request_cards(requests, _):
+    """Cards for organizations the user has requested but not yet joined.
+    Rendered at the bottom of the organization list."""
+    return [_pending_request_card(r, _) for r in requests]
+
+
 def _org_dialog(_):
     return Dialog(
         Div(
@@ -231,16 +303,24 @@ def _hs_results(results, _, search, import_url="/groups/import-healthsite"):
                  style="color:var(--c-text-3);font-size:0.85rem;margin:10px 0 0 0;")
 
     rows = []
+    has_joinable = False
     for fac in results:
         meta = f" — {_fac_meta(fac)}"
         if fac.get("already_imported"):
+            # Selectable: joining the existing org beats creating a duplicate.
+            has_joinable = True
             rows.append(
-                Div(
-                    Span("✓", style="margin-right:8px;color:var(--c-green);"),
+                Label(
+                    Input(type="radio", name="sel", onchange="pickHS(this)",
+                          data_osm_id=fac.get("osm_id", ""), data_osm_type=fac.get("osm_type", ""),
+                          data_name=fac.get("name", ""), data_country=fac.get("country", ""),
+                          data_region=fac.get("region", ""), data_address=fac.get("address", ""),
+                          data_existing_org_id=fac.get("existing_org_id", ""),
+                          style="margin-right:10px;"),
                     Span(fac.get("name", ""), style="font-weight:600;"),
                     Span(meta, style="color:var(--c-text-3);font-size:0.8rem;"),
                     Span(_("groups.already_imported"), cls="badge badge-gray", style="margin-left:8px;"),
-                    style="display:flex;align-items:center;padding:8px 10px;border-radius:8px;background:var(--c-bg-soft,#f4f4f4);margin-bottom:6px;opacity:.75;",
+                    style="display:flex;align-items:center;padding:8px 10px;border-radius:8px;background:var(--c-green-lt,#eefaf3);margin-bottom:6px;cursor:pointer;",
                 )
             )
             continue
@@ -259,6 +339,9 @@ def _hs_results(results, _, search, import_url="/groups/import-healthsite"):
 
     return Div(
         Div(*rows, style="margin-top:10px;max-height:min(45vh,360px);overflow-y:auto;padding-right:6px;"),
+        (P(_("groups.join_existing_hint"),
+            style="color:var(--c-text-3);font-size:0.78rem;margin:8px 0 0 0;")
+         if has_joinable else None),
         Form(
             Input(type="hidden", name="osm_id", id="hs-osm-id"),
             Input(type="hidden", name="osm_type", id="hs-osm-type"),
@@ -266,6 +349,7 @@ def _hs_results(results, _, search, import_url="/groups/import-healthsite"):
             Input(type="hidden", name="country", id="hs-country"),
             Input(type="hidden", name="region", id="hs-region"),
             Input(type="hidden", name="address", id="hs-address"),
+            Input(type="hidden", name="existing_org_id", id="hs-existing-org-id"),
             Label(_("signup.role_label"), for_="hs-role", cls="label",
                   style="display:block;margin-top:10px;"),
             Select(
@@ -365,15 +449,23 @@ def _sort_orgs(orgs):
     )
 
 
-async def _build_page(req, token, lang, orgs, *, results=None, search=None, error="", open_hs=False, source=""):
+async def _build_page(req, token, lang, orgs, *, results=None, search=None, error="", open_hs=False, source="", requests=None):
     _ = make_t(lang)
 
-    if not orgs:
+    requests = requests or []
+
+    empty = Div(
+        Div("🏥", style="width:56px;height:56px;background:var(--c-blue-lt);color:var(--c-primary);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
+        P(_("groups.empty"), style="color:var(--c-text-3);font-size:0.9rem;text-align:center;"),
+        Div(_action_buttons(_), style="margin-top:16px;display:flex;justify-content:center;"),
+        style="text-align:center;padding:40px 24px;"
+    )
+
+    if not orgs and not requests:
         body = Div(
-            Div("🏥", style="width:56px;height:56px;background:var(--c-blue-lt);color:var(--c-primary);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
-            P(_("groups.empty"), style="color:var(--c-text-3);font-size:0.9rem;text-align:center;"),
-            Div(_action_buttons(_), style="margin-top:16px;display:flex;justify-content:center;"),
-            style="text-align:center;padding:40px 24px;"
+            _flash(req),
+            empty,
+            style="display:flex;flex-direction:column;gap:14px;max-width:760px;",
         )
     else:
         pills = [
@@ -386,21 +478,25 @@ async def _build_page(req, token, lang, orgs, *, results=None, search=None, erro
             ]
         ]
 
-        if source == "app":
-            shown = [o for o in orgs if o.get("source") != "healthsites.io"]
-        elif source == "imported":
-            shown = [o for o in orgs if o.get("source") == "healthsites.io"]
-        else:
-            shown = orgs
-        shown = _sort_orgs(shown)
+        def _source_matches(org_source):
+            if source == "app":
+                return org_source != "healthsites.io"
+            if source == "imported":
+                return org_source == "healthsites.io"
+            return True
 
-        cards = (
-            Div(*[_org_card(o, _) for o in shown],
-                style="display:flex;flex-direction:column;gap:12px;")
-            if shown else
-            P(_("groups.no_orgs_match"),
+        shown = _sort_orgs([o for o in orgs if _source_matches(o.get("source", "app"))])
+        cards_list = [_org_card(o, _) for o in shown]
+        cards_list += _pending_request_cards(
+            [r for r in requests if _source_matches(r.get("source", "app"))], _)
+
+        if cards_list:
+            cards = Div(*cards_list, style="display:flex;flex-direction:column;gap:12px;")
+        elif orgs:
+            cards = P(_("groups.no_orgs_match"),
               style="color:var(--c-text-3);font-size:0.9rem;text-align:center;padding:32px 0;")
-        )
+        else:
+            cards = empty
 
         body = Div(
             _flash(req),
@@ -455,7 +551,31 @@ async def get(req):
     except Exception:
         orgs = []
 
-    return await _build_page(req, token, lang, orgs, source=req.query_params.get("source", ""))
+    try:
+        my_requests = await groups_api.get_my_join_requests(token)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            auth_helper.clear_session(req)
+            return RedirectResponse("/login?expired=1", status_code=302)
+        my_requests = []
+    except Exception:
+        my_requests = []
+
+    return await _build_page(req, token, lang, orgs,
+                             source=req.query_params.get("source", ""),
+                             requests=my_requests)
+
+
+@rt("/groups/cancel-request/{request_id}")
+async def cancel_request(req, request_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    try:
+        await groups_api.cancel_join_request(token, request_id)
+    except Exception:
+        pass
+    return RedirectResponse("/groups", status_code=303)
 
 
 @rt("/groups/add-organization")
@@ -529,13 +649,28 @@ async def post(req, lat: str = "", lng: str = "", radius_km: str = "20"):
 @rt("/groups/import-healthsite")
 async def post(req, osm_id: str = "", osm_type: str = "", name: str = "",
                country: str = "", region: str = "", address: str = "",
-               role: str = "technician"):
+               role: str = "technician", existing_org_id: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
 
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
+
+    # Facility already in FixMyMedTech: join that org instead of duplicating it.
+    if existing_org_id.strip():
+        try:
+            result = await groups_api.join_organization(
+                token, existing_org_id.strip(), role=role
+            )
+            org_name = result.get("name", "")
+            # Remember the clinic so the healthsite dropdown pre-selects it when
+            # the user goes on to register a device.
+            req.session["last_healthsite"] = existing_org_id.strip()
+            msg = quote(_("groups.join_added").format(name=org_name))
+            return RedirectResponse(f"/groups?flash={msg}&ok=1", status_code=302)
+        except Exception:
+            return RedirectResponse("/groups?flash=import_error", status_code=302)
 
     facility = {
         "osm_id": osm_id.strip(),

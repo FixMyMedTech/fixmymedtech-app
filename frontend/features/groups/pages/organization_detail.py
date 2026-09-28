@@ -21,7 +21,34 @@ async def _get_member_organization(req, token, org_id):
     except Exception:
         orgs = []
 
-    return next((o for o in orgs if str(o.get("id")) == str(org_id)), None), None
+    member = next((o for o in orgs if str(o.get("id")) == str(org_id)), None)
+    if member:
+        return member, None
+
+    # Not a member yet: fall back to a pending request so a requester can read
+    # about the organization they asked to join.
+    try:
+        requests = await groups_api.get_my_join_requests(token)
+    except Exception:
+        requests = []
+    pending = next(
+        (r for r in requests if str(r.get("organization_id")) == str(org_id)), None
+    )
+    if pending:
+        return {
+            "id": pending.get("organization_id"),
+            "name": pending.get("organization_name", ""),
+            "type": pending.get("type", ""),
+            "country": pending.get("country"),
+            "region": pending.get("region"),
+            "address": pending.get("address"),
+            "contact_email": pending.get("contact_email"),
+            "role": None,
+            "source": pending.get("source", "app"),
+            "pending_request": True,
+        }, None
+
+    return None, None
 
 
 @rt("/groups/{org_id}/view")
@@ -54,10 +81,14 @@ async def view_organization(req, org_id: str):
         A(_("groups.back_to_groups"), href="/groups",
           style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;display:inline-block;margin-bottom:16px;"),
         Div(
-            H1(org.get("name", ""), style="margin:0;"),
-            A(_("groups.manage"), href=f"/groups/{org_id}",
-              cls="btn btn-primary btn-sm") if org.get("role") == "admin" else "",
-            style="display:flex;align-items:center;justify-content:space-between;gap:16px;",
+            Div(
+                H1(org.get("name", ""), style="margin:0;"),
+                A(_("groups.manage"), href=f"/groups/{org_id}",
+                  cls="btn btn-primary btn-sm") if org.get("role") == "admin" else "",
+                style="display:flex;align-items:center;justify-content:space-between;gap:16px;",
+            ),
+            P(_("groups.view_pending_banner"),
+              style="margin:12px 0 0 0;font-size:0.85rem;color:var(--c-text-3);") if org.get("pending_request") else "",
         ),
         Div(
             Div(

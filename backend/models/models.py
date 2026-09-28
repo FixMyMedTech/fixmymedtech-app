@@ -167,6 +167,39 @@ class OrgUser(Base):
         return f"<OrgUser {self.profile_id} → {self.organization_id} ({self.role})>"
 
 
+class OrgJoinRequest(Base):
+    """A request to join an existing organization, awaiting admin approval.
+
+    Membership of a pre-existing (healthsites.io) organization is self-declared,
+    so it is staged here instead of writing org_users directly. Only an approved
+    request becomes real membership. admin is not requestable: it can only be
+    granted by an existing admin.
+    """
+    __tablename__ = "org_join_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('technician', 'clinical_staff', 'engineering_staff')",
+            name="org_join_requests_role_check"
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected')",
+            name="org_join_requests_status_check"
+        ),
+        {"schema": SCHEMA},
+    )
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="CASCADE"), nullable=False)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    role            = Column(Text, nullable=False, default="technician")
+    status          = Column(Text, nullable=False, default="pending")
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+    reviewed_at     = Column(DateTime(timezone=True))
+
+    def __repr__(self):
+        return f"<OrgJoinRequest {self.profile_id} → {self.organization_id} ({self.status})>"
+
+
 # ══════════════════════════════════════════════════════════════
 # DEVICE CATEGORIES
 # ══════════════════════════════════════════════════════════════

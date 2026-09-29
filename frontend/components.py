@@ -235,6 +235,12 @@ tr:hover td { background:var(--c-bg-2); }
 
 /* Two col */
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+/* Organization ownership: 3 labelled columns, stacked on mobile. */
+.own-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.own-col { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px; border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-bg-2); }
+.own-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-text-3); }
+.own-name { font-size:.95rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
 
 /* Toolbar */
@@ -366,6 +372,7 @@ tr:hover td { background:var(--c-bg-2); }
   .brand-sub { display:none; }
   .stat-grid { grid-template-columns:1fr 1fr; }
   .two-col { grid-template-columns:1fr; }
+  .own-grid { grid-template-columns:1fr; }
   .auth-wrap { grid-template-columns:1fr; }
   .auth-bg { display:none; }
   .auth-card { padding:32px 20px; border-right:none; }

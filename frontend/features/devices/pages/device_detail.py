@@ -88,6 +88,7 @@ async def get(req, device_id: str):
     d = data.get("device", {})
     cat = d.get("category") or {}
     org = d.get("organization") or {}
+    maint_org = d.get("organization_maintenance") or {}
     hs = d.get("healthsite") or {}
     logs = data.get("maintenance_logs", [])
     faults = data.get("fault_reports", [])
@@ -120,6 +121,32 @@ async def get(req, device_id: str):
     ) if can_choose_photo else ""
 
     qr_url = f"{req.base_url}d/{device_id}"
+
+    # Ownership: responsible org, maintenance org, healthsite. One column each
+    # (stacked on mobile by .own-grid). Each links to the organization page.
+    def _own_col(label, o):
+        name = o.get("name")
+        oid = o.get("id")
+        return Div(
+            Div(label, cls="own-label"),
+            Div(
+                A(name, href=f"/groups/{oid}/view",
+                  style="color:var(--c-primary);text-decoration:none;") if oid else (name or ""),
+                cls="own-name",
+            ) if name else Div(_("common.fallback"), cls="own-name"),
+            cls="own-col",
+        )
+
+    ownership = Div(
+        Div(H3(_("device_detail.ownership"), style="margin-bottom:12px;")),
+        Div(
+            _own_col(_("device_detail.responsible_org"), org),
+            _own_col(_("device_detail.maintenance_org"), maint_org),
+            _own_col(_("device_detail.healthsite"), hs),
+            cls="own-grid",
+        ),
+        cls="card", style="margin-bottom:16px;",
+    )
 
     # Maintenance log rows
     log_rows = [
@@ -313,15 +340,17 @@ async def get(req, device_id: str):
             id="deviceQrDialog",
             style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);"
         ),
+        # Ownership: full-width row above the two-column info cards
+        ownership,
         # Device info
         Div(
             Div(
                 H3(_("device_detail.info"), style="margin-bottom:12px;"),
                 Dl(
-                    *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
-                        style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
-                    for k, v in [
-                        (_("device_detail.serial"), d.get("serial_number",_("common.fallback"))),
+                *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
+                    style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
+                for k, v in [
+                    (_("device_detail.serial"), d.get("serial_number",_("common.fallback"))),
                         (_("device_detail.manufacturer"),  d.get("manufacturer",_("common.fallback"))),
                         (_("device_detail.model"),         d.get("model",_("common.fallback"))),
                         (_("device_detail.year"),          str(d.get("manufacture_year",_("common.fallback")))),

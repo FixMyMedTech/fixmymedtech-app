@@ -188,6 +188,7 @@ async def get_device(
         .options(
             selectinload(Device.category),
             selectinload(Device.organization),
+            selectinload(Device.organization_maintenance),
             selectinload(Device.healthsite),
         )
         .where(Device.id == device_id)

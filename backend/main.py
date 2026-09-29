@@ -276,12 +276,23 @@ async def proxy(request: Request, path: str):
 
     query = request.url.query
     url = f"http://frontend:5001/{path}" + (f"?{query}" if query else "")
-    headers = dict(request.headers)
+
+    # Forward end-to-end headers only. Hop-by-hop/framing headers must be dropped:
+    # httpx recomputes Content-Length from the body we pass, and reusing the
+    # original value (or Transfer-Encoding) makes the upstream read a malformed body.
+    HOP_BY_HOP = {
+        "host", "content-length", "transfer-encoding", "connection",
+        "keep-alive", "upgrade", "proxy-authorization", "proxy-authenticate",
+        "te", "trailer", "content-encoding",
+    }
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP_BY_HOP}
 
     data = await request.body()
 
     try:
-        async with httpx.AsyncClient() as client:
+        # Generous timeout: the frontend renders server-side and can be slow,
+        # especially while the dev reloader restarts it after a file change.
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0)) as client:
             if request.method == "GET":
                 response = await client.get(url, headers=headers)
             elif request.method == "POST":
@@ -295,7 +306,12 @@ async def proxy(request: Request, path: str):
             status_code=response.status_code,
             headers=dict(response.headers),
         )
-    except Exception:
+    except Exception as exc:
+        # Log the real cause: a bare 502 here is impossible to diagnose otherwise.
+        logging.getLogger("proxy").warning(
+            "proxy %s %s -> %s failed: %s: %s",
+            request.method, url, type(exc).__name__, exc,
+        )
         raise HTTPException(status_code=502, detail="Upstream unavailable")
 
 

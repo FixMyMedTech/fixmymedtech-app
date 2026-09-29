@@ -27,6 +27,47 @@ rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 
 
+def _pending_label(_):
+    return _("new_device.pending_approval")
+
+
+def _default_org_id(orgs, selected: str = ""):
+    """Responsible organization default: an org the user admins, else the
+    healthsite they just picked. Pending orgs are never admin, so they cannot
+    win this default unless nothing else applies."""
+    ids = {o["id"] for o in orgs}
+    for o in orgs:
+        if o.get("role") == "admin" and not o.get("pending"):
+            return o["id"]
+    if selected and selected in ids:
+        return selected
+    return ""
+
+
+async def _orgs_with_pending(token, orgs):
+    """Membership orgs plus any org the user has a pending join request for.
+
+    A pending requester may register a device in that clinic but cannot list the
+    org's devices yet, so the org is offered but marked as awaiting approval.
+    """
+    try:
+        pending = await org_api.get_my_join_requests(token)
+    except Exception:
+        return orgs
+    member_ids = {o["id"] for o in orgs}
+    merged = list(orgs)
+    for r in pending:
+        if r.get("organization_id") in member_ids:
+            continue
+        merged.append({
+            "id": r.get("organization_id"),
+            "name": r.get("organization_name"),
+            "role": r.get("role"),
+            "pending": True,
+        })
+    return merged
+
+
 @rt("/new_device")
 async def get(req):
     token, redirect = auth_helper.require_auth(req)
@@ -148,6 +189,11 @@ async def get(req, device_id: str, selected: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
 
+    # Pre-select the healthsite picked in the healthsites.io import menu, unless
+    # the URL overrides it.
+    if not selected:
+        selected = req.session.get("last_healthsite", "") or ""
+
     try:
         await devices_api.get_device_public(device_id)
         return RedirectResponse(f"/device/{device_id}", status_code=303)
@@ -159,6 +205,7 @@ async def get(req, device_id: str, selected: str = ""):
 
     try:
         orgs = await org_api.get_my_organizations(token)
+        orgs = await _orgs_with_pending(token, orgs)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
@@ -299,10 +346,21 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
     cat_options.append(Option(f"🏥 {other_label}", value="other",
                               data_first=(other_label or "").split()[0] if other_label else ""))
 
-    org_options = [Option(o["name"], value=o["id"]) for o in orgs]
+    default_org = _default_org_id(orgs, selected)
+    org_options = [
+        Option(
+            f"{o['name']} · {_pending_label(_)}" if o.get("pending") else o["name"],
+            value=o["id"],
+            selected=(o["id"] == default_org),
+        )
+        for o in orgs
+    ]
     hs_options = [Option(_("new_device.select_healthsite"), value="")]
     for o in orgs:
-        hs_options.append(Option(o["name"], value=o["id"], selected=(o["id"] == selected)))
+        label = (
+            f"{o['name']} · {_pending_label(_)}" if o.get("pending") else o["name"]
+        )
+        hs_options.append(Option(label, value=o["id"], selected=(o["id"] == selected)))
 
     step_back = _("new_device.wizard_back")
     step_next = _("new_device.wizard_next")
@@ -637,6 +695,7 @@ async def post(req, device_id: str, lat: str = "", lng: str = "", radius_km: str
 
     try:
         orgs = await org_api.get_my_organizations(token)
+        orgs = await _orgs_with_pending(token, orgs)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
@@ -645,7 +704,8 @@ async def post(req, device_id: str, lat: str = "", lng: str = "", radius_km: str
     except Exception:
         orgs = []
 
-    form = _device_form(lang, device_id, orgs)
+    form = _device_form(lang, device_id, orgs,
+                        selected=req.session.get("last_healthsite", "") or "")
     search = (lat_f, lng_f, radius_f)
     try:
         data = await org_api.search_healthsites(token, {
@@ -691,6 +751,7 @@ async def post(req, device_id: str, osm_id: str = "", osm_type: str = "", name: 
         result = await org_api.import_healthsite(token, facility, role="technician")
         if result.get("added"):
             selected = result.get("id", "")
+            req.session["last_healthsite"] = selected
             return RedirectResponse(
                 f"/device/{device_id}/new?selected={selected}&flash={quote(_('groups.import_added'))}&ok=1",
                 status_code=302)
@@ -759,6 +820,8 @@ async def post(req, device_id: str):
                     photo_data,
                     photo.content_type,
                 )
+        # Consumed: don't carry this clinic into the next registration.
+        req.session.pop("last_healthsite", None)
         return RedirectResponse(f"/device/{device_id}", status_code=303)
     except Exception:
         return RedirectResponse(f"/device/{device_id}/new", status_code=303)

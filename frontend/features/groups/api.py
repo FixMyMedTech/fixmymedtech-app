@@ -22,8 +22,42 @@ async def add_organization_member(token: str, org_id: str, data: dict):
     return await _post(f"/api/organizations/{org_id}/members", data, token=token)
 
 
-async def add_organization_member(token: str, org_id: str, data: dict):
-    return await _post(f"/api/organizations/{org_id}/members", data, token=token)
+async def join_organization(token: str, org_id: str, role: str = "technician"):
+    """Ask to join an existing org. Needs an admin's approval to take effect."""
+    return await _post("/api/organizations/join", {"org_id": org_id, "role": role}, token=token)
+
+
+async def get_join_requests(token: str, org_id: str):
+    return await _get(f"/api/organizations/{org_id}/join_requests", token=token)
+
+
+async def get_my_join_requests(token: str):
+    """The caller's own pending join requests."""
+    return await _get("/api/organizations/my_join_requests", token=token)
+
+
+async def cancel_join_request(token: str, request_id: str):
+    return await _delete(f"/api/organizations/join_requests/{request_id}", token=token)
+
+
+async def approve_join_request(token: str, org_id: str, request_id: str, role: str = ""):
+    return await _post(
+        f"/api/organizations/{org_id}/join_requests/{request_id}/approve",
+        {"role": role},
+        token=token,
+    )
+
+
+async def reject_join_request(token: str, org_id: str, request_id: str):
+    return await _post(
+        f"/api/organizations/{org_id}/join_requests/{request_id}/reject",
+        {},
+        token=token,
+    )
+
+
+async def invite_organization_member(token: str, org_id: str, data: dict):
+    return await _post(f"/api/organizations/{org_id}/invite", data, token=token)
 
 
 async def remove_organization_member(token: str, org_id: str, member_id: str):

@@ -303,17 +303,21 @@ async def search_healthsites(
 
     # single batched query for already-imported flags
     if results:
-        existing = set()
+        existing = {}
         for i in range(0, len(results), 50):
             chunk = results[i:i + 50]
             pairs = [(f["osm_id"], f["osm_type"]) for f in chunk]
-            stmt = select(Organization.osm_id, Organization.osm_type).where(
+            stmt = select(Organization.id, Organization.osm_id, Organization.osm_type).where(
                 tuple_(Organization.osm_id, Organization.osm_type).in_(pairs)
             )
-            for osm_id, osm_type in (await db.execute(stmt)).all():
-                existing.add((osm_id, osm_type))
+            for org_id, osm_id, osm_type in (await db.execute(stmt)).all():
+                existing[(osm_id, osm_type)] = str(org_id)
         for fac in results:
-            fac["already_imported"] = (fac["osm_id"], fac["osm_type"]) in existing
+            org_id = existing.get((fac["osm_id"], fac["osm_type"]))
+            fac["already_imported"] = org_id is not None
+            if org_id:
+                # Lets the user join the existing org instead of re-importing.
+                fac["existing_org_id"] = org_id
 
     # keep only facilities within the requested radius, nearest first
     clat, clng, radius_km = body.lat, body.lng, body.radius_km

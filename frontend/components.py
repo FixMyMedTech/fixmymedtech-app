@@ -147,6 +147,8 @@ a { color: var(--c-primary); text-decoration: none; }
 .nav-link:hover { background: var(--c-bg-2); color: var(--c-text); }
 .nav-link.active { background: var(--c-primary-lt); color: var(--c-primary); font-weight: 600; }
 .nav-ico { width: 18px; flex-shrink: 0; text-align: center; font-size: 1rem; }
+.nav-ico svg { width: 18px; height: 18px; display: block; margin: 0 auto; }
+.nav-menu-ico svg { width: 16px; height: 16px; display: inline-block; vertical-align: -3px; margin-right: 6px; }
 .sb-foot {
   padding: 12px 14px; border-top: 1px solid var(--c-border);
   display: flex; flex-direction: column; gap: 8px;
@@ -233,6 +235,12 @@ tr:hover td { background:var(--c-bg-2); }
 
 /* Two col */
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+/* Organization ownership: 3 labelled columns, stacked on mobile. */
+.own-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.own-col { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px; border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-bg-2); }
+.own-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-text-3); }
+.own-name { font-size:.95rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
 
 /* Toolbar */
@@ -364,6 +372,7 @@ tr:hover td { background:var(--c-bg-2); }
   .brand-sub { display:none; }
   .stat-grid { grid-template-columns:1fr 1fr; }
   .two-col { grid-template-columns:1fr; }
+  .own-grid { grid-template-columns:1fr; }
   .auth-wrap { grid-template-columns:1fr; }
   .auth-bg { display:none; }
   .auth-card { padding:32px 20px; border-right:none; }
@@ -429,16 +438,59 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
     return Span(label, cls=f"badge {cls}")
 
 
+# ── Lucide icons ────────────────────────────────────────────────────────────
+# Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
+# and stay crisp in both themes.
+LUCIDE_ICONS = {
+    "home": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>'
+            '<path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    "dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/>'
+                '<rect width="7" height="5" x="14" y="3" rx="1"/>'
+                '<rect width="7" height="9" x="14" y="12" rx="1"/>'
+                '<rect width="7" height="5" x="3" y="16" rx="1"/>',
+    "devices": '<rect width="20" height="14" x="2" y="3" rx="2"/>'
+               '<line x1="8" x2="16" y1="21" y2="21"/>'
+               '<line x1="12" x2="12" y1="17" y2="21"/>',
+    "tasks": '<rect width="8" height="4" x="8" y="2" rx="1"/>'
+             '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
+             '<path d="M12 11h4"/><path d="M12 16h4"/>'
+             '<path d="M8 11h.01"/><path d="M8 16h.01"/>',
+    "groups": '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>'
+              '<path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>'
+              '<path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>'
+              '<path d="M10 6h4"/><path d="M10 10h4"/>'
+              '<path d="M10 14h4"/><path d="M10 18h4"/>',
+    "profile": '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>'
+               '<circle cx="12" cy="7" r="4"/>',
+    "logout": '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>'
+              '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+}
+
+
+def lucide(name: str, cls: str = ""):
+    """Return an inline Lucide SVG icon (falls back to an empty string)."""
+    body = LUCIDE_ICONS.get(name)
+    if not body:
+        return ""
+    return Safe(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+        f'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+        f'stroke-linejoin="round" aria-hidden="true"'
+        + (f' class="{cls}"' if cls else "")
+        + f">{body}</svg>"
+    )
+
+
 def sidebar(current: str = "", lang: str = "en"):
     _ = make_t(lang)
     links = [
-        ("/home",     "⌂", _("nav.home")),
-        ("/dashboard", "📊", _("nav.dashboard")), #◈
-        ("/devices",   "⊞", _("nav.devices")),
-        ("/tasks",     "📋", _("nav.tasks")), #☐
-        ("/groups",    "🏢", _("nav.groups")),
-        ("/profile",   "◉", _("nav.profile")),
-        ("/logout",   "➜]", _("nav.logout")),
+        ("/home",      "home",      _("nav.home")),
+        ("/dashboard", "dashboard", _("nav.dashboard")),
+        ("/devices",   "devices",   _("nav.devices")),
+        ("/tasks",     "tasks",     _("nav.tasks")),
+        ("/groups",    "groups",    _("nav.groups")),
+        ("/profile",   "profile",   _("nav.profile")),
+        ("/logout",    "logout",    _("nav.logout")),
     ]
     return Aside(
         Div(
@@ -453,7 +505,7 @@ def sidebar(current: str = "", lang: str = "en"):
             cls="sb-head"
         ),
         Nav(
-            *[A(Span(icon, cls="nav-ico"), Span(label, cls="nav-label"), href=href,
+            *[A(Span(lucide(icon), cls="nav-ico"), Span(label, cls="nav-label"), href=href,
                 title=label,
                 cls=f"nav-link {'active' if current == href else ''}")
               for href, icon, label in links],
@@ -515,8 +567,8 @@ def avatar_menu(lang: str = "en"):
                 Div(second_row, cls="avatar-menu-email"),
                 cls="avatar-menu-user",
             ),
-            A("◉ " + _("nav.profile"), href="/profile"),
-            A("➜] " + _("nav.logout"), href="/logout"),
+            A(Span(lucide("profile"), cls="nav-menu-ico"), _("nav.profile"), href="/profile"),
+            A(Span(lucide("logout"), cls="nav-menu-ico"), _("nav.logout"), href="/logout"),
             Div(
                 Div(_("lang.label"),
                     style="font-size:.7rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;margin:4px 12px;"),

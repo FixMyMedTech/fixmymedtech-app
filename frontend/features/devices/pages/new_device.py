@@ -112,6 +112,9 @@ async def get(req):
     try:
         org = await org_api.get_my_organizations(token)
 
+# A rejected UID comes back as ?flash=…&uid=…, rendered under the manual
+        # entry field with the same alert the login page uses on a bad submit.
+        flash = req.query_params.get("flash", "")
         bad_uid = req.query_params.get("uid", "")
 
         content = Div(

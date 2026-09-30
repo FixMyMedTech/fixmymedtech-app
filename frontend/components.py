@@ -839,7 +839,8 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False
         cls="card"
     )
 
-def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en"):
+def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en",
+                         error: str = "", value: str = ""):
     _ = make_t(lang)
     return Div(
         Button(
@@ -859,8 +860,14 @@ def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en"):
         # Fallback manual entry
         Div(
             Label(_("qr.manual_label"), cls="label"),
-            Input(id="manual-code", cls="input", placeholder=_("qr.manual_placeholder")),
-            Button(_("qr.manual_submit"), cls="btn btn-secondary", onclick="submitManualCode()"),
+            Input(id="manual-code", cls="input", value=value,
+                  placeholder=_("qr.manual_placeholder")),
+            # Sits between the field and the button, matching the alert the
+            # login page shows for a failed submit.
+            Div(error, cls="alert alert-error",
+                style="margin:10px 0 0 0;text-align:left;") if error else "",
+            Button(_("qr.manual_submit"), cls="btn btn-secondary", onclick="submitManualCode()",
+                   style="margin-top:10px;"),
             style="margin-top:12px;"
         ),
         Script(f"""

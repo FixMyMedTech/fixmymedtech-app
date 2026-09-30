@@ -3,7 +3,7 @@ from urllib.parse import quote, urlparse
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
-import os, json, httpx
+import os, json, re, httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,6 +29,39 @@ rt = APIRouter()
 
 def _pending_label(_):
     return _("new_device.pending_approval")
+
+
+# Canonical RFC 4122 UUID, exactly as printed under the QR label. Stricter than
+# uuid.UUID(), which would also accept bare hex, braces and urn: forms — none of
+# which appear on a label.
+_UID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+
+
+def _valid_uid(device_id) -> bool:
+    """A device UID is the UUID printed on its QR label.
+
+    The API types this as a UUID, so anything else comes back as an opaque 422
+    (or a 404 on reads) and the user gets bounced around the wizard with no
+    explanation. Check the shape up front instead.
+    """
+    if not device_id:
+        return False
+    return bool(_UID_RE.match(str(device_id).strip()))
+
+
+def _uid_error_redirect(lang, device_id):
+    """Send a malformed UID back to the scan/manual-entry page with an error.
+
+    The UID lives in the form's action path, so the wizard cannot correct it —
+    the user has to re-enter it where they got it from.
+    """
+    _ = make_t(lang)
+    uid = str(device_id).strip()
+    msg = _("new_device.invalid_uid",
+            "“{uid}” is not a valid device UID. Scan the QR label or enter the UUID printed under it.")
+    return RedirectResponse(
+        f"/new_device?flash={quote(msg.format(uid=uid))}&uid={quote(uid)}", status_code=302)
 
 
 def _default_org_id(orgs, selected: str = ""):
@@ -79,13 +112,16 @@ async def get(req):
     try:
         org = await org_api.get_my_organizations(token)
 
+        bad_uid = req.query_params.get("uid", "")
+
         content = Div(
                 Div(
                     Script(src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"),
                     Div("📸", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
                     H2(_("new_device.scan_heading")),
                     P(_("new_device.scan_desc"), style="margin-top:8px;"),
-                    qr_scanner_component(target_url="/scan-result", lang=lang),
+                    qr_scanner_component(target_url="/scan-result", lang=lang,
+                                         error=flash, value=bad_uid),
                     style="text-align:center;padding:60px 40px;"
                 ),
                 style="max-width:440px;margin:80px auto;"
@@ -132,6 +168,9 @@ async def get(req, code: str = ""):
     parsed = urlparse(code)
     parts = [p for p in parsed.path.split("/") if p]
     device_id = parts[-1] if parts else code
+
+    if not _valid_uid(device_id):
+        return _uid_error_redirect(lang, device_id)
 
     try:
         existing = await devices_api.get_device_public(device_id)
@@ -193,6 +232,10 @@ async def get(req, device_id: str, selected: str = ""):
     # the URL overrides it.
     if not selected:
         selected = req.session.get("last_healthsite", "") or ""
+
+    # Don't open a wizard that can only fail on submit.
+    if not _valid_uid(device_id):
+        return _uid_error_redirect(lang, device_id)
 
     try:
         await devices_api.get_device_public(device_id)
@@ -768,6 +811,12 @@ async def post(req, device_id: str):
 
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
+
+    # Reject a malformed UID before building a payload: the API would answer
+    # with a bare 422 and the catch-all below would silently re-render the
+    # wizard with the user's input lost.
+    if not _valid_uid(device_id):
+        return _uid_error_redirect(lang, device_id)
 
     form = await req.form()
 

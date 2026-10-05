@@ -287,6 +287,13 @@ async def proxy(request: Request, path: str):
     }
     headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP_BY_HOP}
 
+    # Host was stripped above, so the frontend would otherwise build absolute
+    # URLs (e.g. the device-detail QR link) from its internal name, giving
+    # http://frontend:5001/d/<id>. Forward the origin the browser actually used.
+    headers["X-Forwarded-Host"] = request.headers.get("host", "")
+    headers["X-Forwarded-Proto"] = request.url.scheme
+    headers["X-Forwarded-Prefix"] = ""
+
     data = await request.body()
 
     try:

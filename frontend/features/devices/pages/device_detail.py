@@ -17,6 +17,21 @@ from i18n import t as make_t
 rt = APIRouter()
 
 
+def _public_base(req) -> str:
+    """The origin the browser is actually using, so QR/absolute links point at
+    the environment being viewed rather than the internal service name.
+
+    The backend proxy strips Host, so req.base_url reports http://frontend:5001.
+    It republishes the browser's origin in X-Forwarded-Host/Proto, which is what
+    makes dev show the dev host and prod show the platform host automatically.
+    """
+    host = (req.headers.get("x-forwarded-host") or "").strip()
+    if not host:
+        return str(req.base_url).rstrip("/")
+    proto = (req.headers.get("x-forwarded-proto") or "").strip() or "http"
+    return f"{proto}://{host}".rstrip("/")
+
+
 def _org_loc(org: dict) -> str:
     bits = []
     if org.get("country"):
@@ -120,7 +135,10 @@ async def get(req, device_id: str):
         style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;",
     ) if can_choose_photo else ""
 
-    qr_url = f"{req.base_url}d/{device_id}"
+    # Prefer the configured public URL. req.base_url echoes the incoming Host
+    # header, which is the internal service name (http://frontend:5001/…) when
+    # the request arrives through the Docker network — unusable in a QR code.
+    qr_url = f"{_public_base(req)}/d/{device_id}"
 
     # Ownership: responsible org, maintenance org, healthsite. One column each
     # (stacked on mobile by .own-grid). Each links to the organization page.

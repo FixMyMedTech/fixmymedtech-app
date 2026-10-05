@@ -18,6 +18,7 @@ from features.devices.pages import device_list,device_detail,new_device,public_q
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
+from features.auth.pages import forgot_password as auth_forgot
 from features.profile import pages as profile_pages
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page, organization_detail, organization_manage
@@ -103,6 +104,7 @@ async def post(req):
 auth_login.rt.to_app(app)
 auth_signup.rt.to_app(app)
 auth_reset.rt.to_app(app)
+auth_forgot.rt.to_app(app)
 profile_pages.rt.to_app(app)
 tasks_pages.rt.to_app(app)
 groups_page.rt.to_app(app)

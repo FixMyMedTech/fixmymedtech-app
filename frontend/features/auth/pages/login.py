@@ -86,6 +86,11 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
                     Label(_("login.password_label"), cls="label", for_="password"),
                     Input(id="password", name="password", type="password",
                         placeholder=_("login.password_placeholder"), cls="input"),
+                    P(
+                        _("login.forgot_link"),
+                        A(_("login.forgot_link_action"), href="/forgot-password"),
+                        cls="auth-link", style="margin-top:12px;"
+                    ),
                     cls="form-group"
                 ),
                 Button(_("login.signin"), type="submit", cls="btn btn-primary",
@@ -166,8 +171,11 @@ async def post(req, email: str, password: str, next: str = ""):
                 ),
                 Button(_("login.signin"), type="submit", cls="btn btn-primary",
                     style="width:100%;justify-content:center;margin-top:4px;"),
+                P(_("login.forgot_link"),
+                    A(_("login.forgot_link_action"), href="/forgot-password"),
+                    cls="auth-link", style="margin-top:12px;"),
                 P(_("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
-                cls="auth-link", style="margin-top:12px;"),
+                    cls="auth-link", style="margin-top:12px;"),
                 # _oauth_buttons(_),
                 cls="auth-card"
             ),

@@ -287,6 +287,8 @@ tr:hover td { background:var(--c-bg-2); }
   display:flex; align-items:flex-end; padding:48px; position:relative; overflow:hidden;
 }
 .auth-bg::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 20% 30%, rgba(94,234,212,0.12) 0%, transparent 50%); }
+.step-num { flex:0 0 32px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.10); border:1px solid rgba(94,234,212,0.45); color:#5eead4; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:.9rem; }
+.auth-steps { position:relative; width:100%; }
 .auth-quote { position:relative; font-family:var(--font-display); font-size:1.5rem; color:rgba(255,255,255,0.9); line-height:1.5; border-left:3px solid #5eead4; padding-left:20px; font-weight:600; }
 .auth-quote em { color:#5eead4; }
 .auth-link { margin-top:14px; font-size:.82rem; color:var(--c-text-3); text-align:center; }

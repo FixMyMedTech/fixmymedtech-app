@@ -14,7 +14,7 @@ from components import set_current_user
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
-from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides
+from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,device_edit
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
@@ -112,6 +112,7 @@ organization_detail.rt.to_app(app)
 organization_manage.rt.to_app(app)
 device_detail.rt.to_app(app)
 device_list.rt.to_app(app)
+device_edit.rt.to_app(app)
 dashboard.rt.to_app(app)
 home_pages.rt.to_app(app)
 public_qr_page.rt.to_app(app)

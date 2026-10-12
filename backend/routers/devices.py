@@ -254,11 +254,29 @@ async def get_device(
     )
     docs = docs_result.scalars().all()
 
+    # Built by hand and returned alongside the device rather than loaded onto
+    # it: Profile links to User with lazy="selectin", so eager-loading the
+    # relationship would leave hashed_password reachable once FastAPI walks
+    # vars() over the instance.
+    registrant = None
+    if device.registered_by:
+        reg_result = await db.execute(
+            select(Profile).where(Profile.id == device.registered_by)
+        )
+        reg = reg_result.scalar_one_or_none()
+        if reg:
+            registrant = {
+                "id": reg.id,
+                "username": reg.username,
+                "full_name": reg.full_name,
+            }
+
     return {
         "device": device,
         "maintenance_logs": logs,
         "fault_reports": faults,
         "documents": docs,
+        "registered_by_profile": registrant,
     }
 
 

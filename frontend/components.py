@@ -18,6 +18,14 @@ def current_user_ctx() -> dict:
     return _user_ctx.get()
 
 
+# ── Avatar rendering, shared by pages/profile/my_profile and profile_detail ──
+AVATAR_IMG_STYLE = (
+    "width:110px;height:110px;border-radius:50%;object-fit:cover;"
+    "background:var(--c-bg-2);border:2px solid var(--c-border);"
+)
+TRANSPARENT_GIF = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+
+
 # ── Design tokens ────────────────────────────────────────────
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -291,7 +299,7 @@ tr:hover td { background:var(--c-bg-2); }
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
 /* Organization ownership: 3 labelled columns, stacked on mobile. */
-.own-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.own-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:12px; }
 .own-col { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px; border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-bg-2); }
 .own-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-text-3); }
 .own-name { font-size:.95rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }

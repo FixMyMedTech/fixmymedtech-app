@@ -99,6 +99,18 @@ document.addEventListener('keydown', function (e) {
 });
 """
 
+# In-app delete confirmation. The name comes from DEV_INDEX, so the device
+# name is never interpolated into markup — only textContent can touch it.
+DEL_DIALOG_JS = """
+function delAsk(id) {
+  var d = DEV_INDEX.filter(function (x) { return x.id === id; })[0];
+  document.getElementById('del-name').textContent = d ? d.name : '';
+  document.getElementById('del-dialog-form').action =
+    '/devices/' + encodeURIComponent(id) + '/delete';
+  document.getElementById('del-dialog').showModal();
+}
+"""
+
 # ══════════════════════════════════════════════════════════════
 # DEVICES LIST
 # ══════════════════════════════════════════════════════════════
@@ -222,12 +234,8 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         actions = Div(
             A(_("device_list.view"), href=f"/device/{d['id']}", cls="btn btn-secondary btn-sm"),
             A(_("groups.edit"), href=f"/devices/{d['id']}/edit", cls="btn btn-secondary btn-sm") if can_manage(d) else "",
-            Form(
-                Button(_("groups.delete"), type="submit", cls="btn btn-danger btn-sm"),
-                method="post",
-                action=f"/devices/{d['id']}/delete",
-                onsubmit=f"return confirm({json.dumps(_('device_list.delete_confirm'))});",
-            ) if can_manage(d) else "",
+            Button(_("groups.delete"), type="button", cls="btn btn-danger btn-sm",
+                   onclick=f"delAsk({json.dumps(str(d['id']))})") if can_manage(d) else "",
             cls="actions",
         )
 
@@ -283,6 +291,27 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         cls="dev-search",
     )
 
+    # In-app confirmation instead of the browser's native confirm() box.
+    delete_dialog = Dialog(
+        Form(
+            H3(_("device_list.delete_confirm"),
+               style="margin:0 0 6px 0;font-size:1.05rem;"),
+            P(Span("", id="del-name"),
+              style="color:var(--c-text-2);font-size:0.875rem;margin:0 0 18px;"
+                    "word-break:break-word;overflow-wrap:anywhere;"),
+            Div(
+                Button(_("groups.cancel"), type="button", cls="btn btn-secondary",
+                       onclick="document.getElementById('del-dialog').close()"),
+                Button(_("groups.delete"), type="submit", cls="btn btn-danger"),
+                style="display:flex;gap:8px;justify-content:flex-end;",
+            ),
+            method="post", action="/devices", id="del-dialog-form",
+            style="padding:20px;max-width:440px;width:90%;",
+        ),
+        id="del-dialog",
+        style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);",
+    )
+
     n = len(devices)
     one, many = _("device_list.device"), _("device_list.device") + _("device_list.devices_plural")
     tail = _("device_list.registered")
@@ -292,10 +321,11 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         style="color:var(--c-text-3);",
     )
 
-    search_script = Script(
+    page_script = Script(
         "const DEV_INDEX = " + _js_json(search_index) + ";\n"
         "const DEV_NONE = " + _js_json(_("device_list.search_none")) + ";\n"
         + DEV_SEARCH_JS
+        + DEL_DIALOG_JS
     )
 
     content = Div(
@@ -308,7 +338,8 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         search_bar,
         table,
         empty_msg,
-        search_script,
+        delete_dialog,
+        page_script,
     )
 
     return page_shell(content, current="/devices", title=_("title.devices"), lang=lang)

@@ -18,6 +18,14 @@ def current_user_ctx() -> dict:
     return _user_ctx.get()
 
 
+# ── Avatar rendering, shared by pages/profile/my_profile and profile_detail ──
+AVATAR_IMG_STYLE = (
+    "width:110px;height:110px;border-radius:50%;object-fit:cover;"
+    "background:var(--c-bg-2);border:2px solid var(--c-border);"
+)
+TRANSPARENT_GIF = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+
+
 # ── Design tokens ────────────────────────────────────────────
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -217,6 +225,60 @@ td { padding:11px 14px; border-bottom:1px solid var(--c-border); color:var(--c-t
 tr:last-child td { border-bottom:none; }
 tr:hover td { background:var(--c-bg-2); }
 
+/* Row action buttons */
+.actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
+
+/* Device search: input with a suggestion dropdown */
+.dev-search { position:relative; margin-bottom:14px; }
+.dev-sugg {
+  position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:60;
+  background:var(--c-surface); border:1px solid var(--c-border);
+  border-radius:var(--r-md); box-shadow:0 8px 24px rgba(0,0,0,.16);
+  max-height:320px; overflow:auto;
+}
+.sugg-item {
+  display:flex; flex-direction:column; gap:2px;
+  padding:9px 12px; text-decoration:none; color:inherit;
+  border-bottom:1px solid var(--c-border);
+}
+.sugg-item:last-child { border-bottom:none; }
+.sugg-item:hover, .sugg-item:focus { background:var(--c-bg-2); outline:none; }
+.sugg-name { font-size:.875rem; font-weight:500; color:var(--c-text); }
+.sugg-sub { font-size:.72rem; color:var(--c-text-3); }
+.sugg-empty { padding:10px 12px; font-size:.8rem; color:var(--c-text-3); }
+
+/* Devices page: below 768px the table becomes stacked cards.
+   Only applies to tables flagged .has-cards, so other tables keep scrolling. */
+@media (max-width: 768px) {
+  .table-wrap.has-cards { border:none; background:none; border-radius:0; overflow:visible; }
+  .table-wrap.has-cards table,
+  .table-wrap.has-cards tbody,
+  .table-wrap.has-cards tr,
+  .table-wrap.has-cards td { display:block; width:100%; }
+  .table-wrap.has-cards thead { display:none; }
+  .table-wrap.has-cards tbody { display:grid; gap:12px; }
+  .table-wrap.has-cards tbody tr {
+    border:1px solid var(--c-border); border-radius:var(--r-lg);
+    background:var(--c-surface); padding:14px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.05);
+  }
+  .table-wrap.has-cards tbody tr:hover td { background:transparent; }
+  .table-wrap.has-cards td {
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:12px; padding:8px 0; border-bottom:1px solid var(--c-border);
+  }
+  /* First cell is the card header: name + category + model, no label. */
+  .table-wrap.has-cards td:first-child { display:block; padding-top:0; }
+  .table-wrap.has-cards td:last-child { border-bottom:none; padding-bottom:0; }
+  .table-wrap.has-cards td[data-label]::before {
+    content:attr(data-label); flex:0 0 auto; padding-top:3px;
+    font-size:.68rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    font-family:var(--font-mono); color:var(--c-text-3);
+  }
+  .table-wrap.has-cards .actions { width:100%; justify-content:stretch; }
+  .table-wrap.has-cards .actions .btn { flex:1; text-align:center; }
+}
+
 /* Alerts */
 .alert { padding:11px 14px; border-radius:var(--r-md); font-size:.875rem; margin-bottom:14px; }
 .alert-error   { background:var(--c-red-lt);   color:var(--c-red);   border:1px solid transparent; }
@@ -237,7 +299,7 @@ tr:hover td { background:var(--c-bg-2); }
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
 /* Organization ownership: 3 labelled columns, stacked on mobile. */
-.own-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.own-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:12px; }
 .own-col { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px; border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-bg-2); }
 .own-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-text-3); }
 .own-name { font-size:.95rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }

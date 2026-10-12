@@ -11,6 +11,21 @@ async def get_profile_stats(token: str):
     return await _get("/api/auth/me/stats", token)
 
 
+async def get_profile(token: str, profile_id: str):
+    """Another user's profile, read-only. Backend allows it only for yourself
+    or for someone in one of your organizations."""
+    return await _get(f"/api/auth/profiles/{profile_id}", token)
+
+
+async def get_profile_photo(token: str, profile_id: str):
+    headers = {"Authorization": f"Bearer {token}"}
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{API_URL}/api/auth/profiles/{profile_id}/photo",
+                             headers=headers)
+        r.raise_for_status()
+        return r.content, r.headers.get("content-type", "image/jpeg")
+
+
 async def update_profile(token: str, data: dict):
     return await _patch("/api/auth/me", data, token=token)
 

@@ -1,27 +1,27 @@
+# pages/my_profile.py — the signed-in user's own profile.
+#
+# Editable: avatar upload, name/username/country, stats. POSTs to itself.
+# A different page entirely from profile_detail (read-only, someone else's) —
+# profile_detail redirects here rather than rendering for yourself.
+
 import asyncio
 from fasthtml.common import *
-from starlette.responses import RedirectResponse, Response
+from starlette.responses import Response
 import features.profile.api as profile_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import page_shell
+from components import page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF
 
 rt = APIRouter()
-
-_AVATAR_IMG_STYLE = (
-    "width:110px;height:110px;border-radius:50%;object-fit:cover;"
-    "background:var(--c-bg-2);border:2px solid var(--c-border);"
-)
-_TRANSPARENT_GIF = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
 
 
 def _avatar_section(me, _=None):
     _ = _ or (lambda k: k)
     avatar_key = me.get("avatar_key", "") or ""
-    src = f"/profile/photo?v={avatar_key}" if avatar_key else _TRANSPARENT_GIF
+    src = f"/profile/photo?v={avatar_key}" if avatar_key else TRANSPARENT_GIF
     return Div(
         Label(_("profile.photo_label"), cls="label"),
-        Img(id="avatar-preview", src=src, alt="", style=_AVATAR_IMG_STYLE),
+        Img(id="avatar-preview", src=src, alt="", style=AVATAR_IMG_STYLE),
         Label(_("profile.photo_choose"), cls="label", for_="photo-file",
               style="margin-top:8px;"),
         Input(type="file", id="photo-file", name="avatar", accept="image/*",

@@ -36,6 +36,10 @@ async def get_fault_assignees(token: str, device_id: str):
 async def get_fault(token: str, fault_id: str):
     return await _get(f"/api/faults/{fault_id}", token)
 
+async def list_faults(token: str, status: str = None):
+    path = "/api/faults/" + (f"?status={status}" if status else "")
+    return await _get(path, token)
+
 async def update_fault(token: str, fault_id: str, data: dict):
     return await _patch(f"/api/faults/{fault_id}", data, token)
 

@@ -141,28 +141,43 @@ async def get(req, device_id: str):
     qr_url = f"{_public_base(req)}/d/{device_id}"
 
     # Ownership: responsible org, maintenance org, healthsite. One column each
-    # (stacked on mobile by .own-grid). Each links to the organization page.
-    def _own_col(label, o):
+    # (stacked on mobile by .own-grid). Org columns link to the organization
+    # page; `href` overrides that for non-org entries such as the registrant.
+    def _own_col(label, o, href=None):
         name = o.get("name")
         oid = o.get("id")
+        link = href if href is not None else (f"/groups/{oid}/view" if oid else None)
         return Div(
             Div(label, cls="own-label"),
             Div(
-                A(name, href=f"/groups/{oid}/view",
-                  style="color:var(--c-primary);text-decoration:none;") if oid else (name or ""),
+                A(name, href=link,
+                  style="color:var(--c-primary);text-decoration:none;") if (name and link) else (name or ""),
                 cls="own-name",
             ) if name else Div(_("common.fallback"), cls="own-name"),
             cls="own-col",
         )
 
+    reg = data.get("registered_by_profile") or {}
+    reg_name = (reg.get("full_name") or reg.get("username") or "").strip()
+    reg_id = reg.get("id") or d.get("registered_by")
+
+    own_cols = [
+        _own_col(_("device_detail.responsible_org"), org),
+        _own_col(_("device_detail.maintenance_org"), maint_org),
+        _own_col(_("device_detail.healthsite"), hs),
+    ]
+    # Only shown when there is a name to display: a dangling registered_by id
+    # (profile row gone) would otherwise produce an unlabelled dead link.
+    if reg_name:
+        own_cols.append(_own_col(
+            _("device_detail.registered_by"),
+            {"name": reg_name, "id": reg_id},
+            href=f"/profile/{reg_id}" if reg_id else None,
+        ))
+
     ownership = Div(
         Div(H3(_("device_detail.ownership"), style="margin-bottom:12px;")),
-        Div(
-            _own_col(_("device_detail.responsible_org"), org),
-            _own_col(_("device_detail.maintenance_org"), maint_org),
-            _own_col(_("device_detail.healthsite"), hs),
-            cls="own-grid",
-        ),
+        Div(*own_cols, cls="own-grid"),
         cls="card", style="margin-bottom:16px;",
     )
 

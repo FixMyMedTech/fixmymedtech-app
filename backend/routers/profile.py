@@ -24,6 +24,7 @@ from models.models import Profile, OrgUser, User, Device, FaultReport, Maintenan
 from config.db_config import get_db
 from config.storage import upload_file, get_file, delete_file
 from config.users import current_active_user
+from utils.profile import get_current_profile
 
 router = APIRouter()
 
@@ -241,3 +242,72 @@ async def get_profile_stats(
         "faults_resolved": faults_resolved,
         "maintenance_performed": maintenance_performed,
     }
+
+
+# ── Other profiles (read-only) ──────────────────────────────────────────────────
+#
+# A profile can be viewed by its owner, or by anyone who shares an organization
+# with them — the same audience that already sees them listed as a member or as
+# the registrant of a device. Only the public fields are returned: never the
+# linked User (which carries the hashed password and email).
+
+async def _load_viewable_profile(db: AsyncSession, viewer: Profile, profile_id) -> Profile:
+    result = await db.execute(
+        select(Profile)
+        .options(selectinload(Profile.org_memberships).selectinload(OrgUser.organization))
+        .where(Profile.id == profile_id)
+    )
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    if target.id != viewer.id:
+        viewer_orgs = {m.organization_id for m in viewer.org_memberships}
+        target_orgs = {m.organization_id for m in target.org_memberships}
+        if not (viewer_orgs & target_orgs):
+            raise HTTPException(status_code=403, detail="You do not have access to this profile")
+    return target
+
+
+@router.get("/profiles/{profile_id}")
+async def get_profile_view(
+    profile_id: uuid.UUID,
+    viewer: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    target = await _load_viewable_profile(db, viewer, profile_id)
+    return {
+        "id": target.id,
+        "username": target.username,
+        "full_name": target.full_name,
+        "country": target.country,
+        "avatar_key": target.avatar_key,
+        # Lets the frontend tell "someone else's profile (read-only)" from
+        # "mine" without a second round-trip, so the two never share a page.
+        "is_self": target.id == viewer.id,
+        "organizations": [
+            {
+                "id": m.organization_id,
+                "name": m.organization.name if m.organization else None,
+                "country": m.organization.country if m.organization else None,
+                "role": m.role,
+            }
+            for m in target.org_memberships
+        ],
+    }
+
+
+@router.get("/profiles/{profile_id}/photo")
+async def get_profile_view_photo(
+    profile_id: uuid.UUID,
+    viewer: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    target = await _load_viewable_profile(db, viewer, profile_id)
+    if not target.avatar_key:
+        raise HTTPException(status_code=404, detail="No avatar")
+    obj = await get_file(target.avatar_key)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Avatar not found in storage")
+    content, ctype = obj
+    return FastAPIResponse(content=content, media_type=ctype)

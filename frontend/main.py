@@ -14,12 +14,12 @@ from components import set_current_user
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
-from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides
+from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,device_edit
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
 from features.auth.pages import forgot_password as auth_forgot
-from features.profile import pages as profile_pages
+from features.profile.pages import my_profile, profile_detail
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page, organization_detail, organization_manage
 from features.faults.pages import report_page, fault_detail, public_fault
@@ -105,13 +105,17 @@ auth_login.rt.to_app(app)
 auth_signup.rt.to_app(app)
 auth_reset.rt.to_app(app)
 auth_forgot.rt.to_app(app)
-profile_pages.rt.to_app(app)
+# my_profile MUST register first: /profile/photo has to win over the
+# /profile/{profile_id} pattern profile_detail adds.
+my_profile.rt.to_app(app)
+profile_detail.rt.to_app(app)
 tasks_pages.rt.to_app(app)
 groups_page.rt.to_app(app)
 organization_detail.rt.to_app(app)
 organization_manage.rt.to_app(app)
 device_detail.rt.to_app(app)
 device_list.rt.to_app(app)
+device_edit.rt.to_app(app)
 dashboard.rt.to_app(app)
 home_pages.rt.to_app(app)
 public_qr_page.rt.to_app(app)

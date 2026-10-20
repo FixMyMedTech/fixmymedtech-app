@@ -52,20 +52,33 @@ async def get_fault_public(req, device_id: str, fault_id: str):
         (_("fault_detail.resolved_at"), fmt_date(fault.get("resolved_at", ""))),
     ]
 
-    # Botón editar solo si hay sesión con rol técnico/admin
-    edit_btn = ""
+    # The private page shows the whole workflow. Only signed-in visitors get a
+    # button to it — a signed-out one has nothing to act on here and is served
+    # by the top-bar Sign in instead.
+    private_url = f"/device/{device_id}/fault/{fault['id']}"
     token = auth_helper.get_token(req)
+    me = {}
     if token:
         try:
             me = await auth_api.get_me(token)
         except Exception:
             me = {}
+    signed_in = bool(token)
+
+    # Side by side: edit (only for the reporter/assignee) plus the way into the
+    # private page, which is the primary action for everyone else.
+    actions = ""
+    if signed_in:
+        action_btns = []
         if auth_helper.user_can_edit_fault(me, fault):
-            edit_btn = Div(
-                A(_("fault_detail.edit"), href=f"/d/{device_id}/fault/{fault['id']}/edit",
-                  cls="btn btn-primary", style="width:100%;justify-content:center;"),
-                cls="pub-section"
-            )
+            action_btns.append(A(_("fault_detail.edit"),
+                                 href=f"/d/{device_id}/fault/{fault['id']}/edit",
+                                 cls="btn btn-secondary",
+                                 style="flex:1;justify-content:center;"))
+        action_btns.append(A(_("fault_detail.open_full"), href=private_url,
+                             cls="btn btn-primary",
+                             style="flex:1;justify-content:center;"))
+        actions = Div(*action_btns, cls="pub-section", style="display:flex;gap:8px;")
 
     content = Div(
         Script(f"""
@@ -135,7 +148,7 @@ async def get_fault_public(req, device_id: str, fault_id: str):
               style="font-size:0.9rem;white-space:pre-wrap;color:var(--c-text-2);"),
             cls="pub-section"
         ) if fault.get("resolution_notes") else "",
-        edit_btn,
+        actions,
         # Footer
         Div(_("brand_footer"), cls="pub-footer"),
         cls="pub-page"

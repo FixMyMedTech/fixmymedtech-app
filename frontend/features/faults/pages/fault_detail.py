@@ -359,6 +359,8 @@ async def get(req, device_id: str, fault_id: str, err: str = "", ok: str = ""):
                 H1(_("fault_detail.heading"), style="margin-bottom:4px;"),
                 P(_("fault_detail.desc"), style="color:var(--c-text-3);"),
             ),
+            A(_("fault_detail.open_public"), href=f"/d/{device_id}/fault/{fault_id}",
+              cls="btn btn-secondary btn-sm", style="flex-shrink:0;margin-top:4px;"),
             cls="page-header", style="margin-bottom:14px;"
         ),
         Div(details_col, side_col, cls="fault-detail-grid"),

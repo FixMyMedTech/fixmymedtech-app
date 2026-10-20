@@ -47,7 +47,25 @@ class OrgJoin(BaseModel):
 @router.get("/")
 async def list_organizations(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Organization).order_by(Organization.name))
-    return result.scalars().all()
+    orgs = result.scalars().all()
+    # Hand-built payload: returning the ORM objects directly makes FastAPI's
+    # jsonable_encoder walk Organization.org_users -> OrgUser.profile ->
+    # Profile.org_memberships, which lazy-loads on an async session and 500s.
+    return [
+        {
+            "id": str(o.id),
+            "name": o.name,
+            "country": o.country,
+            "region": o.region,
+            "address": o.address,
+            "type": o.type,
+            "contact_email": o.contact_email,
+            "osm_id": o.osm_id,
+            "osm_type": o.osm_type,
+            "source": o.source,
+        }
+        for o in orgs
+    ]
 
 
 @router.get("/my_organizations")

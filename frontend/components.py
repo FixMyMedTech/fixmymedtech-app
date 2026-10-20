@@ -483,6 +483,8 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
         "fault": {
             "open":        (_("badge.open"),        "badge-red"),
             "assigned":    (_("badge.assigned"),    "badge-amber"),
+            "diagnosed":   (_("badge.diagnosed"),   "badge-amber"),
+            "approved":    (_("badge.approved"),    "badge-blue"),
             "in_progress": (_("badge.in_progress"), "badge-blue"),
             "resolved":    (_("badge.resolved"),    "badge-green"),
         },
@@ -515,6 +517,8 @@ LUCIDE_ICONS = {
     "devices": '<rect width="20" height="14" x="2" y="3" rx="2"/>'
                '<line x1="8" x2="16" y1="21" y2="21"/>'
                '<line x1="12" x2="12" y1="17" y2="21"/>',
+    "faults": '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>'
+              '<path d="M12 9v4"/><path d="M12 17h.01"/>',
     "tasks": '<rect width="8" height="4" x="8" y="2" rx="1"/>'
              '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
              '<path d="M12 11h4"/><path d="M12 16h4"/>'
@@ -551,6 +555,7 @@ def sidebar(current: str = "", lang: str = "en"):
         ("/home",      "home",      _("nav.home")),
         ("/dashboard", "dashboard", _("nav.dashboard")),
         ("/devices",   "devices",   _("nav.devices")),
+        ("/faults",    "faults",    _("nav.faults")),
         ("/tasks",     "tasks",     _("nav.tasks")),
         ("/groups",    "groups",    _("nav.groups")),
         ("/profile",   "profile",   _("nav.profile")),

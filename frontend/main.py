@@ -22,7 +22,7 @@ from features.auth.pages import forgot_password as auth_forgot
 from features.profile.pages import my_profile, profile_detail
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page, organization_detail, organization_manage
-from features.faults.pages import report_page, fault_detail, public_fault
+from features.faults.pages import fault_list, report_page, fault_detail, public_fault
 from features.maintenance.pages import public_log, maintenance_log, maintenance_log_detail
 from i18n import LANGUAGES
 
@@ -119,6 +119,7 @@ device_edit.rt.to_app(app)
 dashboard.rt.to_app(app)
 home_pages.rt.to_app(app)
 public_qr_page.rt.to_app(app)
+fault_list.rt.to_app(app)
 public_fault.rt.to_app(app)
 public_log.rt.to_app(app)
 new_device.rt.to_app(app)

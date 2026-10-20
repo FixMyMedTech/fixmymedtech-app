@@ -45,6 +45,41 @@ def user_can_edit(me, device_org_id):
     return False
 
 
+def admin_org_ids(me) -> set:
+    return {str(o["id"]) for o in me.get("organizations", []) if o.get("role") == "admin"}
+
+
+def can_manage_device(me, device) -> bool:
+    """Delete rights: admin of the owning organization, admin of the
+    healthsite, or the user who registered the device. Mirrors the backend's
+    _can_manage_device and deliberately excludes the maintaining organization."""
+    admin = admin_org_ids(me)
+    if str(device.get("organization_id") or "") in admin:
+        return True
+    if str(device.get("healthsite_id") or "") in admin:
+        return True
+    return bool(me.get("id")) and str(device.get("registered_by") or "") == str(me["id"])
+
+
+def can_edit_device(me, device) -> bool:
+    """Edit rights: everyone who can manage it, plus the admin of the
+    organization that maintains it. Mirrors the backend's _can_edit_device."""
+    if can_manage_device(me, device):
+        return True
+    return str(device.get("organization_maintenance_id") or "") in admin_org_ids(me)
+
+
+def can_set_maintenance_org(me, device) -> bool:
+    """Owning-org admin, healthsite admin, or current maintenance-org admin.
+    Mirrors the backend's _can_set_maintenance_org."""
+    admin = admin_org_ids(me)
+    for key in ("organization_id", "healthsite_id", "organization_maintenance_id"):
+        value = device.get(key)
+        if value and str(value) in admin:
+            return True
+    return False
+
+
 def user_can_edit_fault(me, fault):
     """Only the profile that reported or is assigned to a fault may edit it."""
     user_id = str(me.get("id", ""))
@@ -52,6 +87,56 @@ def user_can_edit_fault(me, fault):
         user_id == str(fault.get("reported_by", ""))
         or user_id == str(fault.get("assigned_to", ""))
     )
+
+
+# ── Fault workflow ──────────────────────────────────────────
+# Mirrors the guards in backend/routers/fault_reports.py. The backend is the
+# authority; these only decide which forms the page renders.
+
+def _role_in(me, org_id, roles) -> bool:
+    if not org_id:
+        return False
+    for org in me.get("organizations", []):
+        if str(org.get("id")) == str(org_id) and org.get("role") in roles:
+            return True
+    return False
+
+
+def is_fault_assignee(me, fault) -> bool:
+    user_id = str(me.get("id", ""))
+    return bool(user_id) and user_id == str(fault.get("assigned_to") or "")
+
+
+def can_assign_fault(me, fault) -> bool:
+    """Step 2 — the maintenance organization's admin."""
+    return _role_in(me, (fault.get("device") or {}).get("organization_maintenance_id"), ("admin",))
+
+
+def can_approve_fault(me, fault) -> bool:
+    """Step 4 — the healthsite admin; a device with no healthsite falls back
+    to the maintenance organization's admin."""
+    device = fault.get("device") or {}
+    healthsite = device.get("healthsite_id")
+    if healthsite:
+        return _role_in(me, healthsite, ("admin",))
+    return _role_in(me, device.get("organization_maintenance_id"), ("admin",))
+
+
+def fault_actions(me, fault) -> list:
+    """Which workflow steps this user may act on right now, in order."""
+    status = fault.get("status")
+    out = []
+    if status in ("open", "assigned") and can_assign_fault(me, fault):
+        out.append("assign")
+    if status == "assigned" and is_fault_assignee(me, fault):
+        out.append("diagnosis")
+    if status == "diagnosed" and can_approve_fault(me, fault):
+        out.append("approval")
+    if status == "approved" and is_fault_assignee(me, fault):
+        out.append("start")
+    if status in ("approved", "in_progress") and is_fault_assignee(me, fault):
+        out.append("resolve")
+    return out
 
 
 def user_can_edit_log(me, log):

@@ -286,7 +286,7 @@ tr:hover td { background:var(--c-bg-2); }
 .alert-warning { background:var(--c-amber-lt); color:var(--c-amber); border:1px solid transparent; }
 
 /* Stats grid */
-.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
 .stat-card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:16px 18px; }
 .stat-label { font-size:.7rem; font-weight:600; color:var(--c-text-3); text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono); margin-bottom:5px; }
 .stat-num { font-family:var(--font-display); font-size:2rem; font-weight:700; color:var(--c-text); line-height:1; }
@@ -294,6 +294,7 @@ tr:hover td { background:var(--c-bg-2); }
 .stat-card.g { border-top:3px solid var(--c-green); }
 .stat-card.a { border-top:3px solid var(--c-amber); }
 .stat-card.r { border-top:3px solid var(--c-red); }
+.stat-card.p { border-top:3px solid var(--c-primary); }
 
 /* Two col */
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -315,6 +316,34 @@ tr:hover td { background:var(--c-bg-2); }
 .net-country { font-size:.8rem; color:var(--c-text-2); }
 .net-role { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-primary); margin-top:4px; }
 .net-org { font-size:.8rem; color:var(--c-text-3); overflow-wrap:anywhere; }
+
+/* Toolbar: search on the left, cards/list switch on the right. */
+.net-toolbar { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:14px; }
+.net-toolbar form { flex:1 1 auto; }
+.net-view { display:inline-flex; border:1px solid var(--c-border); border-radius:var(--r-md); overflow:hidden; background:var(--c-surface); flex-shrink:0; }
+.net-view-btn { padding:7px 14px; font-size:.875rem; font-weight:500; color:var(--c-text-2); text-decoration:none; transition:background .15s, color .15s; }
+.net-view-btn:hover { background:var(--c-bg); color:var(--c-text); }
+.net-view-btn.is-active { background:var(--c-primary); color:#fff; }
+
+/* List view: the same members, sortable by column. */
+.net-table-wrap { overflow-x:auto; margin-top:18px; border:1px solid var(--c-border); border-radius:var(--r-lg); background:var(--c-surface); }
+.net-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+.net-table th { text-align:left; padding:11px 14px; border-bottom:1px solid var(--c-border); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:var(--c-text-2); white-space:nowrap; }
+.net-table td { padding:10px 14px; border-bottom:1px solid var(--c-border); }
+.net-table tbody tr:last-child td { border-bottom:none; }
+.net-table tbody tr:hover { background:var(--c-bg); }
+.net-th-name { min-width:220px; }
+.net-num { text-align:right; font-variant-numeric:tabular-nums; color:var(--c-text-2); }
+.net-sort { display:inline-flex; align-items:center; gap:4px; color:inherit; text-decoration:none; }
+.net-sort:hover { color:var(--c-primary); }
+.net-sort.is-active { color:var(--c-primary); }
+.net-sort-ico { font-size:.8em; line-height:1; }
+.net-td-name { padding-top:6px; padding-bottom:6px; }
+.net-row-link { display:flex; align-items:center; gap:10px; color:var(--c-text); text-decoration:none; }
+.net-row-link:hover .net-name { color:var(--c-primary); }
+.net-row-text { min-width:0; }
+.net-row-text .net-name { margin-top:0; }
+.net-avatar-sm { width:34px; height:34px; font-size:.85rem; }
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
 
 /* Toolbar */
@@ -514,6 +543,36 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
     }
     label, cls = m.get(type, m["device"]).get(status, (status, "badge-gray"))
     return Span(label, cls=f"badge {cls}")
+
+
+def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
+    """The four activity counters.
+
+    One component shared by My Profile and a member's public page, so the
+    numbers a person sees on their own profile are by construction the same
+    ones everyone else sees — and the same four the Network table sorts by.
+    """
+    stats = stats or {}
+
+    def tile(label_key, key, accent=""):
+        return Div(
+            Div(_(label_key), cls="stat-label"),
+            Div(str(stats.get(key, 0)), cls="stat-num"),
+            cls=("stat-card " + accent).strip(),
+        )
+
+    return Div(
+        H3(_("profile.stats_heading"), cls="card-title"),
+        Div(
+            tile("profile.stats_devices", "devices_registered"),
+            tile("profile.stats_faults_resolved", "faults_resolved", "g"),
+            tile("profile.stats_maint_performed", "maintenance_performed", "a"),
+            tile("profile.stats_invites", "invites", "p"),
+            cls="stat-grid",
+        ),
+        cls="card",
+        style=style,
+    )
 
 
 # ── Lucide icons ────────────────────────────────────────────────────────────

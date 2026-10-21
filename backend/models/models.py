@@ -38,6 +38,10 @@ class User(Base):
     is_superuser   = Column(Boolean, default=False, nullable=False)
     is_verified    = Column(Boolean, default=False, nullable=False)
     full_name      = Column(Text)
+    # Who created this account. Plain column on purpose: adding the ForeignKey
+    # here gave User two ORM paths back to Profile and made User.profile
+    # ambiguous. Referential integrity is enforced by migration 025 in SQL.
+    invited_by     = Column(UUID(as_uuid=True))
     created_at     = Column(DateTime(timezone=True), server_default=func.now())
     updated_at     = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

@@ -10,7 +10,7 @@ from starlette.responses import RedirectResponse, Response
 import features.profile.api as profile_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF
+from components import page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF, stats_section
 
 rt = APIRouter()
 
@@ -32,11 +32,16 @@ def _view_error(_, heading, message):
     )
 
 
-def _view_content(p, _, back="devices"):
-    # Arriving from the Network directory we return there; from a device's
-    # "Registered by" link we return to the device list.
-    back_href = "/network" if back == "network" else "/devices"
-    back_label = _("network.heading") if back == "network" else _("profile.view_back")
+def _view_content(p, _, back=""):
+    # Arriving from the Network directory we return there, preserving the
+    # view and ordering the member had chosen; from a device's "Registered by"
+    # link we return to the device list. `back` is a full path so the network
+    # page's query string survives the round-trip.
+    if back == "network":
+        back = "/network"
+    from_network = back.startswith("/network")
+    back_href = back if from_network else "/devices"
+    back_label = _("network.heading") if from_network else _("profile.view_back")
 
     avatar_key = p.get("avatar_key", "") or ""
     src = f"/profile/{p.get('id')}/photo?v={avatar_key}" if avatar_key else TRANSPARENT_GIF
@@ -88,6 +93,8 @@ def _view_content(p, _, back="devices"):
             cls="card profile-basic",
             style="max-width:720px;margin-bottom:16px;",
         ),
+        # The same four numbers as their row in the Network directory.
+        stats_section(p, _, style="max-width:720px;margin-bottom:16px;"),
         Div(
             H3(_("profile.orgs_heading"), cls="card-title"),
             Div(*org_cards, cls="own-grid") if org_cards
@@ -108,8 +115,11 @@ async def get_view(req, profile_id: str):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     title = _("profile.view_heading")
-    back = req.query_params.get("back", "")
-    current = "/network" if back == "network" else "/devices"
+    # `back` is either a full path (/network?view=table&sort=devices) or the
+    # legacy "network" sentinel still present in older links.
+    raw_back = req.query_params.get("back", "")
+    back = "/network" if raw_back == "network" else raw_back
+    current = "/network" if back.startswith("/network") else "/devices"
 
     try:
         p = await profile_api.get_profile(token, profile_id)

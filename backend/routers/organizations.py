@@ -617,6 +617,9 @@ async def invite_organization_member(
             # The emailed link authenticates them, so no separate verification step.
             is_verified=True,
             full_name=email.split("@")[0].replace(".", " ").title(),
+            # Credit only the person who created the account. Re-inviting
+            # someone who already exists must not rewrite their attribution.
+            invited_by=profile.id,
         )
         db.add(user)
         await db.flush()

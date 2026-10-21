@@ -303,6 +303,18 @@ tr:hover td { background:var(--c-bg-2); }
 .own-col { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px; border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-bg-2); }
 .own-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-text-3); }
 .own-name { font-size:.95rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }
+
+/* Network directory: one card per member, the whole card a link. */
+.net-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; margin:18px auto 0;}
+.net-card { display:flex; flex-direction:column; align-items:center; text-align:center; gap:2px; padding:18px 14px; border:1px solid var(--c-border); border-radius:var(--r-lg); background:var(--c-surface); text-decoration:none; color:var(--c-text); transition:border-color .15s, transform .15s, box-shadow .15s; }
+.net-card:hover { border-color:var(--c-primary); transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.net-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.net-initials { display:flex; align-items:center; justify-content:center; background:var(--c-primary-lt); color:var(--c-primary); font-weight:700; font-size:1.25rem; }
+.net-name { font-weight:600; font-size:.95rem; margin-top:8px; overflow-wrap:anywhere; }
+.net-username { font-size:.8rem; color:var(--c-text-3); }
+.net-country { font-size:.8rem; color:var(--c-text-2); }
+.net-role { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-primary); margin-top:4px; }
+.net-org { font-size:.8rem; color:var(--c-text-3); overflow-wrap:anywhere; }
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
 
 /* Toolbar */
@@ -530,6 +542,18 @@ LUCIDE_ICONS = {
               '<path d="M10 14h4"/><path d="M10 18h4"/>',
     "profile": '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>'
                '<circle cx="12" cy="7" r="4"/>',
+    # Lucide graph-star: a hub with satellites, rather than the people glyph.
+    "network": '<path d="m12.342 9.316 1.764-3.527"/>'
+               '<path d="m12.59 14.545 2.35 3.759"/>'
+               '<path d="m13.982 12.332 4.03.447"/>'
+               '<path d="M5.414 17.586 8.88 14.12"/>'
+               '<path d="M9.025 9.742 5.317 5.505"/>'
+               '<circle cx="11" cy="12" r="3"/>'
+               '<circle cx="15" cy="4" r="2"/>'
+               '<circle cx="16" cy="20" r="2"/>'
+               '<circle cx="20" cy="13" r="2"/>'
+               '<circle cx="4" cy="19" r="2"/>'
+               '<circle cx="4" cy="4" r="2"/>',
     "logout": '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>'
               '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
 }
@@ -558,6 +582,7 @@ def sidebar(current: str = "", lang: str = "en"):
         ("/faults",    "faults",    _("nav.faults")),
         ("/tasks",     "tasks",     _("nav.tasks")),
         ("/groups",    "groups",    _("nav.groups")),
+        ("/network",   "network",   _("nav.network")),
         ("/profile",   "profile",   _("nav.profile")),
         ("/logout",    "logout",    _("nav.logout")),
     ]

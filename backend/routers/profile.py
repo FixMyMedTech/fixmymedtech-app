@@ -1,4 +1,4 @@
-# routers/profile.py — Profile endpoints (me, avatar, stats)
+# routers/profile.py — Profile endpoints (me, avatar, stats, network directory)
 #
 # Mounted under /api/auth, keeping the same frontend contract:
 #   GET   /api/auth/me         → {id, username, full_name, country, avatar_key, organizations}
@@ -6,6 +6,9 @@
 #   POST  /api/auth/me/photo   → {avatar_key, mime_type}
 #   GET   /api/auth/me/photo   → avatar image bytes
 #   GET   /api/auth/me/stats   → {devices_registered, faults_resolved, maintenance_performed}
+#   GET   /api/auth/profiles   → {items, total, limit, offset}  (network directory)
+#   GET   /api/auth/profiles/{id}        → a single profile, for any signed-in member
+#   GET   /api/auth/profiles/{id}/photo  → that profile's avatar
 
 import asyncio
 import io
@@ -246,12 +249,12 @@ async def get_profile_stats(
 
 # ── Other profiles (read-only) ──────────────────────────────────────────────────
 #
-# A profile can be viewed by its owner, or by anyone who shares an organization
-# with them — the same audience that already sees them listed as a member or as
-# the registrant of a device. Only the public fields are returned: never the
-# linked User (which carries the hashed password and email).
+# Any signed-in member may open any other member's profile — that is what the
+# Network directory is for, and the "Registered by" link on a device already
+# points here. Only the public fields are returned: never the linked User
+# (which carries the hashed password and email).
 
-async def _load_viewable_profile(db: AsyncSession, viewer: Profile, profile_id) -> Profile:
+async def _load_viewable_profile(db: AsyncSession, viewer_id, profile_id) -> Profile:
     result = await db.execute(
         select(Profile)
         .options(selectinload(Profile.org_memberships).selectinload(OrgUser.organization))
@@ -260,22 +263,77 @@ async def _load_viewable_profile(db: AsyncSession, viewer: Profile, profile_id) 
     target = result.scalar_one_or_none()
     if not target:
         raise HTTPException(status_code=404, detail="Profile not found")
-
-    if target.id != viewer.id:
-        viewer_orgs = {m.organization_id for m in viewer.org_memberships}
-        target_orgs = {m.organization_id for m in target.org_memberships}
-        if not (viewer_orgs & target_orgs):
-            raise HTTPException(status_code=403, detail="You do not have access to this profile")
     return target
+
+
+def _card(p: Profile) -> dict:
+    """Network-directory card. Hand-built: never touch p.user, which lazy-loads
+    the auth User and would put hashed_password in the response."""
+    primary = p.org_memberships[0] if p.org_memberships else None
+    return {
+        "id": p.id,
+        "username": p.username,
+        "full_name": p.full_name,
+        "country": p.country,
+        "avatar_key": p.avatar_key,
+        "role": primary.role if primary else None,
+        "organization": (
+            {
+                "id": primary.organization_id,
+                "name": primary.organization.name if primary.organization else None,
+            }
+            if primary else None
+        ),
+    }
+
+
+@router.get("/profiles")
+async def list_profiles(
+    q: Optional[str] = None,
+    limit: int = 24,
+    offset: int = 0,
+    viewer: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Network directory: every active member of the platform."""
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+
+    base = (
+        select(Profile)
+        .join(User, User.id == Profile.id)
+        .where(User.is_active.is_(True))
+    )
+    if q and q.strip():
+        needle = f"%{q.strip()}%"
+        base = base.where(
+            Profile.username.ilike(needle) | Profile.full_name.ilike(needle)
+        )
+
+    total = (await db.execute(
+        select(func.count()).select_from(base.subquery())
+    )).scalar_one()
+
+    result = await db.execute(
+        base.options(
+            selectinload(Profile.org_memberships).selectinload(OrgUser.organization)
+        )
+        .order_by(Profile.full_name.asc().nulls_last(), Profile.username.asc())
+        .limit(limit)
+        .offset(offset)
+    )
+    items = [_card(p) for p in result.scalars().all()]
+
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/profiles/{profile_id}")
 async def get_profile_view(
     profile_id: uuid.UUID,
-    viewer: Profile = Depends(get_current_profile),
+    viewer: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    target = await _load_viewable_profile(db, viewer, profile_id)
+    target = await _load_viewable_profile(db, viewer.id, profile_id)
     return {
         "id": target.id,
         "username": target.username,
@@ -300,10 +358,10 @@ async def get_profile_view(
 @router.get("/profiles/{profile_id}/photo")
 async def get_profile_view_photo(
     profile_id: uuid.UUID,
-    viewer: Profile = Depends(get_current_profile),
+    viewer: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    target = await _load_viewable_profile(db, viewer, profile_id)
+    target = await _load_viewable_profile(db, viewer.id, profile_id)
     if not target.avatar_key:
         raise HTTPException(status_code=404, detail="No avatar")
     obj = await get_file(target.avatar_key)

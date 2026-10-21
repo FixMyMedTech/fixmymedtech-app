@@ -1,4 +1,5 @@
 import httpx
+from urllib.parse import urlencode
 
 from config.api import _get, _patch, API_URL
 
@@ -11,9 +12,16 @@ async def get_profile_stats(token: str):
     return await _get("/api/auth/me/stats", token)
 
 
+async def list_profiles(token: str, q: str = "", limit: int = 24, offset: int = 0):
+    """The Network directory: every active member, newest page first."""
+    params = {"limit": limit, "offset": offset}
+    if q and q.strip():
+        params["q"] = q.strip()
+    return await _get(f"/api/auth/profiles?{urlencode(params)}", token)
+
+
 async def get_profile(token: str, profile_id: str):
-    """Another user's profile, read-only. Backend allows it only for yourself
-    or for someone in one of your organizations."""
+    """Another user's profile, read-only. Any signed-in member may open it."""
     return await _get(f"/api/auth/profiles/{profile_id}", token)
 
 

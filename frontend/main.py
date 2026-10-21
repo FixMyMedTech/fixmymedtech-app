@@ -20,6 +20,7 @@ from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
 from features.auth.pages import forgot_password as auth_forgot
 from features.profile.pages import my_profile, profile_detail
+from features.network import pages as network_pages
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page, organization_detail, organization_manage
 from features.faults.pages import fault_list, report_page, fault_detail, public_fault
@@ -109,6 +110,7 @@ auth_forgot.rt.to_app(app)
 # /profile/{profile_id} pattern profile_detail adds.
 my_profile.rt.to_app(app)
 profile_detail.rt.to_app(app)
+network_pages.rt.to_app(app)
 tasks_pages.rt.to_app(app)
 groups_page.rt.to_app(app)
 organization_detail.rt.to_app(app)

@@ -32,7 +32,12 @@ def _view_error(_, heading, message):
     )
 
 
-def _view_content(p, _):
+def _view_content(p, _, back="devices"):
+    # Arriving from the Network directory we return there; from a device's
+    # "Registered by" link we return to the device list.
+    back_href = "/network" if back == "network" else "/devices"
+    back_label = _("network.heading") if back == "network" else _("profile.view_back")
+
     avatar_key = p.get("avatar_key", "") or ""
     src = f"/profile/{p.get('id')}/photo?v={avatar_key}" if avatar_key else TRANSPARENT_GIF
     full_name = p.get("full_name") or ""
@@ -68,7 +73,7 @@ def _view_content(p, _):
                 P(f"@{username}" if username else "",
                   style="color:var(--c-text-3);") if username else "",
             ),
-            A(_("profile.view_back"), href="/devices", cls="btn btn-secondary btn-sm"),
+            A(back_label, href=back_href, cls="btn btn-secondary btn-sm"),
             cls="page-header",
         ),
         Div(
@@ -103,6 +108,8 @@ async def get_view(req, profile_id: str):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     title = _("profile.view_heading")
+    back = req.query_params.get("back", "")
+    current = "/network" if back == "network" else "/devices"
 
     try:
         p = await profile_api.get_profile(token, profile_id)
@@ -113,14 +120,15 @@ async def get_view(req, profile_id: str):
             return RedirectResponse("/login?expired=1", status_code=302)
         message = _("profile.view_denied") if status == 403 else _("profile.view_missing")
         return page_shell(_view_error(_, title, message),
-                          current="/devices", title=title, lang=lang)
+                          current=current, title=title, lang=lang)
 
     # This route is strictly "someone else's profile". Your own lives at
     # /profile (editable), so never render the read-only page for yourself.
     if p.get("is_self"):
         return RedirectResponse("/profile", status_code=302)
 
-    return page_shell(_view_content(p, _), current="/devices", title=title, lang=lang)
+    return page_shell(_view_content(p, _, back=back),
+                      current=current, title=title, lang=lang)
 
 
 @rt("/profile/{profile_id}/photo")

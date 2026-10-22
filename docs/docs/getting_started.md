@@ -4,7 +4,7 @@
 
 - **Docker Desktop** (or Docker Engine + Compose V2)
 - **Git**
-- A **Supabase** project (free tier works) — or any PostgreSQL database
+- Nothing else for the local stack. Optionally, a **Supabase** project (or any PostgreSQL database) if you want to develop against a remote database
 - (Optional) Python 3.12 + `uv` / `pip` if you want to run services outside Docker
 
 ---
@@ -83,19 +83,20 @@ If you prefer to develop against your Supabase project, set `DATABASE_URL` in
 docker compose up --build -d
 ```
 
-This builds and starts two containers:
+This builds and starts three containers:
 
 | Service | URL | What it does |
 |---------|-----|--------------|
 | **backend** | `http://localhost:8888` | FastAPI REST API |
 | **frontend** | `http://localhost:5001` | FastHTML server-side UI |
+| **minio** | console `http://localhost:9001` | S3-compatible file storage |
 
 Once running:
 
 - **App:** <http://localhost:5001>
 - **API docs (Swagger):** <http://localhost:8888/docs>
 - **Admin portal:** <http://localhost:8888/admin/> *(superuser only — see below)*
-- **MinIO console:** <http://localhost:9003> *(Option A only — creds `minioadmin`/`minioadmin`)*
+- **MinIO console:** <http://localhost:9003> with Option A, <http://localhost:9001> with Option B *(creds `minioadmin`/`minioadmin` unless overridden)*
 
 ### First-time setup — create a superuser
 
@@ -135,61 +136,12 @@ Once logged in as a superuser at `/admin/`:
 
 ## 3. Project structure
 
-```
-fixmymedtech-app1/
-├── backend/                          ← FastAPI REST API
-│   ├── main.py                       ← App entry, CORS, router registration, SQLAdmin
-│   ├── admin_auth.py                 ← SQLAdmin auth (superuser-only login)
-│   ├── migrations.py                 ← Auto-runs SQL migration files on startup
-│   ├── config/
-│   │   ├── db_config.py               ← DB engine + async session factory
-│   │   ├── users.py                  ← FastAPI-Users: UserManager, JWT backend, deps
-│   │   ├── email.py                  ← fastapi-mail config (SMTP or console fallback)
-│   │   └── oauth.py                  ← Authlib OAuth client (Google/GitHub)
-│   ├── models/
-│   │   └── models.py                 ← SQLAlchemy models (User, Profile, Device, …)
-│   ├── routers/
-│   │   ├── auth.py                   ← /api/auth/* (login, signup, me, tasks, …)
-│   │   ├── oauth.py                  ← /api/auth/oauth/{provider} (social login)
-│   │   ├── devices.py                ← /api/devices/*
-│   │   ├── fault_reports.py          ← /api/faults/*
-│   │   ├── maintenance_logs.py       ← /api/maintenance-logs/*
-│   │   ├── dashboard.py              ← /api/dashboard/*
-│   │   └── organizations.py          ← /api/organizations/*
-│   ├── utils/
-│   │   ├── profile.py                ← get_current_profile dependency
-│   │   └── username.py               ← Auto-generate unique usernames
-│   └── requirements.txt
-│
-├── frontend/                         ← FastHTML frontend server
-│   ├── main.py                       ← All routes and page rendering
-│   ├── components.py                 ← Reusable HTML components + CSS
-│   ├── i18n.py                       ← Translations (EN/ES/FR)
-│   ├── countries.py                  ← Country list
-│   ├── features/
-│   │   └── auth/                     ← Login, signup pages + API helpers
-│   ├── config/
-│   │   └── api.py                    ← HTTP client (calls FastAPI via httpx)
-│   ├── static/                       ← Images, favicon
-│   └── requirements.txt
-│
-├── infrastructure/
-│   └── migrations/                   ← SQL migrations (run in order on startup)
-│       ├── 001_device_coordinates.sql
-│       ├── …
-│       ├── 011_local_auth_users.sql  ← Creates local users table
-│       └── 012_fastapi_users.sql     ← Aligns schema for FastAPI-Users
-│
-├── docker-compose.yml                ← Production compose (backend + frontend)
-├── docker-compose.dev.yml            ← Dev-server compose (backend + frontend + minio)
-├── docker-compose.local.yml          ← Local dev stack (PostgreSQL + minio + backend + frontend)
-├── .env.example                      ← Template for environment variables
-└── README.md                         ← Architecture overview
-```
+See [Architecture](architecture.md) for the full layout, request flow, and the
+frontend feature pattern.
 
 ---
 
-## 5. Admin portal
+## 4. Admin portal
 
 The admin portal at `/admin/` uses [SQLAdmin](https://aminaltay.dev/sqladmin/) to provide a browsable database UI.
 
@@ -211,24 +163,24 @@ The admin portal at `/admin/` uses [SQLAdmin](https://aminaltay.dev/sqladmin/) t
 
 ---
 
-## 6. Database migrations
+## 5. Database migrations
 
 Migrations live in `infrastructure/migrations/` and are named `NNN_description.sql`. They run **automatically** on backend startup in numeric order. Each migration is recorded in `fixmymedtech.schema_migrations` so it only runs once.
 
 To add a new migration:
 
 ```bash
-# Pick the next number
-cat > infrastructure/migrations/013_my_change.sql << 'SQL'
+# Pick the next number after the highest existing file
+cat > infrastructure/migrations/026_my_change.sql << 'SQL'
 ALTER TABLE fixmymedtech.devices ADD COLUMN IF NOT EXISTS warranty_end DATE;
 SQL
 ```
 
-Restart the backend container and it will apply automatically.
+Rebuild and restart the backend container (`up --build -d backend`) and it will apply automatically. Never edit a migration that has already been applied; add a new one. Update `backend/models/models.py` to match.
 
 ---
 
-## 7. Common tasks
+## 6. Common tasks
 
 ### Create a new API endpoint
 
@@ -273,7 +225,7 @@ docker compose up --build -d backend
 
 ---
 
-## 8. Environment variables reference
+## 7. Environment variables reference
 
 ### Backend
 
@@ -294,16 +246,26 @@ docker compose up --build -d backend
 | `GOOGLE_CLIENT_SECRET` | No | — | OAuth |
 | `GITHUB_CLIENT_ID` | No | — | OAuth |
 | `GITHUB_CLIENT_SECRET` | No | — | OAuth |
+| `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | No | — | OAuth |
+| `MINIO_ENDPOINT` | No | `minio:9000` | MinIO host:port as seen from the backend |
+| `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | No | `minioadmin` | MinIO credentials |
+| `MINIO_BUCKET` | No | `fixmymedtech` | Bucket for photos |
+| `AUTO_PROCESS_PHOTO` | No | `on` | White-background photo processing (`off` to disable) |
+| `GEMINI_API_KEY` | No | — | Use Gemini instead of local `rembg` for photo processing |
+| `PHOTO_MAX_DIMENSION` / `PHOTO_JPEG_QUALITY` | No | `1600` / `85` | Photo compression |
+| `HEALTHSITES_API_KEY` | No | — | healthsites.io lookup when registering organizations |
+| `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` / `SUPERUSER_NAME` | No | — | Auto-create a superuser on startup |
 
 ### Frontend
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `API_URL` | No | `http://backend:8888` | FastAPI backend URL |
+| `API_URL` | No | `http://localhost:8888` (compose sets `http://backend:8888`) | FastAPI backend URL |
+| `SESSION_SECRET` | Dev/prod | `dev-local-session-secret` (local compose) | Signs the session cookie, which holds the user's JWT. The dev and prod compose files refuse to start without it |
 
 ---
 
-## 9. Tech stack summary
+## 8. Tech stack summary
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -313,7 +275,8 @@ docker compose up --build -d backend
 | OAuth | Authlib | Google/GitHub social login |
 | Admin UI | SQLAdmin | Browsable database portal (superuser only) |
 | Frontend | FastHTML | Server-side HTML rendering |
-| Database | PostgreSQL (Supabase) | Data storage |
+| Database | PostgreSQL (local container or Supabase) | Data storage |
+| Object storage | MinIO | Device, fault and avatar photos |
 | ORM | SQLAlchemy 2 (async) | Query builder |
 | Migrations | Custom (file-based) | Auto-applied on startup |
 | Containerization | Docker Compose | Multi-service orchestration |

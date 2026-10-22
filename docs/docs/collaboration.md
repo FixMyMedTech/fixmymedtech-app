@@ -61,7 +61,7 @@ the summary path we use:
    `fix/avatar-menu-stale-session`.
 4. **Make small, focused commits** — one logical change per commit, with a
    clear message.
-5. **Run the tests and linting** before pushing (see `docs/docs/setup.md`).
+5. **Run the app locally and check your change** before pushing (see [Getting Started](getting_started.md)). The project has no automated test suite yet.
 6. **Open a Pull Request** to `dev` describing what changed and referencing the
    issue.
 7. A maintainer **reviews**, you may be asked for tweaks, and then it is merged.
@@ -73,7 +73,7 @@ the summary path we use:
 * Backend changes include a migration in `infrastructure/migrations/` when the
   schema changes.
 * Docs are updated when behaviour is user-visible.
-* Tests still pass.
+* The change was checked by hand in the local stack.
 
 ---
 

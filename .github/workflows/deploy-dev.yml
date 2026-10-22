@@ -36,6 +36,7 @@ jobs:
             API_URL=http://backend:8888
             SESSION_SECRET=${{ secrets.DEV_SESSION_SECRET }}
             AUTH_JWT_SECRET=${{ secrets.DEV_AUTH_JWT_SECRET }}
+            AUTH_SESSION_SECRET=${{ secrets.DEV_AUTH_SESSION_SECRET }}
             SUPERUSER_EMAIL=${{ secrets.DEV_SUPERUSER_EMAIL }}
             SUPERUSER_PASSWORD=${{ secrets.DEV_SUPERUSER_PASSWORD }}
             MAIL_SERVER=${{ secrets.DEV_MAIL_SERVER }}

@@ -53,6 +53,7 @@ services:
     restart: unless-stopped
     environment:
       API_URL: ${API_URL:-http://backend:8888}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set}
     ports:
       - "127.0.0.1:5002:5001"
     depends_on:

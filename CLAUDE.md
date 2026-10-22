@@ -85,5 +85,6 @@ Browser → (nginx) → backend FastAPI :8888
   - Pushing `dev` deploys to `/opt/fixmymedtech-dev`.
   - Pushing `main` deploys to production at `/opt/fixmymedtech`.
   - Secrets are written into the server's `.env` on each deploy. A new env var has to be added to the workflow's `.env` heredoc and to the matching compose file.
+- Contribution flow: branch from `dev` and open PRs against `dev`. Maintainers merge `dev` into `main`.
 
 

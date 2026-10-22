@@ -236,7 +236,7 @@ docker compose up --build -d backend
 | `FRONTEND_URL` | No | `http://localhost` | For CORS + email links |
 | `AUTH_JWT_SECRET` | No | `dev-local-jwt-secret-change-me` | JWT signing secret |
 | `AUTH_TOKEN_TTL` | No | `604800` (7 days) | JWT lifetime in seconds |
-| `AUTH_SESSION_SECRET` | No | `dev-admin-session-secret` | Session cookie signing |
+| `AUTH_SESSION_SECRET` | Dev/prod | `dev-local-admin-session-secret` (local compose) | Signs the `/admin` login session. The dev and prod compose files refuse to start without it |
 | `MAIL_SERVER` | No | *(empty — logs emails)* | SMTP host |
 | `MAIL_PORT` | No | `587` | SMTP port |
 | `MAIL_USERNAME` | No | — | SMTP login |

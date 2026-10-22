@@ -41,6 +41,7 @@ services:
       MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
       MAIL_SSL_TLS: ${MAIL_SSL_TLS:-false}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-dev-local-jwt-secret-change-me}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:-dev-local-admin-session-secret}
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}

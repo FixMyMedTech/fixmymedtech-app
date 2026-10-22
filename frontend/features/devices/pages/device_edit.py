@@ -109,16 +109,10 @@ def _own_col(label, o, _):
 
 
 def _can_manage(device: dict, me: dict) -> bool:
-    """Same rule as the backend: admin of the owning organization, admin of
-    the device's healthsite, or the user who registered the device."""
-    admin_org_ids = {str(o["id"]) for o in me.get("organizations", []) if o.get("role") == "admin"}
-    if str(device.get("organization_id") or "") in admin_org_ids:
-        return True
-    healthsite = device.get("healthsite") or {}
-    hs_id = str(device.get("healthsite_id") or healthsite.get("id") or "")
-    if hs_id and hs_id in admin_org_ids:
-        return True
-    return bool(me.get("id")) and str(device.get("registered_by") or "") == str(me["id"])
+    """Same rule as the backend's _can_edit_device: admin of the owning
+    organization, admin of the device's healthsite, admin of the organization
+    that maintains it, or the user who registered the device."""
+    return auth_helper.can_edit_device(me, device)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -126,6 +120,8 @@ def _can_manage(device: dict, me: dict) -> bool:
 # ══════════════════════════════════════════════════════════════
 
 def _ownership_card(device: dict, me: dict, my_orgs: list, all_orgs: list, _):
+    """healthsite: my_orgs (my memberships). maintenance org: only the
+    engineering organizations — the ones that actually service equipment."""
     card_id = "ownership"
     org = device.get("organization") or {}
     maint_org = device.get("organization_maintenance") or {}
@@ -142,8 +138,7 @@ def _ownership_card(device: dict, me: dict, my_orgs: list, all_orgs: list, _):
         id=f"{card_id}-display",
     )
 
-    admin_org_ids = {str(o["id"]) for o in me.get("organizations", []) if o.get("role") == "admin"}
-    is_owning_admin = str(device.get("organization_id") or "") in admin_org_ids
+    can_set_maint = auth_helper.can_set_maintenance_org(me, device)
     current_hs = str(device.get("healthsite_id") or "")
 
     hs_options = [Option(_("new_device.select_healthsite"), value="",
@@ -161,12 +156,18 @@ def _ownership_card(device: dict, me: dict, my_orgs: list, all_orgs: list, _):
         _edit_row(_("device_detail.healthsite"),
                   Select(*hs_options, name="healthsite_id", cls="input", style="max-width:260px;")),
     ]
-    if is_owning_admin:
+    if can_set_maint:
+        current_maint = str(device.get("organization_maintenance_id") or "")
+        engineering = [o for o in all_orgs if (o.get("type") or "") == "engineering"]
         maint_options = [
             Option(o.get("name", ""), value=o["id"],
-                   selected=(str(o["id"]) == str(device.get("organization_maintenance_id") or "")))
-            for o in all_orgs
+                   selected=(str(o["id"]) == current_maint))
+            for o in engineering
         ]
+        if current_maint and current_maint not in {str(o["id"]) for o in engineering}:
+            # Same guard as the healthsite select: never drop the current value.
+            maint_options.insert(0, Option(maint_org.get("name") or current_maint,
+                                           value=current_maint, selected=True))
         edit_rows.append(
             _edit_row(_("device_detail.maintenance_org"),
                       Select(*maint_options, name="organization_maintenance_id",
@@ -437,37 +438,29 @@ def _log_edit_row(log: dict, device_id: str, assignees: list, me: dict, lang: st
 def _fault_edit_row(fault: dict, device_id: str, assignees: list, me: dict, lang: str, _):
     if not auth_helper.user_can_edit_fault(me, fault):
         return []
+    # Status, assignee, diagnosis, approval and resolution all belong to the
+    # workflow on the fault's own page — here the reporter can only correct
+    # what was reported.
     form = Form(
-        Div(
-            Div(Label(_("fault_detail.status"), cls="label"),
-                Select(*[Option(_(f"badge.{v}"), value=v, selected=(fault.get("status") == v))
-                         for v in FAULT_STATUSES],
-                       name="status", cls="input"),
-                style="flex:1;min-width:150px;"),
-            Div(Label(_("fault_detail.severity"), cls="label"),
-                Select(*[Option(_(f"badge.{v}"), value=v, selected=(fault.get("severity") == v))
-                         for v in FAULT_SEVERITIES],
-                       name="severity", cls="input"),
-                style="flex:1;min-width:150px;"),
-            Div(Label(_("fault_detail.assigned_to"), cls="label"),
-                Select(*assignee_options(assignees, fault.get("assigned_to") or "", lang),
-                       name="assigned_to", cls="input"),
-                style="flex:1;min-width:150px;"),
-            style="display:flex;gap:12px;flex-wrap:wrap;",
-        ),
+        Div(Label(_("fault_detail.severity"), cls="label"),
+            Select(*[Option(_(f"badge.{v}"), value=v, selected=(fault.get("severity") == v))
+                     for v in FAULT_SEVERITIES],
+                   name="severity", cls="input"),
+            style="flex:1;min-width:150px;"),
         Div(Label(_("fault_detail.description"), cls="label"),
             Textarea(fault.get("description") or "", name="description", rows="3", cls="input"),
-            style="margin-top:10px;"),
-        Div(Label(_("fault_detail.resolution"), cls="label"),
-            Textarea(fault.get("resolution_notes") or "", name="resolution_notes", rows="2",
-                     cls="input"),
-            style="margin-top:10px;"),
+            style="flex:2;min-width:220px;"),
         Div(Label(_("fault_detail.change_photo"), cls="label", for_=f"fault-photo-{fault['id']}"),
             Input(type="file", id=f"fault-photo-{fault['id']}", name="photo",
                   accept="image/*", cls="input"),
-            style="margin-top:10px;"),
-        Button(_("common.save"), type="submit", cls="btn btn-primary btn-sm",
-               style="margin-top:12px;"),
+            style="flex:1;min-width:150px;"),
+        Div(
+            Button(_("common.save"), type="submit", cls="btn btn-primary btn-sm"),
+            A(_("fault_detail.open_workflow"),
+              href=f"/device/{device_id}/fault/{fault['id']}",
+              cls="btn btn-secondary btn-sm"),
+            style="display:flex;gap:8px;margin-top:12px;",
+        ),
         method="post", action=f"/devices/{device_id}/edit/fault/{fault['id']}",
         enctype="multipart/form-data",
         style="margin-top:4px;",
@@ -556,7 +549,7 @@ def _faults_card(faults: list, device_id: str, assignees: list, me: dict, lang: 
 # ══════════════════════════════════════════════════════════════
 
 @rt("/devices/{device_id}/edit")
-async def get_device_edit(req, device_id: str):
+async def get(req, device_id: str):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
@@ -586,8 +579,7 @@ async def get_device_edit(req, device_id: str):
         return RedirectResponse(f"/device/{device_id}", status_code=302)
 
     cat = d.get("category") or {}
-    admin_org_ids = {str(o["id"]) for o in me.get("organizations", []) if o.get("role") == "admin"}
-    is_owning_admin = str(d.get("organization_id") or "") in admin_org_ids
+    can_set_maint = auth_helper.can_set_maintenance_org(me, d)
 
     try:
         categories = await devices_api.get_categories()
@@ -598,9 +590,9 @@ async def get_device_edit(req, device_id: str):
     except Exception:
         my_orgs = []
     all_orgs = []
-    if is_owning_admin:
+    if can_set_maint:
         try:
-            all_orgs = await org_api.get_organizations()
+            all_orgs = await org_api.get_organizations(token)
         except Exception:
             all_orgs = []
 
@@ -762,9 +754,8 @@ async def post_photo(req, device_id: str):
 
 
 @rt("/devices/{device_id}/edit/fault/{fault_id}")
-async def post_fault(req, device_id: str, fault_id: str, status: str = "",
-                     severity: str = "", assigned_to: str = "",
-                     description: str = "", resolution_notes: str = ""):
+async def post_fault(req, device_id: str, fault_id: str, severity: str = "",
+                     description: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return redirect
@@ -780,15 +771,12 @@ async def post_fault(req, device_id: str, fault_id: str, status: str = "",
     if not auth_helper.user_can_edit_fault(me, fault_obj):
         return RedirectResponse(f"/device/{device_id}", status_code=303)
 
+    # Severity and description only — status, assignee and resolution are
+    # workflow steps with their own authorizers on the fault's own page.
     data = {}
-    if status in FAULT_STATUSES:
-        data["status"] = status
     if severity in FAULT_SEVERITIES:
         data["severity"] = severity
-    if assigned_to:
-        data["assigned_to"] = assigned_to
     data["description"] = description
-    data["resolution_notes"] = resolution_notes
     try:
         await faults_api.update_fault(token, fault_id, data)
     except httpx.HTTPStatusError as e:

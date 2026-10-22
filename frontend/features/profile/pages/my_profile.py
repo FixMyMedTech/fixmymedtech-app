@@ -10,7 +10,8 @@ from starlette.responses import Response
 import features.profile.api as profile_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF
+from components import (page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF,
+                        stats_section)
 
 rt = APIRouter()
 
@@ -81,30 +82,7 @@ def _account_section(me, _=None, saved=False, error=None):
 
 def _stats_section(stats, _=None):
     _ = _ or (lambda k: k)
-    stats = stats or {}
-    return Div(
-        H3(_("profile.stats_heading"), cls="card-title"),
-        Div(
-            Div(
-                Div(_("profile.stats_devices"), cls="stat-label"),
-                Div(str(stats.get("devices_registered", 0)), cls="stat-num"),
-                cls="stat-card",
-            ),
-            Div(
-                Div(_("profile.stats_faults_resolved"), cls="stat-label"),
-                Div(str(stats.get("faults_resolved", 0)), cls="stat-num"),
-                cls="stat-card g",
-            ),
-            Div(
-                Div(_("profile.stats_maint_performed"), cls="stat-label"),
-                Div(str(stats.get("maintenance_performed", 0)), cls="stat-num"),
-                cls="stat-card a",
-            ),
-            cls="stat-grid",
-        ),
-        cls="card",
-        style="max-width:720px;margin-top:20px;",
-    )
+    return stats_section(stats, _)
 
 
 def _content(me, _, stats=None, saved=False, error=None):

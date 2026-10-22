@@ -286,7 +286,7 @@ tr:hover td { background:var(--c-bg-2); }
 .alert-warning { background:var(--c-amber-lt); color:var(--c-amber); border:1px solid transparent; }
 
 /* Stats grid */
-.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
 .stat-card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:16px 18px; }
 .stat-label { font-size:.7rem; font-weight:600; color:var(--c-text-3); text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono); margin-bottom:5px; }
 .stat-num { font-family:var(--font-display); font-size:2rem; font-weight:700; color:var(--c-text); line-height:1; }
@@ -294,6 +294,7 @@ tr:hover td { background:var(--c-bg-2); }
 .stat-card.g { border-top:3px solid var(--c-green); }
 .stat-card.a { border-top:3px solid var(--c-amber); }
 .stat-card.r { border-top:3px solid var(--c-red); }
+.stat-card.p { border-top:3px solid var(--c-primary); }
 
 /* Two col */
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -303,6 +304,46 @@ tr:hover td { background:var(--c-bg-2); }
 .own-col { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px; border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-bg-2); }
 .own-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-text-3); }
 .own-name { font-size:.95rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }
+
+/* Network directory: one card per member, the whole card a link. */
+.net-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; margin:18px auto 0;}
+.net-card { display:flex; flex-direction:column; align-items:center; text-align:center; gap:2px; padding:18px 14px; border:1px solid var(--c-border); border-radius:var(--r-lg); background:var(--c-surface); text-decoration:none; color:var(--c-text); transition:border-color .15s, transform .15s, box-shadow .15s; }
+.net-card:hover { border-color:var(--c-primary); transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.net-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.net-initials { display:flex; align-items:center; justify-content:center; background:var(--c-primary-lt); color:var(--c-primary); font-weight:700; font-size:1.25rem; }
+.net-name { font-weight:600; font-size:.95rem; margin-top:8px; overflow-wrap:anywhere; }
+.net-username { font-size:.8rem; color:var(--c-text-3); }
+.net-country { font-size:.8rem; color:var(--c-text-2); }
+.net-role { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-primary); margin-top:4px; }
+.net-org { font-size:.8rem; color:var(--c-text-3); overflow-wrap:anywhere; }
+
+/* Toolbar: search on the left, cards/list switch on the right. */
+.net-toolbar { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:14px; }
+.net-toolbar form { flex:1 1 auto; }
+.net-view { display:inline-flex; border:1px solid var(--c-border); border-radius:var(--r-md); overflow:hidden; background:var(--c-surface); flex-shrink:0; }
+.net-view-btn { padding:7px 14px; font-size:.875rem; font-weight:500; color:var(--c-text-2); text-decoration:none; transition:background .15s, color .15s; }
+.net-view-btn:hover { background:var(--c-bg); color:var(--c-text); }
+.net-view-btn.is-active { background:var(--c-primary); color:#fff; }
+
+/* List view: the same members, sortable by column. */
+.net-table-wrap { overflow-x:auto; margin-top:18px; border:1px solid var(--c-border); border-radius:var(--r-lg); background:var(--c-surface); }
+.net-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+.net-table th { text-align:left; padding:11px 14px; border-bottom:1px solid var(--c-border); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:var(--c-text-2); white-space:nowrap; }
+.net-table td { padding:10px 14px; border-bottom:1px solid var(--c-border); }
+.net-table tbody tr:last-child td { border-bottom:none; }
+.net-table tbody tr:hover { background:var(--c-bg); }
+.net-th-name { min-width:220px; }
+.net-num { text-align:right; font-variant-numeric:tabular-nums; color:var(--c-text-2); }
+.net-sort { display:inline-flex; align-items:center; gap:4px; color:inherit; text-decoration:none; }
+.net-sort:hover { color:var(--c-primary); }
+.net-sort.is-active { color:var(--c-primary); }
+.net-sort-ico { font-size:.8em; line-height:1; }
+.net-td-name { padding-top:6px; padding-bottom:6px; }
+.net-row-link { display:flex; align-items:center; gap:10px; color:var(--c-text); text-decoration:none; }
+.net-row-link:hover .net-name { color:var(--c-primary); }
+.net-row-text { min-width:0; }
+.net-row-text .net-name { margin-top:0; }
+.net-avatar-sm { width:34px; height:34px; font-size:.85rem; }
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
 
 /* Toolbar */
@@ -483,6 +524,8 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
         "fault": {
             "open":        (_("badge.open"),        "badge-red"),
             "assigned":    (_("badge.assigned"),    "badge-amber"),
+            "diagnosed":   (_("badge.diagnosed"),   "badge-amber"),
+            "approved":    (_("badge.approved"),    "badge-blue"),
             "in_progress": (_("badge.in_progress"), "badge-blue"),
             "resolved":    (_("badge.resolved"),    "badge-green"),
         },
@@ -502,6 +545,36 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
     return Span(label, cls=f"badge {cls}")
 
 
+def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
+    """The four activity counters.
+
+    One component shared by My Profile and a member's public page, so the
+    numbers a person sees on their own profile are by construction the same
+    ones everyone else sees — and the same four the Network table sorts by.
+    """
+    stats = stats or {}
+
+    def tile(label_key, key, accent=""):
+        return Div(
+            Div(_(label_key), cls="stat-label"),
+            Div(str(stats.get(key, 0)), cls="stat-num"),
+            cls=("stat-card " + accent).strip(),
+        )
+
+    return Div(
+        H3(_("profile.stats_heading"), cls="card-title"),
+        Div(
+            tile("profile.stats_devices", "devices_registered"),
+            tile("profile.stats_faults_resolved", "faults_resolved", "g"),
+            tile("profile.stats_maint_performed", "maintenance_performed", "a"),
+            tile("profile.stats_invites", "invites", "p"),
+            cls="stat-grid",
+        ),
+        cls="card",
+        style=style,
+    )
+
+
 # ── Lucide icons ────────────────────────────────────────────────────────────
 # Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
 # and stay crisp in both themes.
@@ -515,6 +588,8 @@ LUCIDE_ICONS = {
     "devices": '<rect width="20" height="14" x="2" y="3" rx="2"/>'
                '<line x1="8" x2="16" y1="21" y2="21"/>'
                '<line x1="12" x2="12" y1="17" y2="21"/>',
+    "faults": '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>'
+              '<path d="M12 9v4"/><path d="M12 17h.01"/>',
     "tasks": '<rect width="8" height="4" x="8" y="2" rx="1"/>'
              '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
              '<path d="M12 11h4"/><path d="M12 16h4"/>'
@@ -526,6 +601,18 @@ LUCIDE_ICONS = {
               '<path d="M10 14h4"/><path d="M10 18h4"/>',
     "profile": '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>'
                '<circle cx="12" cy="7" r="4"/>',
+    # Lucide graph-star: a hub with satellites, rather than the people glyph.
+    "network": '<path d="m12.342 9.316 1.764-3.527"/>'
+               '<path d="m12.59 14.545 2.35 3.759"/>'
+               '<path d="m13.982 12.332 4.03.447"/>'
+               '<path d="M5.414 17.586 8.88 14.12"/>'
+               '<path d="M9.025 9.742 5.317 5.505"/>'
+               '<circle cx="11" cy="12" r="3"/>'
+               '<circle cx="15" cy="4" r="2"/>'
+               '<circle cx="16" cy="20" r="2"/>'
+               '<circle cx="20" cy="13" r="2"/>'
+               '<circle cx="4" cy="19" r="2"/>'
+               '<circle cx="4" cy="4" r="2"/>',
     "logout": '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>'
               '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
 }
@@ -551,8 +638,10 @@ def sidebar(current: str = "", lang: str = "en"):
         ("/home",      "home",      _("nav.home")),
         ("/dashboard", "dashboard", _("nav.dashboard")),
         ("/devices",   "devices",   _("nav.devices")),
+        ("/faults",    "faults",    _("nav.faults")),
         ("/tasks",     "tasks",     _("nav.tasks")),
         ("/groups",    "groups",    _("nav.groups")),
+        ("/network",   "network",   _("nav.network")),
         ("/profile",   "profile",   _("nav.profile")),
         ("/logout",    "logout",    _("nav.logout")),
     ]

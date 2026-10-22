@@ -38,6 +38,10 @@ class User(Base):
     is_superuser   = Column(Boolean, default=False, nullable=False)
     is_verified    = Column(Boolean, default=False, nullable=False)
     full_name      = Column(Text)
+    # Who created this account. Plain column on purpose: adding the ForeignKey
+    # here gave User two ORM paths back to Profile and made User.profile
+    # ambiguous. Referential integrity is enforced by migration 025 in SQL.
+    invited_by     = Column(UUID(as_uuid=True))
     created_at     = Column(DateTime(timezone=True), server_default=func.now())
     updated_at     = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -366,8 +370,12 @@ class FaultReport(Base):
             name="fault_reports_severity_check"
         ),
         CheckConstraint(
-            "status IN ('open', 'assigned', 'in_progress', 'resolved')",
+            "status IN ('open', 'assigned', 'diagnosed', 'approved', 'in_progress', 'resolved')",
             name="fault_reports_status_check"
+        ),
+        CheckConstraint(
+            "approval_status IS NULL OR approval_status IN ('pending', 'approved', 'rejected')",
+            name="fault_reports_approval_status_check"
         ),
         {"schema": SCHEMA},
     )
@@ -385,6 +393,24 @@ class FaultReport(Base):
     resolution_notes    = Column(Text)
     photo_key           = Column(Text)
 
+    # Step 2 — the maintenance-org admin who assigned it
+    assigned_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    assigned_at         = Column(DateTime(timezone=True))
+    # Step 3 — the assignee's diagnosis and online quote
+    diagnosis           = Column(Text)
+    diagnosed_by        = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    diagnosed_at        = Column(DateTime(timezone=True))
+    quote_amount        = Column(Numeric(12, 2))
+    quote_notes         = Column(Text)
+    # Step 4 — the healthsite admin's decision (falls back to maintenance admin)
+    approval_status     = Column(Text)   # pending | approved | rejected
+    approved_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    approved_at         = Column(DateTime(timezone=True))
+    approval_comment    = Column(Text)
+    # Step 5 — the assignee's repair and final price
+    final_price         = Column(Numeric(12, 2))
+    resolved_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+
     # Relationships
     device                  = relationship("Device", back_populates="fault_reports")
     reported_by_profile     = relationship(
@@ -396,6 +422,26 @@ class FaultReport(Base):
         "Profile",
         foreign_keys=[assigned_to],
         primaryjoin="Profile.id == FaultReport.assigned_to",
+    )
+    assigned_by_profile     = relationship(
+        "Profile",
+        foreign_keys=[assigned_by],
+        primaryjoin="Profile.id == FaultReport.assigned_by",
+    )
+    diagnosed_by_profile    = relationship(
+        "Profile",
+        foreign_keys=[diagnosed_by],
+        primaryjoin="Profile.id == FaultReport.diagnosed_by",
+    )
+    approved_by_profile     = relationship(
+        "Profile",
+        foreign_keys=[approved_by],
+        primaryjoin="Profile.id == FaultReport.approved_by",
+    )
+    resolved_by_profile     = relationship(
+        "Profile",
+        foreign_keys=[resolved_by],
+        primaryjoin="Profile.id == FaultReport.resolved_by",
     )
 
     def __repr__(self):

@@ -40,8 +40,52 @@ async def list_faults(token: str, status: str = None):
     path = "/api/faults/" + (f"?status={status}" if status else "")
     return await _get(path, token)
 
+
+async def list_maintained_faults(token: str, status: str = None):
+    """Faults on devices my organizations MAINTAIN (not the ones they own)."""
+    path = "/api/faults/maintained" + (f"?status={status}" if status else "")
+    return await _get(path, token)
+
+
 async def update_fault(token: str, fault_id: str, data: dict):
     return await _patch(f"/api/faults/{fault_id}", data, token)
+
+
+# ── Workflow steps ───────────────────────────────────────────
+# Each step has its own endpoint because each one has its own authorizer:
+# assign -> maintenance-org admin; diagnosis/resolve -> the assignee;
+# approval -> the healthsite admin (maintenance admin when there is no healthsite).
+
+async def assign_fault(token: str, fault_id: str, assigned_to: str):
+    return await _patch(f"/api/faults/{fault_id}/assign", {"assigned_to": assigned_to}, token)
+
+
+async def start_fault(token: str, fault_id: str):
+    return await _patch(f"/api/faults/{fault_id}/start", {}, token)
+
+
+async def submit_diagnosis(token: str, fault_id: str, diagnosis: str,
+                           quote_amount=None, quote_notes: str = None):
+    return await _patch(f"/api/faults/{fault_id}/diagnosis", {
+        "diagnosis": diagnosis,
+        "quote_amount": quote_amount,
+        "quote_notes": quote_notes,
+    }, token)
+
+
+async def review_approval(token: str, fault_id: str, approved: bool, comment: str = None):
+    return await _patch(f"/api/faults/{fault_id}/approval", {
+        "approved": approved,
+        "comment": comment,
+    }, token)
+
+
+async def resolve_fault(token: str, fault_id: str, resolution_notes: str, final_price=None):
+    return await _patch(f"/api/faults/{fault_id}/resolve", {
+        "resolution_notes": resolution_notes,
+        "final_price": final_price,
+    }, token)
+
 
 async def get_fault_public(fault_id: str):
     return await _get(f"/api/faults/public/{fault_id}")

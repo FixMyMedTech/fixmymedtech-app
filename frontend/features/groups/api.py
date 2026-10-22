@@ -1,8 +1,8 @@
 from config.api import _get, _post, _patch, _delete
 
 
-async def get_organizations():
-    return await _get("/api/organizations/")
+async def get_organizations(token: str = None):
+    return await _get("/api/organizations/", token=token)
 
 
 async def get_my_organizations(token: str):

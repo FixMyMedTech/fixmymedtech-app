@@ -1,8 +1,25 @@
 # routers/fault_reports.py
+#
+# Faults are resolved in steps, each step performed by a different person:
+#   1. anyone reports it                                      -> 'open'
+#   2. the maintenance-org ADMIN assigns it to a member       -> 'assigned'
+#   3. that assignee writes a diagnosis + online quote        -> 'diagnosed'
+#   4. the healthsite ADMIN approves or rejects it            -> 'approved' / back to 'assigned'
+#      (a device with no healthsite is approved by the maintenance-org admin)
+#   5. the assignee repairs it and records the final price    -> 'resolved'
+# 'in_progress' is an optional step the assignee can take when they go on site.
+#
+# Every step records who performed it, so the timeline can show the actor.
+#
+# NOTE ON SERIALIZATION: Profile.user is lazy="selectin", so a Profile that has
+# been loaded carries hashed_password in its __dict__. FastAPI's jsonable_encoder
+# walks vars() (it only strips _sa*), so returning ORM rows would leak it. Every
+# fault response is therefore built by hand from table columns plus _profile().
 
 import os
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
@@ -28,19 +45,122 @@ class FaultReportCreate(BaseModel):
     description: str
     severity: str = "medium"
     reporter_name: Optional[str] = None
-    assigned_to: Optional[UUID] = None
 
 
 class FaultStatusUpdate(BaseModel):
-    status: Optional[str] = None
+    # The reporter (or the assignee) may still correct what was reported.
+    # Status, assignee, resolution and price all moved to the step endpoints
+    # below — each of those has its own authorization.
     severity: Optional[str] = None
     description: Optional[str] = None
-    resolution_notes: Optional[str] = None
-    assigned_to: Optional[UUID] = None
+
+
+class FaultAssign(BaseModel):
+    assigned_to: UUID
+
+
+class FaultDiagnosis(BaseModel):
+    diagnosis: str
+    quote_amount: Optional[float] = None
+    quote_notes: Optional[str] = None
+
+
+class FaultApproval(BaseModel):
+    approved: bool
+    comment: Optional[str] = None
+
+
+class FaultResolve(BaseModel):
+    resolution_notes: str
+    final_price: Optional[float] = None
+
+
+# ── serialization ───────────────────────────────────────────────────────────
+
+def _row(obj) -> dict:
+    """Table columns only — never relationships, which is what keeps Profile.user
+    (and its hashed_password) out of the response."""
+    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
+
+
+def _profile(p) -> Optional[dict]:
+    if p is None:
+        return None
+    return {"id": p.id, "username": p.username, "full_name": p.full_name}
+
+
+def _payload(f: FaultReport) -> dict:
+    d = _row(f)
+    d["device"] = _row(f.device) if f.device is not None else None
+    d["reported_by_profile"] = _profile(f.reported_by_profile)
+    d["assigned_to_profile"] = _profile(f.assigned_to_profile)
+    d["assigned_by_profile"] = _profile(f.assigned_by_profile)
+    d["diagnosed_by_profile"] = _profile(f.diagnosed_by_profile)
+    d["approved_by_profile"] = _profile(f.approved_by_profile)
+    d["resolved_by_profile"] = _profile(f.resolved_by_profile)
+    return d
+
+
+FAULT_EAGER = (
+    selectinload(FaultReport.device),
+    selectinload(FaultReport.reported_by_profile),
+    selectinload(FaultReport.assigned_to_profile),
+    selectinload(FaultReport.assigned_by_profile),
+    selectinload(FaultReport.diagnosed_by_profile),
+    selectinload(FaultReport.approved_by_profile),
+    selectinload(FaultReport.resolved_by_profile),
+)
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+def _money(value) -> Optional[Decimal]:
+    return None if value is None else Decimal(str(value))
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+async def _load_fault(db: AsyncSession, fault_id: UUID) -> FaultReport:
+    result = await db.execute(
+        select(FaultReport).options(*FAULT_EAGER).where(FaultReport.id == fault_id)
+    )
+    fault = result.scalar_one_or_none()
+    if not fault:
+        raise HTTPException(status_code=404, detail="Fault report not found")
+    return fault
+
+
+async def _load_device(db: AsyncSession, device_id) -> Device:
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return device
 
 
 def _can_edit_fault(fault: FaultReport, profile: Profile) -> bool:
     return fault.reported_by == profile.id or fault.assigned_to == profile.id
+
+
+def _is_assignee(fault: FaultReport, profile: Profile) -> bool:
+    return fault.assigned_to is not None and fault.assigned_to == profile.id
+
+
+def _maint_admin(profile: Profile, device: Device) -> bool:
+    return profile.get_role_for_org(device.organization_maintenance_id) == "admin"
+
+
+def _healthsite_admin(profile: Profile, device: Device) -> bool:
+    return bool(device.healthsite_id) and profile.get_role_for_org(device.healthsite_id) == "admin"
+
+
+def _can_approve(profile: Profile, device: Device) -> bool:
+    # A device with no healthsite is approved by the maintenance-org admin.
+    if device.healthsite_id:
+        return _healthsite_admin(profile, device)
+    return _maint_admin(profile, device)
 
 
 async def _validate_assignee(db: AsyncSession, assignee_id: UUID, org_id: UUID):
@@ -62,28 +182,25 @@ async def _validate_assignee(db: AsyncSession, assignee_id: UUID, org_id: UUID):
     return assignee
 
 
+# ── public report ────────────────────────────────────────────────────────────
+
 @router.post("/public")
 async def submit_fault_public(
     body: FaultReportCreate,
     profile: Optional[Profile] = Depends(get_optional_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Device).where(Device.id == body.device_id))
-    device = result.scalar_one_or_none()
-    if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
+    device = await _load_device(db, body.device_id)
 
-    if body.assigned_to:
-        await _validate_assignee(db, body.assigned_to, device.organization_maintenance_id)
-
+    # Assignment is step 2 of the workflow and belongs to the maintenance-org
+    # admin, so a report always starts out unassigned.
     fault = FaultReport(
         device_id=body.device_id,
         reported_by=profile.id if profile else None,
         description=body.description,
         severity=body.severity,
         reporter_name=body.reporter_name or "Anonymous",
-        status="assigned" if body.assigned_to else "open",
-        assigned_to=body.assigned_to,
+        status="open",
     )
     db.add(fault)
 
@@ -98,19 +215,7 @@ async def submit_fault_public(
 
 @router.get("/public/{fault_id}")
 async def get_fault_public(fault_id: UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(FaultReport)
-        .options(
-            selectinload(FaultReport.device),
-            selectinload(FaultReport.assigned_to_profile),
-            selectinload(FaultReport.reported_by_profile),
-        )
-        .where(FaultReport.id == fault_id)
-    )
-    fault = result.scalar_one_or_none()
-    if not fault:
-        raise HTTPException(status_code=404, detail="Fault report not found")
-    return fault
+    return _payload(await _load_fault(db, fault_id))
 
 
 @router.get("/public/{fault_id}/photo")
@@ -134,10 +239,7 @@ async def upload_fault_photo(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(FaultReport).where(FaultReport.id == fault_id))
-    fault = result.scalar_one_or_none()
-    if not fault:
-        raise HTTPException(status_code=404, detail="Fault report not found")
+    fault = await _load_fault(db, fault_id)
     if not _can_edit_fault(fault, profile):
         raise HTTPException(status_code=403, detail="Only the reporter or assignee can edit this fault report")
 
@@ -182,10 +284,7 @@ async def get_fault_assignees(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    device_result = await db.execute(select(Device).where(Device.id == device_id))
-    device = device_result.scalar_one_or_none()
-    if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
+    device = await _load_device(db, device_id)
 
     result = await db.execute(
         select(Profile, OrgUser.role)
@@ -202,6 +301,10 @@ async def get_fault_assignees(
     ]
 
 
+# ── lists ────────────────────────────────────────────────────────────────────
+# NOTE: these sit above GET /{fault_id} on purpose — a static path segment has
+# to be registered before the path-parameter route or it gets swallowed.
+
 @router.get("/")
 async def list_faults(
     status: Optional[str] = None,
@@ -212,10 +315,7 @@ async def list_faults(
     query = (
         select(FaultReport)
         .join(Device, FaultReport.device_id == Device.id)
-        .options(
-            selectinload(FaultReport.device),
-            selectinload(FaultReport.assigned_to_profile),
-        )
+        .options(*FAULT_EAGER)
         .where(or_(
             Device.organization_id.in_(org_ids),
             Device.organization_maintenance_id.in_(org_ids),
@@ -227,7 +327,30 @@ async def list_faults(
         query = query.where(FaultReport.status == status)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    return [_payload(f) for f in result.scalars().all()]
+
+
+@router.get("/maintained")
+async def list_maintained_faults(
+    status: Optional[str] = None,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Faults on devices my organizations MAINTAIN (not the ones they own)."""
+    org_ids = profile.org_ids()
+    query = (
+        select(FaultReport)
+        .join(Device, FaultReport.device_id == Device.id)
+        .options(*FAULT_EAGER)
+        .where(Device.organization_maintenance_id.in_(org_ids))
+        .order_by(FaultReport.reported_at.desc())
+    )
+
+    if status:
+        query = query.where(FaultReport.status == status)
+
+    result = await db.execute(query)
+    return [_payload(f) for f in result.scalars().all()]
 
 
 @router.get("/{fault_id}")
@@ -236,19 +359,159 @@ async def get_fault(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(FaultReport)
-        .options(
-            selectinload(FaultReport.device),
-            selectinload(FaultReport.assigned_to_profile),
-            selectinload(FaultReport.reported_by_profile),
+    return _payload(await _load_fault(db, fault_id))
+
+
+# ── workflow steps ───────────────────────────────────────────────────────────
+
+@router.patch("/{fault_id}/assign")
+async def assign_fault(
+    fault_id: UUID,
+    body: FaultAssign,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    fault = await _load_fault(db, fault_id)
+    device = await _load_device(db, fault.device_id)
+
+    if not _maint_admin(profile, device):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the admin of the maintenance organization can assign a fault",
         )
-        .where(FaultReport.id == fault_id)
-    )
-    fault = result.scalar_one_or_none()
-    if not fault:
-        raise HTTPException(status_code=404, detail="Fault report not found")
-    return fault
+    if fault.status not in ("open", "assigned"):
+        raise HTTPException(status_code=409, detail="This fault is past the assignment step")
+
+    await _validate_assignee(db, body.assigned_to, device.organization_maintenance_id)
+
+    fault.assigned_to = body.assigned_to
+    fault.assigned_by = profile.id
+    fault.assigned_at = _now()
+    fault.status = "assigned"
+
+    await db.commit()
+    return _payload(await _load_fault(db, fault_id))
+
+
+@router.patch("/{fault_id}/start")
+async def start_fault(
+    fault_id: UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    """Optional: the assignee marks the repair as under way when they go on site."""
+    fault = await _load_fault(db, fault_id)
+
+    if not _is_assignee(fault, profile):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the assigned technician can start the repair",
+        )
+    if fault.status != "approved":
+        raise HTTPException(
+            status_code=409,
+            detail="The diagnosis must be approved before the repair can start",
+        )
+
+    fault.status = "in_progress"
+    await db.commit()
+    return _payload(await _load_fault(db, fault_id))
+
+
+@router.patch("/{fault_id}/diagnosis")
+async def submit_fault_diagnosis(
+    fault_id: UUID,
+    body: FaultDiagnosis,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    fault = await _load_fault(db, fault_id)
+
+    if not _is_assignee(fault, profile):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the assigned technician can submit a diagnosis",
+        )
+    if fault.status != "assigned":
+        raise HTTPException(status_code=409, detail="This fault is not waiting for a diagnosis")
+
+    fault.diagnosis = body.diagnosis
+    fault.diagnosed_by = profile.id
+    fault.diagnosed_at = _now()
+    fault.quote_amount = _money(body.quote_amount)
+    fault.quote_notes = body.quote_notes
+    fault.status = "diagnosed"
+    # Clears a previous rejection when the technician resubmits.
+    fault.approval_status = "pending"
+
+    await db.commit()
+    return _payload(await _load_fault(db, fault_id))
+
+
+@router.patch("/{fault_id}/approval")
+async def review_fault_approval(
+    fault_id: UUID,
+    body: FaultApproval,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    fault = await _load_fault(db, fault_id)
+    device = await _load_device(db, fault.device_id)
+
+    if not _can_approve(profile, device):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the healthsite admin can approve a diagnosis",
+        )
+    if fault.status != "diagnosed":
+        raise HTTPException(status_code=409, detail="This fault is not waiting for approval")
+
+    comment = (body.comment or "").strip()
+    if not body.approved and not comment:
+        raise HTTPException(
+            status_code=400,
+            detail="A comment is required when rejecting a diagnosis",
+        )
+
+    fault.approval_status = "approved" if body.approved else "rejected"
+    fault.approved_by = profile.id
+    fault.approved_at = _now()
+    fault.approval_comment = comment or None
+    # A rejection sends it back to the assignee, who revises and resubmits.
+    fault.status = "approved" if body.approved else "assigned"
+
+    await db.commit()
+    return _payload(await _load_fault(db, fault_id))
+
+
+@router.patch("/{fault_id}/resolve")
+async def resolve_fault(
+    fault_id: UUID,
+    body: FaultResolve,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    fault = await _load_fault(db, fault_id)
+
+    if not _is_assignee(fault, profile):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the assigned technician can complete the repair",
+        )
+    if fault.status not in ("approved", "in_progress"):
+        raise HTTPException(
+            status_code=409,
+            detail="The diagnosis must be approved before the repair can be completed",
+        )
+
+    fault.resolution_notes = body.resolution_notes
+    fault.final_price = _money(body.final_price)
+    fault.resolved_by = profile.id
+    fault.resolved_at = _now()
+    fault.status = "resolved"
+
+    await db.commit()
+    return _payload(await _load_fault(db, fault_id))
 
 
 @router.patch("/{fault_id}")
@@ -258,49 +521,15 @@ async def update_fault(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(FaultReport).where(FaultReport.id == fault_id))
-    fault = result.scalar_one_or_none()
-    if not fault:
-        raise HTTPException(status_code=404, detail="Fault report not found")
-
-    device_result = await db.execute(select(Device).where(Device.id == fault.device_id))
-    device = device_result.scalar_one_or_none()
-    if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
+    fault = await _load_fault(db, fault_id)
 
     if not _can_edit_fault(fault, profile):
         raise HTTPException(status_code=403, detail="Only the reporter or assignee can edit this fault report")
 
-    if body.status is not None:
-        fault.status = body.status
-        if body.status == "resolved":
-            fault.resolved_at = datetime.now(timezone.utc)
-
     if body.severity is not None:
         fault.severity = body.severity
-
     if body.description is not None:
         fault.description = body.description
 
-    if body.resolution_notes is not None:
-        fault.resolution_notes = body.resolution_notes
-
-    if body.assigned_to is not None:
-        await _validate_assignee(db, body.assigned_to, device.organization_maintenance_id)
-        fault.assigned_to = body.assigned_to
-        if fault.status == "open":
-            fault.status = "assigned"
-
     await db.commit()
-
-    # Re-fetch with eager-loaded relationships for safe serialization
-    result = await db.execute(
-        select(FaultReport)
-        .options(
-            selectinload(FaultReport.device),
-            selectinload(FaultReport.assigned_to_profile),
-            selectinload(FaultReport.reported_by_profile),
-        )
-        .where(FaultReport.id == fault_id)
-    )
-    return result.scalar_one()
+    return _payload(await _load_fault(db, fault_id))

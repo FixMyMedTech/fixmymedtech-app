@@ -160,6 +160,7 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
     my_admin_org_ids = set()
     my_id = None
+    me = {}
     try:
         me = await auth_api.get_me(token)
         my_id = str(me.get("id") or "") or None
@@ -167,9 +168,10 @@ async def get(req, status: str = "", healthsite_id: str = ""):
     except Exception:
         my_admin_org_ids = set()
 
-    def can_manage(d):
-        """Edit/delete allowed: admin of the owning org, admin of the
-        device's healthsite, or the user who registered the device."""
+    def can_delete(d):
+        """Delete allowed: admin of the owning org, admin of the device's
+        healthsite, or the user who registered the device. Mirrors the
+        backend's _can_manage_device — deliberately NOT the maintaining org."""
         if my_id and str(d.get("registered_by") or "") == my_id:
             return True
         if str(d.get("organization_id") or "") in my_admin_org_ids:
@@ -177,6 +179,12 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         healthsite = d.get("healthsite") or {}
         hs_id = str(d.get("healthsite_id") or healthsite.get("id") or "")
         return hs_id in my_admin_org_ids
+
+    def can_edit(d):
+        """Edit allowed: everyone who can delete, plus the admin of the
+        organization that maintains the device. Mirrors the backend's
+        _can_edit_device."""
+        return auth_helper.can_edit_device(me, d)
 
     pills = [
         A(label, href=f"/devices?status={val}&healthsite_id={healthsite_id}" if healthsite_id else f"/devices?status={val}",
@@ -233,9 +241,9 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
         actions = Div(
             A(_("device_list.view"), href=f"/device/{d['id']}", cls="btn btn-secondary btn-sm"),
-            A(_("groups.edit"), href=f"/devices/{d['id']}/edit", cls="btn btn-secondary btn-sm") if can_manage(d) else "",
+            A(_("groups.edit"), href=f"/devices/{d['id']}/edit", cls="btn btn-secondary btn-sm") if can_edit(d) else "",
             Button(_("groups.delete"), type="button", cls="btn btn-danger btn-sm",
-                   onclick=f"delAsk({json.dumps(str(d['id']))})") if can_manage(d) else "",
+                   onclick=f"delAsk({json.dumps(str(d['id']))})") if can_delete(d) else "",
             cls="actions",
         )
 

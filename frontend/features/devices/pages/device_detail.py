@@ -188,7 +188,7 @@ async def get(req, device_id: str):
             Td(Span(l.get("type",""), cls="badge badge-blue")),
             Td(l.get("description",_("common.fallback")), style="font-size:0.875rem;"),
             Td(f"${l['cost_usd']}" if l.get("cost_usd") else _("common.fallback"), style="font-size:0.875rem;"),
-            Td(A(_("device_list.view"), href=f"/d/{device_id}/log/{l['id']}",
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/log/{l['id']}",
                  cls="btn btn-secondary btn-sm")),
         ) for l in logs
     ]
@@ -201,7 +201,7 @@ async def get(req, device_id: str):
             Td(f.get("description",""), style="font-size:0.875rem;"),
             Td(status_badge(f.get("severity","medium"), "severity", lang=lang)),
             Td(status_badge(f.get("status","open"), "fault", lang=lang)),
-            Td(A(_("device_list.view"), href=f"/d/{device_id}/fault/{f['id']}",
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/fault/{f['id']}",
                  cls="btn btn-secondary btn-sm")),
         ) for f in faults
     ]

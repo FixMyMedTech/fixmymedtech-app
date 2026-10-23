@@ -6,7 +6,8 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5432:5432"
+      # Host port is configurable in case 5432 is taken by another PostgreSQL.
+      - "127.0.0.1:${LOCAL_DB_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -60,6 +61,9 @@ services:
       PHOTO_MAX_DIMENSION: ${PHOTO_MAX_DIMENSION:-1600}
       PHOTO_JPEG_QUALITY: ${PHOTO_JPEG_QUALITY:-85}
       HEALTHSITES_API_KEY: ${HEALTHSITES_API_KEY}
+      DISCORD_FEEDBACK_WEBHOOK_URL: ${DISCORD_FEEDBACK_WEBHOOK_URL:-}
+      DISCORD_FEEDBACK_TAG_ID: ${DISCORD_FEEDBACK_TAG_ID:-}
+      DISCORD_ISSUE_TAG_ID: ${DISCORD_ISSUE_TAG_ID:-}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 30s

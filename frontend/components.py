@@ -485,6 +485,41 @@ tr:hover td { background:var(--c-bg-2); }
   .profile-basic { flex-direction:column; gap:8px; }
 }
 
+/* Feedback button (bottom-right, every page). z-index sits 10 above the
+   highest fixed layer (.pub-theme / .lang-fab at 600). */
+.fb-widget {
+  position:fixed; z-index:610;
+  right:calc(16px + env(safe-area-inset-right, 0px));
+  bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+  display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+}
+.fb-btn {
+  width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
+  background:var(--c-primary); color:#fff; font-size:1.15rem; font-weight:700;
+  box-shadow:0 6px 18px rgba(15,23,42,.22); transition:background .15s, transform .15s;
+}
+.fb-btn:hover { background:var(--c-primary-mid); transform:translateY(-1px); }
+.fb-btn:focus-visible { outline:3px solid var(--c-primary-lt); outline-offset:2px; }
+.fb-menu {
+  display:none; flex-direction:column; min-width:200px; padding:6px;
+  background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg);
+  box-shadow:0 12px 32px rgba(15,23,42,.16);
+}
+.fb-menu.open { display:flex; }
+.fb-menu a { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r-md); font-size:.875rem; font-weight:500; color:var(--c-text-2); }
+.fb-menu a:hover, .fb-menu a:focus-visible { background:var(--c-bg-2); color:var(--c-primary); outline:none; }
+@media print { .fb-widget { display:none; } }
+
+/* Feedback form page */
+.fb-page { max-width:560px; margin:24px auto 80px; padding:0 16px; }
+.public-shell .fb-page { padding-top:calc(var(--topbar-h) + 8px); }
+.fb-types { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.fb-type {
+  flex:1 1 140px; display:flex; align-items:center; gap:8px; cursor:pointer;
+  padding:10px 12px; border:1px solid var(--c-border); border-radius:var(--r-md); font-size:.875rem;
+}
+.fb-type:has(input:checked) { border-color:var(--c-primary); background:var(--c-primary-lt); }
+
 /* Modal dialogs: center on screen with a dimmed backdrop */
 dialog {
   margin:auto;
@@ -686,6 +721,24 @@ def language_switcher(current_lang: str):
     )
 
 
+def feedback_widget(lang: str = "en"):
+    """Floating "?" button (bottom-right) opening a menu to send feedback or
+    report an issue. Rendered by every shell, so it is on every page."""
+    _ = make_t(lang)
+    return Div(
+        Div(
+            A("💬 ", _("feedback.menu_feedback"), href="/feedback?type=feedback", data_type="feedback"),
+            A("🐞 ", _("feedback.menu_issue"), href="/feedback?type=issue", data_type="issue"),
+            id="fb-menu", cls="fb-menu",
+        ),
+        Button("?", id="fb-btn", type="button", cls="fb-btn",
+               title=_("feedback.button_label"), aria_label=_("feedback.button_label"),
+               aria_expanded="false", aria_controls="fb-menu",
+               onclick="toggleFeedbackMenu()"),
+        id="fb-widget", cls="fb-widget",
+    )
+
+
 def theme_toggle():
     return Button("☾", id="theme-toggle", cls="theme-btn",
                   aria_label="Toggle dark mode", onclick="toggleTheme()")
@@ -828,6 +881,28 @@ document.addEventListener('click', function(e){
     menu.classList.remove('open');
   }
 });
+function toggleFeedbackMenu(open){
+  var m = document.getElementById('fb-menu');
+  var b = document.getElementById('fb-btn');
+  if (!m) return;
+  var isOpen = (typeof open === 'boolean') ? open : !m.classList.contains('open');
+  if (isOpen) {
+    // Tell the form which page the report is about.
+    var here = encodeURIComponent(location.pathname + location.search);
+    m.querySelectorAll('a[data-type]').forEach(function(a){
+      a.href = '/feedback?type=' + a.getAttribute('data-type') + '&page=' + here;
+    });
+  }
+  m.classList.toggle('open', isOpen);
+  if (b) b.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.addEventListener('click', function(e){
+  var w = document.getElementById('fb-widget');
+  if (w && !w.contains(e.target)) toggleFeedbackMenu(false);
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') toggleFeedbackMenu(false);
+});
 initTheme();
 initSidebar();
 """
@@ -895,6 +970,7 @@ def shell(content, title: str = "FixMyMedTech", lang: str = "en",
                 topbar(authenticated, current, lang),
                 body_inner,
             ),
+            feedback_widget(lang),
             Script(SHELL_SCRIPT)
         )
     )
@@ -927,6 +1003,7 @@ def auth_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
                        aria_label="Toggle dark mode", onclick="toggleTheme()"),
                 content
             ),
+            feedback_widget(lang),
             Script(SHELL_SCRIPT)
         )
     )

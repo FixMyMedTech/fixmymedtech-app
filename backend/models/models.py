@@ -446,3 +446,37 @@ class FaultReport(Base):
 
     def __repr__(self):
         return f"<FaultReport {self.severity} on {self.device_id} [{self.status}]>"
+
+
+# ══════════════════════════════════════════════════════════════
+# FEEDBACK (floating "?" button → stored here, then posted to Discord)
+# ══════════════════════════════════════════════════════════════
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+    __table_args__ = (
+        CheckConstraint("type IN ('feedback', 'issue')", name="feedback_type_check"),
+        CheckConstraint(
+            "discord_status IN ('pending', 'sent', 'failed', 'disabled')",
+            name="feedback_discord_status_check"
+        ),
+        {"schema": SCHEMA},
+    )
+
+    id                = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    type              = Column(Text, nullable=False)
+    summary           = Column(Text, nullable=False)
+    description       = Column(Text, nullable=False)
+    page              = Column(Text)
+    lang              = Column(Text)
+    # Plain FK column, no relationship: keeps Profile (and its User) out of
+    # anything that serializes a Feedback row.
+    profile_id        = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    contact_email     = Column(Text)
+    screenshot_key    = Column(Text)
+    discord_status    = Column(Text, nullable=False, default="pending")
+    discord_thread_id = Column(Text)
+    created_at        = Column(DateTime(timezone=True), server_default=func.now())
+
+    def __repr__(self):
+        return f"<Feedback {self.type}: {self.summary[:40]!r} [{self.discord_status}]>"

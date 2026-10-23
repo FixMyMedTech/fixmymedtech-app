@@ -61,6 +61,9 @@ jobs:
             GEMINI_API_KEY=${{ secrets.PROD_GEMINI_API_KEY }}
             AUTO_PROCESS_PHOTO=${{ secrets.PROD_AUTO_PROCESS_PHOTO }}
             HEALTHSITES_API_KEY=${{ secrets.PROD_HEALTHSITES_API_KEY }}
+            DISCORD_FEEDBACK_WEBHOOK_URL=${{ secrets.PROD_DISCORD_FEEDBACK_WEBHOOK_URL }}
+            DISCORD_FEEDBACK_TAG_ID=${{ secrets.PROD_DISCORD_FEEDBACK_TAG_ID }}
+            DISCORD_ISSUE_TAG_ID=${{ secrets.PROD_DISCORD_ISSUE_TAG_ID }}
             EOF
 
       - name: Copy code to server

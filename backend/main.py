@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
 from utils.create_superuser import bootstrap_superuser_from_env
@@ -75,6 +75,7 @@ app.include_router(dashboard.router,        prefix="/api/dashboard",         tag
 app.include_router(organizations.router,    prefix="/api/organizations",     tags=["organizations"])
 app.include_router(admin_email_router,      prefix="/admin-panel",           tags=["admin"])
 app.include_router(healthsites.router,      prefix="/api/healthsites",       tags=["healthsites"])
+app.include_router(feedback.router,         prefix="/api/feedback",          tags=["feedback"])
 
 # ── SQLAdmin (browsable admin UI at /admin) ─────────────────
 from sqladmin import Admin, ModelView
@@ -240,6 +241,16 @@ class DocumentAdmin(ModelView, model=models.Document):
     name_plural = "Documents"
     icon = "fa-solid fa-file-lines"
 
+class FeedbackAdmin(ModelView, model=models.Feedback):
+    column_list = [models.Feedback.created_at, models.Feedback.type, models.Feedback.summary, models.Feedback.page, models.Feedback.discord_status]
+    column_searchable_list = [models.Feedback.summary, models.Feedback.description]
+    column_sortable_list = [models.Feedback.created_at, models.Feedback.type, models.Feedback.discord_status]
+    column_default_sort = [(models.Feedback.created_at, True)]
+    can_create = False
+    name = "Feedback"
+    name_plural = "Feedback"
+    icon = "fa-solid fa-comment-dots"
+
 admin = Admin(
     app, engine=engine, title="FixMyMedTech Admin",
     authentication_backend=AdminAuth(),
@@ -254,6 +265,7 @@ admin.add_view(DeviceAdmin)
 admin.add_view(DocumentAdmin)
 admin.add_view(FaultAdmin)
 admin.add_view(MaintenanceLogAdmin)
+admin.add_view(FeedbackAdmin)
 
 
 @app.get("/health")

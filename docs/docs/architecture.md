@@ -163,6 +163,18 @@ open ──(maintenance-org admin assigns)──► assigned
 `in_progress` is an optional step when the assignee goes on site. A device
 without a healthsite is approved by the maintenance-org admin.
 
+### Feedback button
+
+Every page shows a **?** button (bottom-right) with two choices, *Send feedback*
+and *Report an issue*. Both open the `/feedback` form, which works with or
+without login. `POST /api/feedback/` stores the report in
+`fixmymedtech.feedback` first, then posts it in the background to a Discord
+forum channel through a webhook, creating one thread per report
+(`backend/config/discord.py`). The outcome is recorded in `discord_status`
+(`sent`, `failed`, or `disabled` when no webhook is configured), and every
+report is visible in the admin portal under **Feedback**. Email addresses are
+never posted to Discord.
+
 ### Device photos
 
 Uploads are EXIF-corrected, downscaled and re-encoded as JPEG (Pillow), then

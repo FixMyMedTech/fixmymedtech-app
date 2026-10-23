@@ -18,6 +18,14 @@ def current_user_ctx() -> dict:
     return _user_ctx.get()
 
 
+# ── Avatar rendering, shared by pages/profile/my_profile and profile_detail ──
+AVATAR_IMG_STYLE = (
+    "width:110px;height:110px;border-radius:50%;object-fit:cover;"
+    "background:var(--c-bg-2);border:2px solid var(--c-border);"
+)
+TRANSPARENT_GIF = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+
+
 # ── Design tokens ────────────────────────────────────────────
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -147,6 +155,8 @@ a { color: var(--c-primary); text-decoration: none; }
 .nav-link:hover { background: var(--c-bg-2); color: var(--c-text); }
 .nav-link.active { background: var(--c-primary-lt); color: var(--c-primary); font-weight: 600; }
 .nav-ico { width: 18px; flex-shrink: 0; text-align: center; font-size: 1rem; }
+.nav-ico svg { width: 18px; height: 18px; display: block; margin: 0 auto; }
+.nav-menu-ico svg { width: 16px; height: 16px; display: inline-block; vertical-align: -3px; margin-right: 6px; }
 .sb-foot {
   padding: 12px 14px; border-top: 1px solid var(--c-border);
   display: flex; flex-direction: column; gap: 8px;
@@ -215,6 +225,60 @@ td { padding:11px 14px; border-bottom:1px solid var(--c-border); color:var(--c-t
 tr:last-child td { border-bottom:none; }
 tr:hover td { background:var(--c-bg-2); }
 
+/* Row action buttons */
+.actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
+
+/* Device search: input with a suggestion dropdown */
+.dev-search { position:relative; margin-bottom:14px; }
+.dev-sugg {
+  position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:60;
+  background:var(--c-surface); border:1px solid var(--c-border);
+  border-radius:var(--r-md); box-shadow:0 8px 24px rgba(0,0,0,.16);
+  max-height:320px; overflow:auto;
+}
+.sugg-item {
+  display:flex; flex-direction:column; gap:2px;
+  padding:9px 12px; text-decoration:none; color:inherit;
+  border-bottom:1px solid var(--c-border);
+}
+.sugg-item:last-child { border-bottom:none; }
+.sugg-item:hover, .sugg-item:focus { background:var(--c-bg-2); outline:none; }
+.sugg-name { font-size:.875rem; font-weight:500; color:var(--c-text); }
+.sugg-sub { font-size:.72rem; color:var(--c-text-3); }
+.sugg-empty { padding:10px 12px; font-size:.8rem; color:var(--c-text-3); }
+
+/* Devices page: below 768px the table becomes stacked cards.
+   Only applies to tables flagged .has-cards, so other tables keep scrolling. */
+@media (max-width: 768px) {
+  .table-wrap.has-cards { border:none; background:none; border-radius:0; overflow:visible; }
+  .table-wrap.has-cards table,
+  .table-wrap.has-cards tbody,
+  .table-wrap.has-cards tr,
+  .table-wrap.has-cards td { display:block; width:100%; }
+  .table-wrap.has-cards thead { display:none; }
+  .table-wrap.has-cards tbody { display:grid; gap:12px; }
+  .table-wrap.has-cards tbody tr {
+    border:1px solid var(--c-border); border-radius:var(--r-lg);
+    background:var(--c-surface); padding:14px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.05);
+  }
+  .table-wrap.has-cards tbody tr:hover td { background:transparent; }
+  .table-wrap.has-cards td {
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:12px; padding:8px 0; border-bottom:1px solid var(--c-border);
+  }
+  /* First cell is the card header: name + category + model, no label. */
+  .table-wrap.has-cards td:first-child { display:block; padding-top:0; }
+  .table-wrap.has-cards td:last-child { border-bottom:none; padding-bottom:0; }
+  .table-wrap.has-cards td[data-label]::before {
+    content:attr(data-label); flex:0 0 auto; padding-top:3px;
+    font-size:.68rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    font-family:var(--font-mono); color:var(--c-text-3);
+  }
+  .table-wrap.has-cards .actions { width:100%; justify-content:stretch; }
+  .table-wrap.has-cards .actions .btn { flex:1; text-align:center; }
+}
+
 /* Alerts */
 .alert { padding:11px 14px; border-radius:var(--r-md); font-size:.875rem; margin-bottom:14px; }
 .alert-error   { background:var(--c-red-lt);   color:var(--c-red);   border:1px solid transparent; }
@@ -222,7 +286,7 @@ tr:hover td { background:var(--c-bg-2); }
 .alert-warning { background:var(--c-amber-lt); color:var(--c-amber); border:1px solid transparent; }
 
 /* Stats grid */
-.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
 .stat-card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:16px 18px; }
 .stat-label { font-size:.7rem; font-weight:600; color:var(--c-text-3); text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono); margin-bottom:5px; }
 .stat-num { font-family:var(--font-display); font-size:2rem; font-weight:700; color:var(--c-text); line-height:1; }
@@ -230,9 +294,56 @@ tr:hover td { background:var(--c-bg-2); }
 .stat-card.g { border-top:3px solid var(--c-green); }
 .stat-card.a { border-top:3px solid var(--c-amber); }
 .stat-card.r { border-top:3px solid var(--c-red); }
+.stat-card.p { border-top:3px solid var(--c-primary); }
 
 /* Two col */
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+/* Organization ownership: 3 labelled columns, stacked on mobile. */
+.own-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:12px; }
+.own-col { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px; border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-bg-2); }
+.own-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-text-3); }
+.own-name { font-size:.95rem; font-weight:600; color:var(--c-text); overflow-wrap:anywhere; }
+
+/* Network directory: one card per member, the whole card a link. */
+.net-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; margin:18px auto 0;}
+.net-card { display:flex; flex-direction:column; align-items:center; text-align:center; gap:2px; padding:18px 14px; border:1px solid var(--c-border); border-radius:var(--r-lg); background:var(--c-surface); text-decoration:none; color:var(--c-text); transition:border-color .15s, transform .15s, box-shadow .15s; }
+.net-card:hover { border-color:var(--c-primary); transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.net-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.net-initials { display:flex; align-items:center; justify-content:center; background:var(--c-primary-lt); color:var(--c-primary); font-weight:700; font-size:1.25rem; }
+.net-name { font-weight:600; font-size:.95rem; margin-top:8px; overflow-wrap:anywhere; }
+.net-username { font-size:.8rem; color:var(--c-text-3); }
+.net-country { font-size:.8rem; color:var(--c-text-2); }
+.net-role { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-primary); margin-top:4px; }
+.net-org { font-size:.8rem; color:var(--c-text-3); overflow-wrap:anywhere; }
+
+/* Toolbar: search on the left, cards/list switch on the right. */
+.net-toolbar { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:14px; }
+.net-toolbar form { flex:1 1 auto; }
+.net-view { display:inline-flex; border:1px solid var(--c-border); border-radius:var(--r-md); overflow:hidden; background:var(--c-surface); flex-shrink:0; }
+.net-view-btn { padding:7px 14px; font-size:.875rem; font-weight:500; color:var(--c-text-2); text-decoration:none; transition:background .15s, color .15s; }
+.net-view-btn:hover { background:var(--c-bg); color:var(--c-text); }
+.net-view-btn.is-active { background:var(--c-primary); color:#fff; }
+
+/* List view: the same members, sortable by column. */
+.net-table-wrap { overflow-x:auto; margin-top:18px; border:1px solid var(--c-border); border-radius:var(--r-lg); background:var(--c-surface); }
+.net-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+.net-table th { text-align:left; padding:11px 14px; border-bottom:1px solid var(--c-border); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:var(--c-text-2); white-space:nowrap; }
+.net-table td { padding:10px 14px; border-bottom:1px solid var(--c-border); }
+.net-table tbody tr:last-child td { border-bottom:none; }
+.net-table tbody tr:hover { background:var(--c-bg); }
+.net-th-name { min-width:220px; }
+.net-num { text-align:right; font-variant-numeric:tabular-nums; color:var(--c-text-2); }
+.net-sort { display:inline-flex; align-items:center; gap:4px; color:inherit; text-decoration:none; }
+.net-sort:hover { color:var(--c-primary); }
+.net-sort.is-active { color:var(--c-primary); }
+.net-sort-ico { font-size:.8em; line-height:1; }
+.net-td-name { padding-top:6px; padding-bottom:6px; }
+.net-row-link { display:flex; align-items:center; gap:10px; color:var(--c-text); text-decoration:none; }
+.net-row-link:hover .net-name { color:var(--c-primary); }
+.net-row-text { min-width:0; }
+.net-row-text .net-name { margin-top:0; }
+.net-avatar-sm { width:34px; height:34px; font-size:.85rem; }
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
 
 /* Toolbar */
@@ -279,6 +390,8 @@ tr:hover td { background:var(--c-bg-2); }
   display:flex; align-items:flex-end; padding:48px; position:relative; overflow:hidden;
 }
 .auth-bg::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 20% 30%, rgba(94,234,212,0.12) 0%, transparent 50%); }
+.step-num { flex:0 0 32px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.10); border:1px solid rgba(94,234,212,0.45); color:#5eead4; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:.9rem; }
+.auth-steps { position:relative; width:100%; }
 .auth-quote { position:relative; font-family:var(--font-display); font-size:1.5rem; color:rgba(255,255,255,0.9); line-height:1.5; border-left:3px solid #5eead4; padding-left:20px; font-weight:600; }
 .auth-quote em { color:#5eead4; }
 .auth-link { margin-top:14px; font-size:.82rem; color:var(--c-text-3); text-align:center; }
@@ -364,12 +477,48 @@ tr:hover td { background:var(--c-bg-2); }
   .brand-sub { display:none; }
   .stat-grid { grid-template-columns:1fr 1fr; }
   .two-col { grid-template-columns:1fr; }
+  .own-grid { grid-template-columns:1fr; }
   .auth-wrap { grid-template-columns:1fr; }
   .auth-bg { display:none; }
   .auth-card { padding:32px 20px; border-right:none; }
   .form-row { grid-template-columns:1fr; }
   .profile-basic { flex-direction:column; gap:8px; }
 }
+
+/* Feedback button (bottom-right, every page). z-index sits 10 above the
+   highest fixed layer (.pub-theme / .lang-fab at 600). */
+.fb-widget {
+  position:fixed; z-index:610;
+  right:calc(16px + env(safe-area-inset-right, 0px));
+  bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+  display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+}
+.fb-btn {
+  width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
+  background:var(--c-primary); color:#fff; font-size:1.15rem; font-weight:700;
+  box-shadow:0 6px 18px rgba(15,23,42,.22); transition:background .15s, transform .15s;
+}
+.fb-btn:hover { background:var(--c-primary-mid); transform:translateY(-1px); }
+.fb-btn:focus-visible { outline:3px solid var(--c-primary-lt); outline-offset:2px; }
+.fb-menu {
+  display:none; flex-direction:column; min-width:200px; padding:6px;
+  background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg);
+  box-shadow:0 12px 32px rgba(15,23,42,.16);
+}
+.fb-menu.open { display:flex; }
+.fb-menu a { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r-md); font-size:.875rem; font-weight:500; color:var(--c-text-2); }
+.fb-menu a:hover, .fb-menu a:focus-visible { background:var(--c-bg-2); color:var(--c-primary); outline:none; }
+@media print { .fb-widget { display:none; } }
+
+/* Feedback form page */
+.fb-page { max-width:560px; margin:24px auto 80px; padding:0 16px; }
+.public-shell .fb-page { padding-top:calc(var(--topbar-h) + 8px); }
+.fb-types { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.fb-type {
+  flex:1 1 140px; display:flex; align-items:center; gap:8px; cursor:pointer;
+  padding:10px 12px; border:1px solid var(--c-border); border-radius:var(--r-md); font-size:.875rem;
+}
+.fb-type:has(input:checked) { border-color:var(--c-primary); background:var(--c-primary-lt); }
 
 /* Modal dialogs: center on screen with a dimmed backdrop */
 dialog {
@@ -410,6 +559,8 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
         "fault": {
             "open":        (_("badge.open"),        "badge-red"),
             "assigned":    (_("badge.assigned"),    "badge-amber"),
+            "diagnosed":   (_("badge.diagnosed"),   "badge-amber"),
+            "approved":    (_("badge.approved"),    "badge-blue"),
             "in_progress": (_("badge.in_progress"), "badge-blue"),
             "resolved":    (_("badge.resolved"),    "badge-green"),
         },
@@ -429,16 +580,105 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
     return Span(label, cls=f"badge {cls}")
 
 
+def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
+    """The four activity counters.
+
+    One component shared by My Profile and a member's public page, so the
+    numbers a person sees on their own profile are by construction the same
+    ones everyone else sees — and the same four the Network table sorts by.
+    """
+    stats = stats or {}
+
+    def tile(label_key, key, accent=""):
+        return Div(
+            Div(_(label_key), cls="stat-label"),
+            Div(str(stats.get(key, 0)), cls="stat-num"),
+            cls=("stat-card " + accent).strip(),
+        )
+
+    return Div(
+        H3(_("profile.stats_heading"), cls="card-title"),
+        Div(
+            tile("profile.stats_devices", "devices_registered"),
+            tile("profile.stats_faults_resolved", "faults_resolved", "g"),
+            tile("profile.stats_maint_performed", "maintenance_performed", "a"),
+            tile("profile.stats_invites", "invites", "p"),
+            cls="stat-grid",
+        ),
+        cls="card",
+        style=style,
+    )
+
+
+# ── Lucide icons ────────────────────────────────────────────────────────────
+# Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
+# and stay crisp in both themes.
+LUCIDE_ICONS = {
+    "home": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>'
+            '<path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    "dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/>'
+                '<rect width="7" height="5" x="14" y="3" rx="1"/>'
+                '<rect width="7" height="9" x="14" y="12" rx="1"/>'
+                '<rect width="7" height="5" x="3" y="16" rx="1"/>',
+    "devices": '<rect width="20" height="14" x="2" y="3" rx="2"/>'
+               '<line x1="8" x2="16" y1="21" y2="21"/>'
+               '<line x1="12" x2="12" y1="17" y2="21"/>',
+    "faults": '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>'
+              '<path d="M12 9v4"/><path d="M12 17h.01"/>',
+    "tasks": '<rect width="8" height="4" x="8" y="2" rx="1"/>'
+             '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
+             '<path d="M12 11h4"/><path d="M12 16h4"/>'
+             '<path d="M8 11h.01"/><path d="M8 16h.01"/>',
+    "groups": '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>'
+              '<path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>'
+              '<path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>'
+              '<path d="M10 6h4"/><path d="M10 10h4"/>'
+              '<path d="M10 14h4"/><path d="M10 18h4"/>',
+    "profile": '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>'
+               '<circle cx="12" cy="7" r="4"/>',
+    # Lucide graph-star: a hub with satellites, rather than the people glyph.
+    "network": '<path d="m12.342 9.316 1.764-3.527"/>'
+               '<path d="m12.59 14.545 2.35 3.759"/>'
+               '<path d="m13.982 12.332 4.03.447"/>'
+               '<path d="M5.414 17.586 8.88 14.12"/>'
+               '<path d="M9.025 9.742 5.317 5.505"/>'
+               '<circle cx="11" cy="12" r="3"/>'
+               '<circle cx="15" cy="4" r="2"/>'
+               '<circle cx="16" cy="20" r="2"/>'
+               '<circle cx="20" cy="13" r="2"/>'
+               '<circle cx="4" cy="19" r="2"/>'
+               '<circle cx="4" cy="4" r="2"/>',
+    "logout": '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>'
+              '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+}
+
+
+def lucide(name: str, cls: str = ""):
+    """Return an inline Lucide SVG icon (falls back to an empty string)."""
+    body = LUCIDE_ICONS.get(name)
+    if not body:
+        return ""
+    return Safe(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+        f'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+        f'stroke-linejoin="round" aria-hidden="true"'
+        + (f' class="{cls}"' if cls else "")
+        + f">{body}</svg>"
+    )
+
+
 def sidebar(current: str = "", lang: str = "en"):
     _ = make_t(lang)
     links = [
-        ("/home",     "⌂", _("nav.home")),
-        ("/dashboard", "📊", _("nav.dashboard")), #◈
-        ("/devices",   "⊞", _("nav.devices")),
-        ("/tasks",     "📋", _("nav.tasks")), #☐
-        ("/groups",    "🏢", _("nav.groups")),
-        ("/profile",   "◉", _("nav.profile")),
-        ("/logout",   "➜]", _("nav.logout")),
+        ("/home",      "home",      _("nav.home")),
+        ("/dashboard", "dashboard", _("nav.dashboard")),
+        ("/devices",   "devices",   _("nav.devices")),
+        ("/faults",    "faults",    _("nav.faults")),
+        ("/tasks",     "tasks",     _("nav.tasks")),
+        ("/groups",    "groups",    _("nav.groups")),
+        ("/network",   "network",   _("nav.network")),
+        ("/profile",   "profile",   _("nav.profile")),
+        ("/logout",    "logout",    _("nav.logout")),
     ]
     return Aside(
         Div(
@@ -453,7 +693,7 @@ def sidebar(current: str = "", lang: str = "en"):
             cls="sb-head"
         ),
         Nav(
-            *[A(Span(icon, cls="nav-ico"), Span(label, cls="nav-label"), href=href,
+            *[A(Span(lucide(icon), cls="nav-ico"), Span(label, cls="nav-label"), href=href,
                 title=label,
                 cls=f"nav-link {'active' if current == href else ''}")
               for href, icon, label in links],
@@ -478,6 +718,24 @@ def language_switcher(current_lang: str):
                onchange="this.form.submit()"),
         method="post", action="/lang",
         style="display:flex;align-items:center;gap:6px;"
+    )
+
+
+def feedback_widget(lang: str = "en"):
+    """Floating "?" button (bottom-right) opening a menu to send feedback or
+    report an issue. Rendered by every shell, so it is on every page."""
+    _ = make_t(lang)
+    return Div(
+        Div(
+            A("💬 ", _("feedback.menu_feedback"), href="/feedback?type=feedback", data_type="feedback"),
+            A("🐞 ", _("feedback.menu_issue"), href="/feedback?type=issue", data_type="issue"),
+            id="fb-menu", cls="fb-menu",
+        ),
+        Button("?", id="fb-btn", type="button", cls="fb-btn",
+               title=_("feedback.button_label"), aria_label=_("feedback.button_label"),
+               aria_expanded="false", aria_controls="fb-menu",
+               onclick="toggleFeedbackMenu()"),
+        id="fb-widget", cls="fb-widget",
     )
 
 
@@ -515,8 +773,8 @@ def avatar_menu(lang: str = "en"):
                 Div(second_row, cls="avatar-menu-email"),
                 cls="avatar-menu-user",
             ),
-            A("◉ " + _("nav.profile"), href="/profile"),
-            A("➜] " + _("nav.logout"), href="/logout"),
+            A(Span(lucide("profile"), cls="nav-menu-ico"), _("nav.profile"), href="/profile"),
+            A(Span(lucide("logout"), cls="nav-menu-ico"), _("nav.logout"), href="/logout"),
             Div(
                 Div(_("lang.label"),
                     style="font-size:.7rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;margin:4px 12px;"),
@@ -623,6 +881,28 @@ document.addEventListener('click', function(e){
     menu.classList.remove('open');
   }
 });
+function toggleFeedbackMenu(open){
+  var m = document.getElementById('fb-menu');
+  var b = document.getElementById('fb-btn');
+  if (!m) return;
+  var isOpen = (typeof open === 'boolean') ? open : !m.classList.contains('open');
+  if (isOpen) {
+    // Tell the form which page the report is about.
+    var here = encodeURIComponent(location.pathname + location.search);
+    m.querySelectorAll('a[data-type]').forEach(function(a){
+      a.href = '/feedback?type=' + a.getAttribute('data-type') + '&page=' + here;
+    });
+  }
+  m.classList.toggle('open', isOpen);
+  if (b) b.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.addEventListener('click', function(e){
+  var w = document.getElementById('fb-widget');
+  if (w && !w.contains(e.target)) toggleFeedbackMenu(false);
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') toggleFeedbackMenu(false);
+});
 initTheme();
 initSidebar();
 """
@@ -690,6 +970,7 @@ def shell(content, title: str = "FixMyMedTech", lang: str = "en",
                 topbar(authenticated, current, lang),
                 body_inner,
             ),
+            feedback_widget(lang),
             Script(SHELL_SCRIPT)
         )
     )
@@ -722,6 +1003,7 @@ def auth_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
                        aria_label="Toggle dark mode", onclick="toggleTheme()"),
                 content
             ),
+            feedback_widget(lang),
             Script(SHELL_SCRIPT)
         )
     )
@@ -787,7 +1069,8 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False
         cls="card"
     )
 
-def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en"):
+def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en",
+                         error: str = "", value: str = ""):
     _ = make_t(lang)
     return Div(
         Button(
@@ -807,8 +1090,14 @@ def qr_scanner_component(target_url="/devices/scan-result", lang: str = "en"):
         # Fallback manual entry
         Div(
             Label(_("qr.manual_label"), cls="label"),
-            Input(id="manual-code", cls="input", placeholder=_("qr.manual_placeholder")),
-            Button(_("qr.manual_submit"), cls="btn btn-secondary", onclick="submitManualCode()"),
+            Input(id="manual-code", cls="input", value=value,
+                  placeholder=_("qr.manual_placeholder")),
+            # Sits between the field and the button, matching the alert the
+            # login page shows for a failed submit.
+            Div(error, cls="alert alert-error",
+                style="margin:10px 0 0 0;text-align:left;") if error else "",
+            Button(_("qr.manual_submit"), cls="btn btn-secondary", onclick="submitManualCode()",
+                   style="margin-top:10px;"),
             style="margin-top:12px;"
         ),
         Script(f"""

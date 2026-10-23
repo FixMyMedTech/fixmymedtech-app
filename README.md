@@ -98,8 +98,8 @@ nginx ──► Backend FastAPI  :8888          ← "proxy hub"
 
 FastHTML is not a traditional frontend — it is a Python web server that renders
 HTML server-side. There is no JavaScript framework, no build step, and the
-browser never calls the API directly. JWT tokens are stored in **encrypted
-server-side sessions** (cookies) and never exposed to the browser.
+browser never calls the API directly. The JWT is kept in FastHTML's session
+cookie (signed with `SESSION_SECRET`) and sent to the API server-side.
 
 ---
 

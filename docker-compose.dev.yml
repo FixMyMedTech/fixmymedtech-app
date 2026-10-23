@@ -21,6 +21,7 @@ services:
       MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
       MAIL_SSL_TLS: ${MAIL_SSL_TLS:-false}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-change-me-this-default-is-32-bytes-long!}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:?AUTH_SESSION_SECRET must be set}
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
@@ -39,6 +40,9 @@ services:
       PHOTO_MAX_DIMENSION: ${PHOTO_MAX_DIMENSION:-1600}
       PHOTO_JPEG_QUALITY: ${PHOTO_JPEG_QUALITY:-85}
       HEALTHSITES_API_KEY: ${HEALTHSITES_API_KEY}
+      DISCORD_FEEDBACK_WEBHOOK_URL: ${DISCORD_FEEDBACK_WEBHOOK_URL:-}
+      DISCORD_FEEDBACK_TAG_ID: ${DISCORD_FEEDBACK_TAG_ID:-}
+      DISCORD_ISSUE_TAG_ID: ${DISCORD_ISSUE_TAG_ID:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; r = urllib.request.urlopen('http://localhost:8888/health', timeout=5); raise SystemExit(0 if r.status == 200 else 1)"]
       interval: 30s
@@ -53,6 +57,7 @@ services:
     restart: unless-stopped
     environment:
       API_URL: ${API_URL:-http://backend:8888}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set}
     ports:
       - "127.0.0.1:5002:5001"
     depends_on:

@@ -1,4 +1,4 @@
-from config.api import _get, _post, _patch, API_URL
+from config.api import _get, _post, _patch, _delete, API_URL
 import httpx
 
 
@@ -32,6 +32,9 @@ async def create_device(token: str, data: dict):
 
 async def update_device(token: str, device_id: str, data: dict):
     return await _patch(f"/api/devices/{device_id}", data, token)
+
+async def delete_device(token: str, device_id: str):
+    return await _delete(f"/api/devices/{device_id}", token)
 
 async def upload_device_photo(token: str, device_id: str, filename: str, content: bytes, content_type: str = None):
     headers = {"Authorization": f"Bearer {token}"}

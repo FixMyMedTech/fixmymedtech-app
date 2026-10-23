@@ -37,6 +37,7 @@ jobs:
             PUBLIC_API_URL=${{ secrets.PROD_PUBLIC_API_URL }}
             SESSION_SECRET=${{ secrets.PROD_SESSION_SECRET }}
             AUTH_JWT_SECRET=${{ secrets.PROD_AUTH_JWT_SECRET }}
+            AUTH_SESSION_SECRET=${{ secrets.PROD_AUTH_SESSION_SECRET }}
             MINIO_ROOT_USER=${{ secrets.PROD_MINIO_ROOT_USER }}
             MINIO_ROOT_PASSWORD=${{ secrets.PROD_MINIO_ROOT_PASSWORD }}
             MINIO_BUCKET=${{ secrets.PROD_MINIO_BUCKET }}
@@ -60,6 +61,9 @@ jobs:
             GEMINI_API_KEY=${{ secrets.PROD_GEMINI_API_KEY }}
             AUTO_PROCESS_PHOTO=${{ secrets.PROD_AUTO_PROCESS_PHOTO }}
             HEALTHSITES_API_KEY=${{ secrets.PROD_HEALTHSITES_API_KEY }}
+            DISCORD_FEEDBACK_WEBHOOK_URL=${{ secrets.PROD_DISCORD_FEEDBACK_WEBHOOK_URL }}
+            DISCORD_FEEDBACK_TAG_ID=${{ secrets.PROD_DISCORD_FEEDBACK_TAG_ID }}
+            DISCORD_ISSUE_TAG_ID=${{ secrets.PROD_DISCORD_ISSUE_TAG_ID }}
             EOF
 
       - name: Copy code to server

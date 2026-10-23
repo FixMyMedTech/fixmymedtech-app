@@ -41,6 +41,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str
@@ -264,7 +268,7 @@ async def request_verification(
 
 @router.post("/forgot-password")
 async def forgot_password(
-    body: LoginRequest,
+    body: ForgotPasswordRequest,
     request: Request,
     user_manager: UserManager = Depends(get_user_manager),
 ):

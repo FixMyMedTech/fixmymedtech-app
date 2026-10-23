@@ -17,6 +17,21 @@ from i18n import t as make_t
 rt = APIRouter()
 
 
+def _public_base(req) -> str:
+    """The origin the browser is actually using, so QR/absolute links point at
+    the environment being viewed rather than the internal service name.
+
+    The backend proxy strips Host, so req.base_url reports http://frontend:5001.
+    It republishes the browser's origin in X-Forwarded-Host/Proto, which is what
+    makes dev show the dev host and prod show the platform host automatically.
+    """
+    host = (req.headers.get("x-forwarded-host") or "").strip()
+    if not host:
+        return str(req.base_url).rstrip("/")
+    proto = (req.headers.get("x-forwarded-proto") or "").strip() or "http"
+    return f"{proto}://{host}".rstrip("/")
+
+
 def _org_loc(org: dict) -> str:
     bits = []
     if org.get("country"):
@@ -88,6 +103,7 @@ async def get(req, device_id: str):
     d = data.get("device", {})
     cat = d.get("category") or {}
     org = d.get("organization") or {}
+    maint_org = d.get("organization_maintenance") or {}
     hs = d.get("healthsite") or {}
     logs = data.get("maintenance_logs", [])
     faults = data.get("fault_reports", [])
@@ -119,7 +135,51 @@ async def get(req, device_id: str):
         style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;",
     ) if can_choose_photo else ""
 
-    qr_url = f"{req.base_url}d/{device_id}"
+    # Prefer the configured public URL. req.base_url echoes the incoming Host
+    # header, which is the internal service name (http://frontend:5001/…) when
+    # the request arrives through the Docker network — unusable in a QR code.
+    qr_url = f"{_public_base(req)}/d/{device_id}"
+
+    # Ownership: responsible org, maintenance org, healthsite. One column each
+    # (stacked on mobile by .own-grid). Org columns link to the organization
+    # page; `href` overrides that for non-org entries such as the registrant.
+    def _own_col(label, o, href=None):
+        name = o.get("name")
+        oid = o.get("id")
+        link = href if href is not None else (f"/groups/{oid}/view" if oid else None)
+        return Div(
+            Div(label, cls="own-label"),
+            Div(
+                A(name, href=link,
+                  style="color:var(--c-primary);text-decoration:none;") if (name and link) else (name or ""),
+                cls="own-name",
+            ) if name else Div(_("common.fallback"), cls="own-name"),
+            cls="own-col",
+        )
+
+    reg = data.get("registered_by_profile") or {}
+    reg_name = (reg.get("full_name") or reg.get("username") or "").strip()
+    reg_id = reg.get("id") or d.get("registered_by")
+
+    own_cols = [
+        _own_col(_("device_detail.responsible_org"), org),
+        _own_col(_("device_detail.maintenance_org"), maint_org),
+        _own_col(_("device_detail.healthsite"), hs),
+    ]
+    # Only shown when there is a name to display: a dangling registered_by id
+    # (profile row gone) would otherwise produce an unlabelled dead link.
+    if reg_name:
+        own_cols.append(_own_col(
+            _("device_detail.registered_by"),
+            {"name": reg_name, "id": reg_id},
+            href=f"/profile/{reg_id}" if reg_id else None,
+        ))
+
+    ownership = Div(
+        Div(H3(_("device_detail.ownership"), style="margin-bottom:12px;")),
+        Div(*own_cols, cls="own-grid"),
+        cls="card", style="margin-bottom:16px;",
+    )
 
     # Maintenance log rows
     log_rows = [
@@ -128,7 +188,7 @@ async def get(req, device_id: str):
             Td(Span(l.get("type",""), cls="badge badge-blue")),
             Td(l.get("description",_("common.fallback")), style="font-size:0.875rem;"),
             Td(f"${l['cost_usd']}" if l.get("cost_usd") else _("common.fallback"), style="font-size:0.875rem;"),
-            Td(A(_("device_list.view"), href=f"/d/{device_id}/log/{l['id']}",
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/log/{l['id']}",
                  cls="btn btn-secondary btn-sm")),
         ) for l in logs
     ]
@@ -141,7 +201,7 @@ async def get(req, device_id: str):
             Td(f.get("description",""), style="font-size:0.875rem;"),
             Td(status_badge(f.get("severity","medium"), "severity", lang=lang)),
             Td(status_badge(f.get("status","open"), "fault", lang=lang)),
-            Td(A(_("device_list.view"), href=f"/d/{device_id}/fault/{f['id']}",
+            Td(A(_("device_list.view"), href=f"/device/{device_id}/fault/{f['id']}",
                  cls="btn btn-secondary btn-sm")),
         ) for f in faults
     ]
@@ -313,15 +373,17 @@ async def get(req, device_id: str):
             id="deviceQrDialog",
             style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);"
         ),
+        # Ownership: full-width row above the two-column info cards
+        ownership,
         # Device info
         Div(
             Div(
                 H3(_("device_detail.info"), style="margin-bottom:12px;"),
                 Dl(
-                    *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
-                        style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
-                    for k, v in [
-                        (_("device_detail.serial"), d.get("serial_number",_("common.fallback"))),
+                *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
+                    style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
+                for k, v in [
+                    (_("device_detail.serial"), d.get("serial_number",_("common.fallback"))),
                         (_("device_detail.manufacturer"),  d.get("manufacturer",_("common.fallback"))),
                         (_("device_detail.model"),         d.get("model",_("common.fallback"))),
                         (_("device_detail.year"),          str(d.get("manufacture_year",_("common.fallback")))),

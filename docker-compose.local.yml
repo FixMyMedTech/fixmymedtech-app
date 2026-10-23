@@ -6,7 +6,8 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5432:5432"
+      # Host port is configurable in case 5432 is taken by another PostgreSQL.
+      - "127.0.0.1:${LOCAL_DB_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -41,6 +42,7 @@ services:
       MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
       MAIL_SSL_TLS: ${MAIL_SSL_TLS:-false}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-dev-local-jwt-secret-change-me}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:-dev-local-admin-session-secret}
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
@@ -59,6 +61,9 @@ services:
       PHOTO_MAX_DIMENSION: ${PHOTO_MAX_DIMENSION:-1600}
       PHOTO_JPEG_QUALITY: ${PHOTO_JPEG_QUALITY:-85}
       HEALTHSITES_API_KEY: ${HEALTHSITES_API_KEY}
+      DISCORD_FEEDBACK_WEBHOOK_URL: ${DISCORD_FEEDBACK_WEBHOOK_URL:-}
+      DISCORD_FEEDBACK_TAG_ID: ${DISCORD_FEEDBACK_TAG_ID:-}
+      DISCORD_ISSUE_TAG_ID: ${DISCORD_ISSUE_TAG_ID:-}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 30s
@@ -76,6 +81,7 @@ services:
     restart: unless-stopped
     environment:
       API_URL: ${API_URL:-http://backend:8888}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-local-session-secret}
     ports:
       - "127.0.0.1:5001:5001"
     depends_on:

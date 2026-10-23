@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
 from utils.create_superuser import bootstrap_superuser_from_env
@@ -75,6 +75,7 @@ app.include_router(dashboard.router,        prefix="/api/dashboard",         tag
 app.include_router(organizations.router,    prefix="/api/organizations",     tags=["organizations"])
 app.include_router(admin_email_router,      prefix="/admin-panel",           tags=["admin"])
 app.include_router(healthsites.router,      prefix="/api/healthsites",       tags=["healthsites"])
+app.include_router(feedback.router,         prefix="/api/feedback",          tags=["feedback"])
 
 # ── SQLAdmin (browsable admin UI at /admin) ─────────────────
 from sqladmin import Admin, ModelView
@@ -240,6 +241,16 @@ class DocumentAdmin(ModelView, model=models.Document):
     name_plural = "Documents"
     icon = "fa-solid fa-file-lines"
 
+class FeedbackAdmin(ModelView, model=models.Feedback):
+    column_list = [models.Feedback.created_at, models.Feedback.type, models.Feedback.summary, models.Feedback.page, models.Feedback.discord_status]
+    column_searchable_list = [models.Feedback.summary, models.Feedback.description]
+    column_sortable_list = [models.Feedback.created_at, models.Feedback.type, models.Feedback.discord_status]
+    column_default_sort = [(models.Feedback.created_at, True)]
+    can_create = False
+    name = "Feedback"
+    name_plural = "Feedback"
+    icon = "fa-solid fa-comment-dots"
+
 admin = Admin(
     app, engine=engine, title="FixMyMedTech Admin",
     authentication_backend=AdminAuth(),
@@ -254,6 +265,7 @@ admin.add_view(DeviceAdmin)
 admin.add_view(DocumentAdmin)
 admin.add_view(FaultAdmin)
 admin.add_view(MaintenanceLogAdmin)
+admin.add_view(FeedbackAdmin)
 
 
 @app.get("/health")
@@ -276,12 +288,30 @@ async def proxy(request: Request, path: str):
 
     query = request.url.query
     url = f"http://frontend:5001/{path}" + (f"?{query}" if query else "")
-    headers = dict(request.headers)
+
+    # Forward end-to-end headers only. Hop-by-hop/framing headers must be dropped:
+    # httpx recomputes Content-Length from the body we pass, and reusing the
+    # original value (or Transfer-Encoding) makes the upstream read a malformed body.
+    HOP_BY_HOP = {
+        "host", "content-length", "transfer-encoding", "connection",
+        "keep-alive", "upgrade", "proxy-authorization", "proxy-authenticate",
+        "te", "trailer", "content-encoding",
+    }
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP_BY_HOP}
+
+    # Host was stripped above, so the frontend would otherwise build absolute
+    # URLs (e.g. the device-detail QR link) from its internal name, giving
+    # http://frontend:5001/d/<id>. Forward the origin the browser actually used.
+    headers["X-Forwarded-Host"] = request.headers.get("host", "")
+    headers["X-Forwarded-Proto"] = request.url.scheme
+    headers["X-Forwarded-Prefix"] = ""
 
     data = await request.body()
 
     try:
-        async with httpx.AsyncClient() as client:
+        # Generous timeout: the frontend renders server-side and can be slow,
+        # especially while the dev reloader restarts it after a file change.
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0)) as client:
             if request.method == "GET":
                 response = await client.get(url, headers=headers)
             elif request.method == "POST":
@@ -295,7 +325,12 @@ async def proxy(request: Request, path: str):
             status_code=response.status_code,
             headers=dict(response.headers),
         )
-    except Exception:
+    except Exception as exc:
+        # Log the real cause: a bare 502 here is impossible to diagnose otherwise.
+        logging.getLogger("proxy").warning(
+            "proxy %s %s -> %s failed: %s: %s",
+            request.method, url, type(exc).__name__, exc,
+        )
         raise HTTPException(status_code=502, detail="Upstream unavailable")
 
 

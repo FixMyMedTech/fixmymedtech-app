@@ -3,7 +3,7 @@ from urllib.parse import quote, urlparse
 from fasthtml.common import *
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
-import os, json, httpx
+import os, json, re, httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,6 +27,80 @@ rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 
 
+def _pending_label(_):
+    return _("new_device.pending_approval")
+
+
+# Canonical RFC 4122 UUID, exactly as printed under the QR label. Stricter than
+# uuid.UUID(), which would also accept bare hex, braces and urn: forms — none of
+# which appear on a label.
+_UID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+
+
+def _valid_uid(device_id) -> bool:
+    """A device UID is the UUID printed on its QR label.
+
+    The API types this as a UUID, so anything else comes back as an opaque 422
+    (or a 404 on reads) and the user gets bounced around the wizard with no
+    explanation. Check the shape up front instead.
+    """
+    if not device_id:
+        return False
+    return bool(_UID_RE.match(str(device_id).strip()))
+
+
+def _uid_error_redirect(lang, device_id):
+    """Send a malformed UID back to the scan/manual-entry page with an error.
+
+    The UID lives in the form's action path, so the wizard cannot correct it —
+    the user has to re-enter it where they got it from.
+    """
+    _ = make_t(lang)
+    uid = str(device_id).strip()
+    msg = _("new_device.invalid_uid",
+            "“{uid}” is not a valid device UID. Scan the QR label or enter the UUID printed under it.")
+    return RedirectResponse(
+        f"/new_device?flash={quote(msg.format(uid=uid))}&uid={quote(uid)}", status_code=302)
+
+
+def _default_org_id(orgs, selected: str = ""):
+    """Responsible organization default: an org the user admins, else the
+    healthsite they just picked. Pending orgs are never admin, so they cannot
+    win this default unless nothing else applies."""
+    ids = {o["id"] for o in orgs}
+    for o in orgs:
+        if o.get("role") == "admin" and not o.get("pending"):
+            return o["id"]
+    if selected and selected in ids:
+        return selected
+    return ""
+
+
+async def _orgs_with_pending(token, orgs):
+    """Membership orgs plus any org the user has a pending join request for.
+
+    A pending requester may register a device in that clinic but cannot list the
+    org's devices yet, so the org is offered but marked as awaiting approval.
+    """
+    try:
+        pending = await org_api.get_my_join_requests(token)
+    except Exception:
+        return orgs
+    member_ids = {o["id"] for o in orgs}
+    merged = list(orgs)
+    for r in pending:
+        if r.get("organization_id") in member_ids:
+            continue
+        merged.append({
+            "id": r.get("organization_id"),
+            "name": r.get("organization_name"),
+            "role": r.get("role"),
+            "pending": True,
+        })
+    return merged
+
+
 @rt("/new_device")
 async def get(req):
     token, redirect = auth_helper.require_auth(req)
@@ -38,13 +112,19 @@ async def get(req):
     try:
         org = await org_api.get_my_organizations(token)
 
+# A rejected UID comes back as ?flash=…&uid=…, rendered under the manual
+        # entry field with the same alert the login page uses on a bad submit.
+        flash = req.query_params.get("flash", "")
+        bad_uid = req.query_params.get("uid", "")
+
         content = Div(
                 Div(
                     Script(src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"),
                     Div("📸", style="width:56px;height:56px;background:var(--c-green-lt);color:var(--c-green);border-radius:50%;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"),
                     H2(_("new_device.scan_heading")),
                     P(_("new_device.scan_desc"), style="margin-top:8px;"),
-                    qr_scanner_component(target_url="/scan-result", lang=lang),
+                    qr_scanner_component(target_url="/scan-result", lang=lang,
+                                         error=flash, value=bad_uid),
                     style="text-align:center;padding:60px 40px;"
                 ),
                 style="max-width:440px;margin:80px auto;"
@@ -91,6 +171,9 @@ async def get(req, code: str = ""):
     parsed = urlparse(code)
     parts = [p for p in parsed.path.split("/") if p]
     device_id = parts[-1] if parts else code
+
+    if not _valid_uid(device_id):
+        return _uid_error_redirect(lang, device_id)
 
     try:
         existing = await devices_api.get_device_public(device_id)
@@ -148,6 +231,15 @@ async def get(req, device_id: str, selected: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
 
+    # Pre-select the healthsite picked in the healthsites.io import menu, unless
+    # the URL overrides it.
+    if not selected:
+        selected = req.session.get("last_healthsite", "") or ""
+
+    # Don't open a wizard that can only fail on submit.
+    if not _valid_uid(device_id):
+        return _uid_error_redirect(lang, device_id)
+
     try:
         await devices_api.get_device_public(device_id)
         return RedirectResponse(f"/device/{device_id}", status_code=303)
@@ -159,6 +251,7 @@ async def get(req, device_id: str, selected: str = ""):
 
     try:
         orgs = await org_api.get_my_organizations(token)
+        orgs = await _orgs_with_pending(token, orgs)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
@@ -299,10 +392,21 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
     cat_options.append(Option(f"🏥 {other_label}", value="other",
                               data_first=(other_label or "").split()[0] if other_label else ""))
 
-    org_options = [Option(o["name"], value=o["id"]) for o in orgs]
+    default_org = _default_org_id(orgs, selected)
+    org_options = [
+        Option(
+            f"{o['name']} · {_pending_label(_)}" if o.get("pending") else o["name"],
+            value=o["id"],
+            selected=(o["id"] == default_org),
+        )
+        for o in orgs
+    ]
     hs_options = [Option(_("new_device.select_healthsite"), value="")]
     for o in orgs:
-        hs_options.append(Option(o["name"], value=o["id"], selected=(o["id"] == selected)))
+        label = (
+            f"{o['name']} · {_pending_label(_)}" if o.get("pending") else o["name"]
+        )
+        hs_options.append(Option(label, value=o["id"], selected=(o["id"] == selected)))
 
     step_back = _("new_device.wizard_back")
     step_next = _("new_device.wizard_next")
@@ -637,6 +741,7 @@ async def post(req, device_id: str, lat: str = "", lng: str = "", radius_km: str
 
     try:
         orgs = await org_api.get_my_organizations(token)
+        orgs = await _orgs_with_pending(token, orgs)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
@@ -645,7 +750,8 @@ async def post(req, device_id: str, lat: str = "", lng: str = "", radius_km: str
     except Exception:
         orgs = []
 
-    form = _device_form(lang, device_id, orgs)
+    form = _device_form(lang, device_id, orgs,
+                        selected=req.session.get("last_healthsite", "") or "")
     search = (lat_f, lng_f, radius_f)
     try:
         data = await org_api.search_healthsites(token, {
@@ -691,6 +797,7 @@ async def post(req, device_id: str, osm_id: str = "", osm_type: str = "", name: 
         result = await org_api.import_healthsite(token, facility, role="technician")
         if result.get("added"):
             selected = result.get("id", "")
+            req.session["last_healthsite"] = selected
             return RedirectResponse(
                 f"/device/{device_id}/new?selected={selected}&flash={quote(_('groups.import_added'))}&ok=1",
                 status_code=302)
@@ -707,6 +814,12 @@ async def post(req, device_id: str):
 
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
+
+    # Reject a malformed UID before building a payload: the API would answer
+    # with a bare 422 and the catch-all below would silently re-render the
+    # wizard with the user's input lost.
+    if not _valid_uid(device_id):
+        return _uid_error_redirect(lang, device_id)
 
     form = await req.form()
 
@@ -759,6 +872,8 @@ async def post(req, device_id: str):
                     photo_data,
                     photo.content_type,
                 )
+        # Consumed: don't carry this clinic into the next registration.
+        req.session.pop("last_healthsite", None)
         return RedirectResponse(f"/device/{device_id}", status_code=303)
     except Exception:
         return RedirectResponse(f"/device/{device_id}/new", status_code=303)

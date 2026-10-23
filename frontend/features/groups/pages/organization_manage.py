@@ -8,6 +8,7 @@ import httpx
 import features.auth.helper as auth_helper
 import features.groups.api as groups_api
 from components import page_shell
+from components import alert as alert_box
 from i18n import t as make_t
 
 rt = APIRouter()
@@ -173,6 +174,46 @@ def _add_member_dialog(org, _, org_id):
     )
 
 
+def _invite_member_dialog(_, org_id):
+    return Dialog(
+        Div(
+            H3(_("groups.invite_user_title"), style="margin:0 0 4px 0;font-size:1.05rem;"),
+            P(_("groups.invite_user_desc"),
+              style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 14px 0;"),
+            Form(
+                Div(
+                    Label(_("groups.invite_email"), for_="invite-email", style="font-size:0.8rem;color:var(--c-text-3);"),
+                    Input(id="invite-email", name="email", type="email", required=True,
+                          cls="input", placeholder=_("groups.invite_email_placeholder"),
+                          style="width:100%;margin-top:4px;"),
+                    style="margin-bottom:12px;",
+                ),
+                Div(
+                    Label(_("groups.member_role"), for_="invite-role", style="font-size:0.8rem;color:var(--c-text-3);"),
+                    Select(
+                        Option(_("signup.role_admin"), value="admin"),
+                        Option(_("signup.role_technician"), value="technician", selected=True),
+                        Option(_("signup.role_clinical"), value="clinical_staff"),
+                        Option(_("role.engineering_staff"), value="engineering_staff"),
+                        id="invite-role", name="role", cls="input", style="width:100%;margin-top:4px;",
+                    ),
+                    style="margin-bottom:14px;",
+                ),
+                Div(
+                    Button(_("groups.invite_send"), type="submit", cls="btn btn-primary btn-sm"),
+                    Button(_("groups.close"), type="button", cls="btn btn-secondary btn-sm",
+                           onclick="document.getElementById('imDialog').close()"),
+                    style="display:flex;justify-content:flex-end;gap:8px;",
+                ),
+                method="post", action=f"/groups/{org_id}/invite",
+            ),
+            style="padding:18px;max-width:480px;width:90%;",
+        ),
+        id="imDialog",
+        style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);",
+    )
+
+
 async def _get_member_organization(req, token, org_id):
     try:
         orgs = await groups_api.get_my_organizations(token)
@@ -184,6 +225,27 @@ async def _get_member_organization(req, token, org_id):
     except Exception:
         orgs = []
     return next((o for o in orgs if str(o.get("id")) == str(org_id)), None), None
+
+
+ROLE_VALUES = ("admin", "technician", "clinical_staff", "engineering_staff")
+
+
+def _role_label(_, role: str) -> str:
+    return {
+        "admin": _("signup.role_admin"),
+        "technician": _("signup.role_technician"),
+        "clinical_staff": _("signup.role_clinical"),
+        "engineering_staff": _("role.engineering_staff"),
+    }.get(role, role)
+
+
+def _role_select(_, selected: str, onchange: str = "",
+                 style: str = "max-width:180px;padding:5px 8px;"):
+    return Select(
+        *(Option(_role_label(_, v), value=v, selected=v == selected) for v in ROLE_VALUES),
+        name="role", cls="input", style=style,
+        **({"onchange": onchange} if onchange else {}),
+    )
 
 
 @rt("/groups/{org_id}")
@@ -206,7 +268,7 @@ async def get_organization(req, org_id: str):
     member_rows = [
         Tr(
             Td(member.get("name", ""), style="font-size:0.875rem;"),
-            Td(member.get("email", ""), style="font-size:0.875rem;"),
+            Td(member.get("username") or member.get("email", ""), style="font-size:0.875rem;"),
             Td(Form(
                 Select(
                     Option(_("signup.role_admin"), value="admin", selected=member.get("role") == "admin"),
@@ -231,7 +293,7 @@ async def get_organization(req, org_id: str):
     members_table = Table(
         Thead(Tr(
             Th(_("groups.member_name")),
-            Th(_("groups.member_email")),
+            Th(_("groups.member_username")),
             Th(_("groups.member_role")),
             Th(_("groups.member_action")),
         )),
@@ -241,26 +303,91 @@ async def get_organization(req, org_id: str):
         ),
     )
 
+    try:
+        join_requests = await groups_api.get_join_requests(token, org_id)
+    except Exception:
+        join_requests = []
+
+    request_rows = [
+        Tr(
+            Td(req.get("name", ""), style="font-size:0.875rem;"),
+            Td(req.get("username") or req.get("email", ""), style="font-size:0.875rem;"),
+            Td(_role_label(_, req.get("role", "")), style="font-size:0.875rem;"),
+            Td(
+                Form(
+                    _role_select(_, req.get("role", ""), style="max-width:150px;padding:4px 6px;"),
+                    Button(_("groups.approve_btn"), type="submit", cls="btn btn-primary btn-sm"),
+                    method="post",
+                    action=f"/groups/{org_id}/join-requests/{req['id']}/approve",
+                    style="display:flex;gap:6px;align-items:center;",
+                ),
+                Form(
+                    Button(_("groups.reject_btn"), type="submit", cls="btn btn-secondary btn-sm"),
+                    method="post",
+                    action=f"/groups/{org_id}/join-requests/{req['id']}/reject",
+                ),
+                style="display:flex;gap:8px;justify-content:flex-end;",
+            ),
+        )
+        for req in join_requests
+    ]
+
+    requests_table = Table(
+        Thead(Tr(
+            Th(_("groups.member_name")),
+            Th(_("groups.member_username")),
+            Th(_("groups.requested_role")),
+            Th(_("groups.member_action"), style="text-align:right;"),
+        )),
+        Tbody(*request_rows),
+    )
+
+    pending_section = (
+        Div(
+            Div(
+                H3(_("groups.pending_requests"), style="margin:0;"),
+                Span(str(len(join_requests)), cls="badge badge-amber",
+                     style="margin-left:8px;"),
+                style="display:flex;align-items:center;margin-bottom:12px;",
+            ),
+            P(_("groups.pending_requests_desc"),
+              style="color:var(--c-text-3);font-size:0.8rem;margin:0 0 12px 0;"),
+            Div(requests_table, cls="table-wrap"),
+            cls="card",
+            style="max-width:960px;margin-top:16px;border-left:3px solid var(--c-amber);",
+        )
+        if join_requests else ""
+    )
+
     content = Div(
         Script(EDIT_ORG_JS),
         Script(_member_manage_js(org_id)),
+        alert_box(_("groups.invite_sent"), "success") if req.query_params.get("invited") else
+        alert_box(_("groups.invite_email_required"), "error") if req.query_params.get("invite_error") else "",
         A(_("groups.back_to_groups"), href="/groups",
           style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;display:inline-block;margin-bottom:16px;"),
         H1(org.get("name", "")),
         P(_("groups.manage_desc"), style="color:var(--c-text-3);margin-bottom:18px;"),
         Div(_basic_card(org, _), _contact_card(org, _),
             cls="two-col", style="max-width:960px;margin-top:16px;"),
+        pending_section,
         Div(
             Div(
                 H3(_("groups.members"), style="margin:0;"),
-                Button(_("groups.add_user_btn"), type="button", cls="btn btn-primary btn-sm",
-                       onclick="document.getElementById('amDialog').showModal()"),
+                Div(
+                    Button(_("groups.invite_user_btn"), type="button", cls="btn btn-primary btn-sm",
+                           onclick="document.getElementById('imDialog').showModal()"),
+                    Button(_("groups.add_user_btn"), type="button", cls="btn btn-secondary btn-sm",
+                           onclick="document.getElementById('amDialog').showModal()"),
+                    style="display:flex;gap:8px;",
+                ),
                 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;",
             ),
             Div(members_table, cls="table-wrap"),
             cls="card", style="max-width:960px;margin-top:16px;",
         ),
         _add_member_dialog(org, _, org_id),
+        _invite_member_dialog(_, org_id),
     )
     return page_shell(content, current="/groups", title=org.get("name", ""), lang=lang)
 
@@ -314,6 +441,31 @@ async def update_member_role(req, org_id: str, member_id: str, role: str = ""):
             await groups_api.update_organization_member(token, org_id, member_id, role)
         except Exception:
             pass
+    return RedirectResponse(f"/groups/{org_id}", status_code=303)
+
+
+@rt("/groups/{org_id}/join-requests/{request_id}/approve")
+async def approve_join_request(req, org_id: str, request_id: str, role: str = ""):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    if role in ROLE_VALUES:
+        try:
+            await groups_api.approve_join_request(token, org_id, request_id, role)
+        except Exception:
+            pass
+    return RedirectResponse(f"/groups/{org_id}", status_code=303)
+
+
+@rt("/groups/{org_id}/join-requests/{request_id}/reject")
+async def reject_join_request(req, org_id: str, request_id: str):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    try:
+        await groups_api.reject_join_request(token, org_id, request_id)
+    except Exception:
+        pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)
 
 
@@ -374,3 +526,36 @@ async def add_member(req, org_id: str, profile_id: str):
     except Exception:
         pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)
+
+
+@rt("/groups/{org_id}/invite")
+async def invite_member(req, org_id: str, email: str = "", role: str = "technician"):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    lang = req.session.get("lang", "en")
+    _ = make_t(lang)
+    if not email.strip():
+        return RedirectResponse(f"/groups/{org_id}?invite_error=1", status_code=303)
+    try:
+        await groups_api.invite_organization_member(
+            token, org_id, {"email": email.strip(), "role": role},
+        )
+    except httpx.HTTPStatusError as e:
+        detail = ""
+        try:
+            detail = e.response.json().get("detail", "")
+        except Exception:
+            detail = ""
+        return page_shell(
+            Script(f"alert({json.dumps(detail or _('groups.invite_failed'))});"
+                   f" window.location={json.dumps(f'/groups/{org_id}')};"),
+            current="/groups", lang=lang,
+        )
+    except Exception:
+        return page_shell(
+            Script(f"alert({json.dumps(_('groups.invite_failed'))});"
+                   f" window.location={json.dumps(f'/groups/{org_id}')};"),
+            current="/groups", lang=lang,
+        )
+    return RedirectResponse(f"/groups/{org_id}?invited=1", status_code=303)

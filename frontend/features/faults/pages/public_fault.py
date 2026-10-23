@@ -52,20 +52,33 @@ async def get_fault_public(req, device_id: str, fault_id: str):
         (_("fault_detail.resolved_at"), fmt_date(fault.get("resolved_at", ""))),
     ]
 
-    # Botón editar solo si hay sesión con rol técnico/admin
-    edit_btn = ""
+    # The private page shows the whole workflow. Only signed-in visitors get a
+    # button to it — a signed-out one has nothing to act on here and is served
+    # by the top-bar Sign in instead.
+    private_url = f"/device/{device_id}/fault/{fault['id']}"
     token = auth_helper.get_token(req)
+    me = {}
     if token:
         try:
             me = await auth_api.get_me(token)
         except Exception:
             me = {}
+    signed_in = bool(token)
+
+    # Side by side: edit (only for the reporter/assignee) plus the way into the
+    # private page, which is the primary action for everyone else.
+    actions = ""
+    if signed_in:
+        action_btns = []
         if auth_helper.user_can_edit_fault(me, fault):
-            edit_btn = Div(
-                A(_("fault_detail.edit"), href=f"/d/{device_id}/fault/{fault['id']}/edit",
-                  cls="btn btn-primary", style="width:100%;justify-content:center;"),
-                cls="pub-section"
-            )
+            action_btns.append(A(_("fault_detail.edit"),
+                                 href=f"/d/{device_id}/fault/{fault['id']}/edit",
+                                 cls="btn btn-secondary",
+                                 style="flex:1;justify-content:center;"))
+        action_btns.append(A(_("fault_detail.open_full"), href=private_url,
+                             cls="btn btn-primary",
+                             style="flex:1;justify-content:center;"))
+        actions = Div(*action_btns, cls="pub-section", style="display:flex;gap:8px;")
 
     content = Div(
         Script(f"""
@@ -135,7 +148,7 @@ async def get_fault_public(req, device_id: str, fault_id: str):
               style="font-size:0.9rem;white-space:pre-wrap;color:var(--c-text-2);"),
             cls="pub-section"
         ) if fault.get("resolution_notes") else "",
-        edit_btn,
+        actions,
         # Footer
         Div(_("brand_footer"), cls="pub-footer"),
         cls="pub-page"
@@ -180,11 +193,6 @@ async def get_fault_edit(req, device_id: str, fault_id: str):
         return RedirectResponse(f"/d/{device_id}", status_code=302)
 
     device = fault.get("device") or {}
-    assignees = []
-    try:
-        assignees = await faults_api.get_fault_assignees(token, device_id)
-    except Exception:
-        assignees = []
 
     content = Div(
         # Title
@@ -196,7 +204,7 @@ async def get_fault_edit(req, device_id: str, fault_id: str):
             H1(_("fault_detail.edit"), style="font-family:var(--font-display);font-size:1.25rem;margin:2px 0 0;"),
             cls="pub-section"
         ),
-        _fault_edit_form(fault, device_id, assignees, lang),
+        _fault_edit_form(fault, device_id, lang),
         # Footer
         Div(_("brand_footer"), cls="pub-footer"),
         cls="pub-page"
@@ -206,22 +214,16 @@ async def get_fault_edit(req, device_id: str, fault_id: str):
 
 
 @rt("/d/{device_id}/fault/{fault_id}/edit", methods=["post"])
-async def post_fault_edit(req, device_id: str, fault_id: str, status: str = "",
-                          severity: str = "", assigned_to: str = "",
-                          description: str = "", resolution_notes: str = ""):
+async def post_fault_edit(req, device_id: str, fault_id: str,
+                          severity: str = "", description: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect:
         return RedirectResponse(f"/login?next=/d/{device_id}/fault/{fault_id}/edit", status_code=302)
 
     data = {}
-    if status:
-        data["status"] = status
     if severity:
         data["severity"] = severity
-    if assigned_to:
-        data["assigned_to"] = assigned_to
     data["description"] = description
-    data["resolution_notes"] = resolution_notes
     try:
         fault_obj = await faults_api.get_fault_public(fault_id)
         if not auth_helper.user_can_edit_fault(await auth_api.get_me(token), fault_obj):
@@ -251,21 +253,16 @@ async def post_fault_edit(req, device_id: str, fault_id: str, status: str = "",
 # HELPERS
 # ══════════════════════════════════════════════════════════════
 
-def _fault_edit_form(fault, device_id, assignees, lang):
+def _fault_edit_form(fault, device_id, lang):
     _ = make_t(lang)
     sec_head = lambda t: H3(t,
         style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;")
     return Form(
         Div(
             sec_head(_("fault_detail.edit")),
-            Div(
-                Label(_("fault_detail.status"), cls="label"),
-                Select(*[Option(_(f"badge.{v}"), value=v,
-                                selected=(fault.get("status") == v))
-                         for v in ["open", "assigned", "in_progress", "resolved"]],
-                       name="status", cls="input"),
-                cls="form-group", style="margin-top:10px;"
-            ),
+            # Status, assignee, diagnosis, approval and resolution belong to the
+            # workflow on the fault's own page; here the reporter can only
+            # correct what was reported.
             Div(
                 Label(_("fault_detail.severity"), cls="label"),
                 Select(*[Option(_(f"badge.{v}"), value=v,
@@ -275,20 +272,8 @@ def _fault_edit_form(fault, device_id, assignees, lang):
                 cls="form-group", style="margin-top:10px;"
             ),
             Div(
-                Label(_("fault_detail.assigned_to"), cls="label"),
-                Select(*assignee_options(assignees, fault.get("assigned_to") or "", lang),
-                       name="assigned_to", cls="input"),
-                cls="form-group", style="margin-top:10px;"
-            ),
-            Div(
                 Label(_("fault_detail.description"), cls="label"),
                 Textarea(fault.get("description", ""), name="description", rows="3",
-                         cls="input"),
-                cls="form-group", style="margin-top:10px;"
-            ),
-            Div(
-                Label(_("fault_detail.resolution"), cls="label"),
-                Textarea(fault.get("resolution_notes", ""), name="resolution_notes", rows="3",
                          cls="input"),
                 cls="form-group", style="margin-top:10px;"
             ),

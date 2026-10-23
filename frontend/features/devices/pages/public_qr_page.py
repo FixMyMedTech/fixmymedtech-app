@@ -151,6 +151,7 @@ async def get(req, device_id: str):
     # Back to private page when logged in
     back_ref = ""
     token = auth_helper.get_token(req)
+    signed_in = bool(token)
     if token:
         try:
             me = await auth_api.get_me(token)
@@ -161,6 +162,52 @@ async def get(req, device_id: str):
             )
         except Exception:
             me = {}
+
+    # Status and location are operational detail, not for a QR passer-by.
+    status_loc = ""
+    if signed_in:
+        status_loc = Div(
+            status_badge(d.get("status","operational"), lang=lang),
+            Div(d.get("location",""), cls="dev-loc"),
+            cls="dev-status"
+        )
+
+    info_rows = [
+        (_("public_qr.manufacturer"), d.get("manufacturer", _("common.fallback"))),
+        (_("public_qr.model"),        d.get("model", _("common.fallback"))),
+        (_("public_qr.serial"),       d.get("serial_number", _("common.fallback"))),
+        (_("public_qr.last_maint"),   fmt_date(d.get("last_maintenance",""))),
+        (_("public_qr.next_maint"),   fmt_date(nm)),
+    ]
+    if signed_in:
+        info_rows.insert(0, (_("public_qr.status"), d.get("status", _("common.fallback"))))
+
+    # Location block + map: signed-in only.
+    location_section = ""
+    if signed_in and hs.get("name"):
+        location_section = Div(
+            H3(_("public_qr.location_map"),
+               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
+            Div(
+                P(d.get("location",_("common.fallback")), style="font-size:0.85rem;margin:2px 0 0;"),
+                Div(hs.get("name", ""), style="font-weight:600;font-size:0.9rem;"),
+                P(_org_loc(hs), style="color:var(--c-text-3);font-size:0.85rem;margin:2px 0 0;")
+                if _org_loc(hs) else "",
+            ),
+            cls="pub-section"
+        )
+
+    map_section = ""
+    if signed_in and d.get("latitude") is not None and d.get("longitude") is not None:
+        map_section = Div(
+            map_component(
+                lat=d.get("latitude", 0),
+                lng=d.get("longitude", 0),
+                markers=[{"lat": d["latitude"], "lng": d["longitude"], "title": d.get("name","")}],
+                height="250px"
+            ),
+            cls="pub-section"
+        )
 
     content = Div(
         back_ref,
@@ -173,11 +220,7 @@ async def get(req, device_id: str):
                 Div(f"{d.get('manufacturer','')}{_('common.sn_prefix')}{d.get('serial_number','')}".strip(" ·"),
                     cls="dev-meta"),
             ),
-            Div(
-                status_badge(d.get("status","operational"), lang=lang),
-                Div(d.get("location",""), cls="dev-loc"),
-                cls="dev-status"
-            ),
+            status_loc,
             cls="device-identity"
         ),
         # Maintenance warning
@@ -217,15 +260,7 @@ async def get(req, device_id: str):
             H3(_("public_qr.info"),
                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
             Dl(
-                *[Div(Dt(k), Dd(v), cls="info-row")
-                  for k, v in [
-                      (_("public_qr.status"),       d.get("status", _("common.fallback"))),
-                      (_("public_qr.manufacturer"), d.get("manufacturer", _("common.fallback"))),
-                      (_("public_qr.model"),        d.get("model", _("common.fallback"))),
-                      (_("public_qr.serial"),       d.get("serial_number", _("common.fallback"))),
-                      (_("public_qr.last_maint"),   fmt_date(d.get("last_maintenance",""))),
-                      (_("public_qr.next_maint"),   fmt_date(nm)),
-                  ]],
+                *[Div(Dt(k), Dd(v), cls="info-row") for k, v in info_rows],
                 cls="info-list"
             ),
             cls="pub-section"
@@ -239,28 +274,9 @@ async def get(req, device_id: str):
                 style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
             cls="pub-section",
         ) if d.get("photo_key") else "",
-        # Map
-        Div(
-            H3(_("public_qr.location_map"),
-               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            Div(
-                P(d.get("location",_("common.fallback")), style="font-size:0.85rem;margin:2px 0 0;"),
-                Div(hs.get("name", ""), style="font-weight:600;font-size:0.9rem;"),
-                P(_org_loc(hs), style="color:var(--c-text-3);font-size:0.85rem;margin:2px 0 0;")
-                if _org_loc(hs) else "",
-                # style="background:var(--c-bg-soft,#f4f4f4);border-radius:8px;padding:10px 12px;margin-bottom:12px;"
-            ) if hs.get("name") else "",
-            cls="pub-section"
-        ) if hs.get("name") else "",
-        Div(
-            map_component(
-                lat=d.get("latitude", 0),
-                lng=d.get("longitude", 0),
-                markers=[{"lat": d["latitude"], "lng": d["longitude"], "title": d.get("name","")}],
-                height="250px"
-            ),
-            cls="pub-section"
-        ) if d.get("latitude") is not None and d.get("longitude") is not None else "",
+        # Location + map
+        location_section,
+        map_section,
         # Manuals
         Div(
             H3(_("public_qr.documents"),

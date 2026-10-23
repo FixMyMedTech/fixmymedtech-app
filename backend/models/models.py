@@ -38,6 +38,10 @@ class User(Base):
     is_superuser   = Column(Boolean, default=False, nullable=False)
     is_verified    = Column(Boolean, default=False, nullable=False)
     full_name      = Column(Text)
+    # Who created this account. Plain column on purpose: adding the ForeignKey
+    # here gave User two ORM paths back to Profile and made User.profile
+    # ambiguous. Referential integrity is enforced by migration 025 in SQL.
+    invited_by     = Column(UUID(as_uuid=True))
     created_at     = Column(DateTime(timezone=True), server_default=func.now())
     updated_at     = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -165,6 +169,39 @@ class OrgUser(Base):
 
     def __repr__(self):
         return f"<OrgUser {self.profile_id} → {self.organization_id} ({self.role})>"
+
+
+class OrgJoinRequest(Base):
+    """A request to join an existing organization, awaiting admin approval.
+
+    Membership of a pre-existing (healthsites.io) organization is self-declared,
+    so it is staged here instead of writing org_users directly. Only an approved
+    request becomes real membership. admin is not requestable: it can only be
+    granted by an existing admin.
+    """
+    __tablename__ = "org_join_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('technician', 'clinical_staff', 'engineering_staff')",
+            name="org_join_requests_role_check"
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected')",
+            name="org_join_requests_status_check"
+        ),
+        {"schema": SCHEMA},
+    )
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="CASCADE"), nullable=False)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    role            = Column(Text, nullable=False, default="technician")
+    status          = Column(Text, nullable=False, default="pending")
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+    reviewed_at     = Column(DateTime(timezone=True))
+
+    def __repr__(self):
+        return f"<OrgJoinRequest {self.profile_id} → {self.organization_id} ({self.status})>"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -333,8 +370,12 @@ class FaultReport(Base):
             name="fault_reports_severity_check"
         ),
         CheckConstraint(
-            "status IN ('open', 'assigned', 'in_progress', 'resolved')",
+            "status IN ('open', 'assigned', 'diagnosed', 'approved', 'in_progress', 'resolved')",
             name="fault_reports_status_check"
+        ),
+        CheckConstraint(
+            "approval_status IS NULL OR approval_status IN ('pending', 'approved', 'rejected')",
+            name="fault_reports_approval_status_check"
         ),
         {"schema": SCHEMA},
     )
@@ -352,6 +393,24 @@ class FaultReport(Base):
     resolution_notes    = Column(Text)
     photo_key           = Column(Text)
 
+    # Step 2 — the maintenance-org admin who assigned it
+    assigned_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    assigned_at         = Column(DateTime(timezone=True))
+    # Step 3 — the assignee's diagnosis and online quote
+    diagnosis           = Column(Text)
+    diagnosed_by        = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    diagnosed_at        = Column(DateTime(timezone=True))
+    quote_amount        = Column(Numeric(12, 2))
+    quote_notes         = Column(Text)
+    # Step 4 — the healthsite admin's decision (falls back to maintenance admin)
+    approval_status     = Column(Text)   # pending | approved | rejected
+    approved_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    approved_at         = Column(DateTime(timezone=True))
+    approval_comment    = Column(Text)
+    # Step 5 — the assignee's repair and final price
+    final_price         = Column(Numeric(12, 2))
+    resolved_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+
     # Relationships
     device                  = relationship("Device", back_populates="fault_reports")
     reported_by_profile     = relationship(
@@ -364,6 +423,60 @@ class FaultReport(Base):
         foreign_keys=[assigned_to],
         primaryjoin="Profile.id == FaultReport.assigned_to",
     )
+    assigned_by_profile     = relationship(
+        "Profile",
+        foreign_keys=[assigned_by],
+        primaryjoin="Profile.id == FaultReport.assigned_by",
+    )
+    diagnosed_by_profile    = relationship(
+        "Profile",
+        foreign_keys=[diagnosed_by],
+        primaryjoin="Profile.id == FaultReport.diagnosed_by",
+    )
+    approved_by_profile     = relationship(
+        "Profile",
+        foreign_keys=[approved_by],
+        primaryjoin="Profile.id == FaultReport.approved_by",
+    )
+    resolved_by_profile     = relationship(
+        "Profile",
+        foreign_keys=[resolved_by],
+        primaryjoin="Profile.id == FaultReport.resolved_by",
+    )
 
     def __repr__(self):
         return f"<FaultReport {self.severity} on {self.device_id} [{self.status}]>"
+
+
+# ══════════════════════════════════════════════════════════════
+# FEEDBACK (floating "?" button → stored here, then posted to Discord)
+# ══════════════════════════════════════════════════════════════
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+    __table_args__ = (
+        CheckConstraint("type IN ('feedback', 'issue')", name="feedback_type_check"),
+        CheckConstraint(
+            "discord_status IN ('pending', 'sent', 'failed', 'disabled')",
+            name="feedback_discord_status_check"
+        ),
+        {"schema": SCHEMA},
+    )
+
+    id                = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    type              = Column(Text, nullable=False)
+    summary           = Column(Text, nullable=False)
+    description       = Column(Text, nullable=False)
+    page              = Column(Text)
+    lang              = Column(Text)
+    # Plain FK column, no relationship: keeps Profile (and its User) out of
+    # anything that serializes a Feedback row.
+    profile_id        = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    contact_email     = Column(Text)
+    screenshot_key    = Column(Text)
+    discord_status    = Column(Text, nullable=False, default="pending")
+    discord_thread_id = Column(Text)
+    created_at        = Column(DateTime(timezone=True), server_default=func.now())
+
+    def __repr__(self):
+        return f"<Feedback {self.type}: {self.summary[:40]!r} [{self.discord_status}]>"

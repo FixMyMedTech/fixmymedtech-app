@@ -13,7 +13,9 @@ from sqlalchemy.orm import selectinload
 
 from config.db_config import get_db
 from utils.profile import get_current_profile
-from models.models import Device, DeviceCategory, Document, MaintenanceLog, FaultReport, Profile
+from models.models import (
+    Device, DeviceCategory, Document, MaintenanceLog, FaultReport, Profile, OrgJoinRequest,
+)
 from config.storage import upload_file, get_file
 from config.db_config import AsyncSessionLocal
 from utils.photo_processing import process_photo_to_white, compress_device_photo
@@ -53,13 +55,104 @@ class DeviceCreate(BaseModel):
     next_maintenance: Optional[date] = None
 
 
+DEVICE_STATUSES = ("operational", "maintenance", "fault", "decommissioned")
+ACQUISITION_TYPES = ("purchased", "donated", "leased")
+
+
 class DeviceUpdate(BaseModel):
     name: Optional[str] = None
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
+    serial_number: Optional[str] = None
+    manufacture_year: Optional[int] = None
+    category_id: Optional[str] = None
     status: Optional[str] = None
     location: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     notes: Optional[str] = None
+    last_maintenance: Optional[date] = None
     next_maintenance: Optional[date] = None
+    acquisition_date: Optional[date] = None
+    acquisition_type: Optional[str] = None
+    healthsite_id: Optional[UUID] = None
     organization_maintenance_id: Optional[UUID] = None
+
+
+def _can_manage_device(profile: Profile, device: Device) -> bool:
+    """Destructive rights on a device (delete): admin of the owning
+    organization, admin of the device's healthsite, or the user who
+    registered it. Deliberately excludes the maintaining organization —
+    a maintenance contract is not ownership."""
+    if profile.get_role_for_org(device.organization_id) == "admin":
+        return True
+    if device.healthsite_id and profile.get_role_for_org(device.healthsite_id) == "admin":
+        return True
+    return device.registered_by is not None and device.registered_by == profile.id
+
+
+def _can_edit_device(profile: Profile, device: Device) -> bool:
+    """Edit rights on a device: everyone who can manage it, plus the admin of
+    the organization that maintains it. The maintaining organization services
+    the device and reports faults on it, so its admin has to be able to
+    correct the record — otherwise a mis-assigned device is permanently
+    invisible to the people actually working on it."""
+    if _can_manage_device(profile, device):
+        return True
+    return bool(device.organization_maintenance_id) and \
+        profile.get_role_for_org(device.organization_maintenance_id) == "admin"
+
+
+def _can_set_maintenance_org(profile: Profile, device: Device) -> bool:
+    """Who may reassign which organization maintains a device: the admin of
+    the owning organization, the admin of its healthsite (the customer picks
+    who services its equipment), or the admin of the organization currently
+    maintaining it (so a mis-assignment can always be corrected)."""
+    for org_id in (device.organization_id,
+                   device.healthsite_id,
+                   device.organization_maintenance_id):
+        if org_id and profile.get_role_for_org(org_id) == "admin":
+            return True
+    return False
+
+
+def _can_manage_media(profile: Profile, device: Device) -> bool:
+    """Photo/location rights: everyone who can manage the device, plus the
+    technicians of the owning organization (who maintain it day to day)."""
+    if profile.get_role_for_org(device.organization_id) == "technician":
+        return True
+    return _can_manage_device(profile, device)
+
+
+def _device_payload(device: Device) -> dict:
+    """Scalar columns only, by hand. Returning the ORM object makes
+    jsonable_encoder walk the lazy relationships (organization,
+    organization_maintenance, healthsite, category), which lazy-loads on an
+    async session and turns a successful commit into a 500."""
+    return {
+        "id": str(device.id),
+        "organization_id": str(device.organization_id),
+        "organization_maintenance_id": str(device.organization_maintenance_id),
+        "healthsite_id": str(device.healthsite_id) if device.healthsite_id else None,
+        "category_id": device.category_id,
+        "name": device.name,
+        "manufacturer": device.manufacturer,
+        "model": device.model,
+        "serial_number": device.serial_number,
+        "manufacture_year": device.manufacture_year,
+        "acquisition_date": device.acquisition_date,
+        "acquisition_type": device.acquisition_type,
+        "location": device.location,
+        "latitude": device.latitude,
+        "longitude": device.longitude,
+        "status": device.status,
+        "registered_by": str(device.registered_by) if device.registered_by else None,
+        "last_maintenance": device.last_maintenance,
+        "next_maintenance": device.next_maintenance,
+        "notes": device.notes,
+        "created_at": device.created_at,
+        "updated_at": device.updated_at,
+    }
 
 
 class PhotoVariantUpdate(BaseModel):
@@ -151,6 +244,7 @@ async def list_devices(
         .where(or_(
             Device.organization_id.in_(org_ids),
             Device.organization_maintenance_id.in_(org_ids),
+            Device.healthsite_id.in_(org_ids),
         ))
         .order_by(Device.name)
     )
@@ -186,6 +280,7 @@ async def get_device(
         .options(
             selectinload(Device.category),
             selectinload(Device.organization),
+            selectinload(Device.organization_maintenance),
             selectinload(Device.healthsite),
         )
         .where(Device.id == device_id)
@@ -217,12 +312,42 @@ async def get_device(
     )
     docs = docs_result.scalars().all()
 
+    # Built by hand and returned alongside the device rather than loaded onto
+    # it: Profile links to User with lazy="selectin", so eager-loading the
+    # relationship would leave hashed_password reachable once FastAPI walks
+    # vars() over the instance.
+    registrant = None
+    if device.registered_by:
+        reg_result = await db.execute(
+            select(Profile).where(Profile.id == device.registered_by)
+        )
+        reg = reg_result.scalar_one_or_none()
+        if reg:
+            registrant = {
+                "id": reg.id,
+                "username": reg.username,
+                "full_name": reg.full_name,
+            }
+
     return {
         "device": device,
         "maintenance_logs": logs,
         "fault_reports": faults,
         "documents": docs,
+        "registered_by_profile": registrant,
     }
+
+
+async def _pending_request_role(db: AsyncSession, profile_id, org_id):
+    """Role carried by the caller's pending join request for this org, if any."""
+    result = await db.execute(
+        select(OrgJoinRequest.role).where(
+            OrgJoinRequest.profile_id == profile_id,
+            OrgJoinRequest.organization_id == org_id,
+            OrgJoinRequest.status == "pending",
+        )
+    )
+    return result.scalar_one_or_none()
 
 
 @router.post("/")
@@ -231,11 +356,21 @@ async def create_device(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    if not profile.org_memberships:
+    org_id = (
+        body.organization_id
+        or (profile.org_memberships[0].organization_id if profile.org_memberships else None)
+    )
+    if not org_id:
         raise HTTPException(status_code=403, detail="No organization membership")
 
-    org_id = body.organization_id or profile.org_memberships[0].organization_id
     role = profile.get_role_for_org(org_id)
+    if role is None:
+        # Not a member yet. A pending join request allows registering a device
+        # in that clinic, carrying the role that was requested. Device *listing*
+        # stays membership-gated, so nothing else in the org is exposed.
+        role = await _pending_request_role(db, profile.id, org_id)
+        if role is None:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     if role not in ("admin", "technician"):
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -267,21 +402,27 @@ async def update_device(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    role = profile.get_role_for_org(device.organization_id)
-    if role not in ("admin", "technician"):
+    if not _can_edit_device(profile, device):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     if body.organization_maintenance_id is not None:
-        if role != "admin" or device.organization_id not in profile.org_ids():
-            raise HTTPException(status_code=403, detail="Only the admin of the organization owning the device can change the maintenance organization")
+        if not _can_set_maintenance_org(profile, device):
+            raise HTTPException(status_code=403, detail="Only the admin of the owning organization, of the healthsite, or of the organization currently maintaining the device can change the maintenance organization")
 
-    payload = body.model_dump(exclude_none=True)
+    payload = body.model_dump(exclude_unset=True)
+    if payload.get("status") is not None and payload["status"] not in DEVICE_STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    if payload.get("acquisition_type") is not None and payload["acquisition_type"] not in ACQUISITION_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid acquisition type")
+    # organization_maintenance_id is NOT NULL — clear requests are ignored.
+    if payload.get("organization_maintenance_id") is None:
+        payload.pop("organization_maintenance_id", None)
     for key, value in payload.items():
         setattr(device, key, value)
 
     await db.commit()
     await db.refresh(device)
-    return device
+    return _device_payload(device)
 
 
 @router.post("/{device_id}/photo-variant")
@@ -299,9 +440,7 @@ async def update_device_photo_variant(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    is_admin = profile.get_role_for_org(device.organization_id) == "admin"
-    is_registrar = device.registered_by == profile.id
-    if not (is_admin or is_registrar):
+    if not _can_manage_media(profile, device):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     device.photo_public_variant = body.variant
@@ -322,11 +461,14 @@ async def update_device_location(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
+    if not _can_manage_media(profile, device):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     device.latitude = body.latitude
     device.longitude = body.longitude
     await db.commit()
     await db.refresh(device)
-    return device
+    return _device_payload(device)
 
 
 @router.delete("/{device_id}")
@@ -340,9 +482,8 @@ async def delete_device(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    role = profile.get_role_for_org(device.organization_id)
-    if role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can delete devices")
+    if not _can_manage_device(profile, device):
+        raise HTTPException(status_code=403, detail="Only the admin of the owning organization, an admin of its healthsite, or the registering user can delete devices")
 
     await db.delete(device)
     await db.commit()
@@ -363,8 +504,7 @@ async def upload_device_photo(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    role = profile.get_role_for_org(device.organization_id)
-    if role not in ("admin", "technician"):
+    if not _can_manage_media(profile, device):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     content = await photo.read()
@@ -446,8 +586,7 @@ async def get_device_photo(
     if not device or not device.photo_key:
         raise HTTPException(status_code=404, detail="No photo")
 
-    role = profile.get_role_for_org(device.organization_id)
-    if role not in ("admin", "technician"):
+    if not _can_manage_media(profile, device):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     key = device.photo_key if device.photo_public_variant == "original" else (

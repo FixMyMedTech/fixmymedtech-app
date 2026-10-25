@@ -10,7 +10,6 @@
 # Only the summary, description, page, language, screenshot and the sender's
 # username reach Discord. Email addresses never do.
 
-import asyncio
 import logging
 import os
 import time
@@ -28,6 +27,7 @@ from config.db_config import AsyncSessionLocal, get_db
 from config.discord import create_forum_thread, discord_enabled
 from config.storage import get_file, upload_file
 from models.models import Feedback, Profile
+from utils.background import spawn
 from utils.profile import get_optional_profile
 
 router = APIRouter()
@@ -144,22 +144,12 @@ async def submit_feedback(
     await db.commit()
 
     if discord_enabled():
-        _spawn(_post_to_discord(fb.id))
+        spawn(_post_to_discord(fb.id))
 
     return {"id": fb.id}
 
 
 # ── Discord (background) ─────────────────────────────────────────────────────
-
-_tasks: set[asyncio.Task] = set()
-
-
-def _spawn(coro) -> None:
-    # Keep a reference until done; the event loop only holds weak ones.
-    task = asyncio.create_task(coro)
-    _tasks.add(task)
-    task.add_done_callback(_tasks.discard)
-
 
 def _discord_content(fb: Feedback, username: Optional[str]) -> str:
     kind = "🐞 Issue" if fb.type == "issue" else "💬 Feedback"

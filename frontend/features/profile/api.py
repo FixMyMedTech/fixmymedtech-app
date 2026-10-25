@@ -1,7 +1,7 @@
 import httpx
 from urllib.parse import urlencode
 
-from config.api import _get, _patch, API_URL
+from config.api import _get, _post, _patch, _delete, API_URL
 
 
 async def get_me(token: str):
@@ -10,6 +10,20 @@ async def get_me(token: str):
 
 async def get_profile_stats(token: str):
     return await _get("/api/auth/me/stats", token)
+
+
+async def request_verification(token: str):
+    """Email the signed-in user a new verification link."""
+    return await _post("/api/auth/me/request-verification", {}, token)
+
+
+async def discord_link_start(token: str) -> str:
+    """URL to send the browser to for "Connect Discord"."""
+    return (await _post("/api/auth/me/discord/link-start", {}, token))["url"]
+
+
+async def discord_unlink(token: str):
+    return await _delete("/api/auth/me/discord", token)
 
 
 async def list_profiles(token: str, q: str = "", limit: int = 24, offset: int = 0,

@@ -55,9 +55,12 @@ jobs:
             PHOTO_MAX_DIMENSION=1600
             PHOTO_JPEG_QUALITY=85
             HEALTHSITES_API_KEY=${{ secrets.DEV_HEALTHSITES_API_KEY }}
+            DISCORD_CLIENT_ID=${{ secrets.DEV_DISCORD_CLIENT_ID }}
+            DISCORD_CLIENT_SECRET=${{ secrets.DEV_DISCORD_CLIENT_SECRET }}
             DISCORD_FEEDBACK_WEBHOOK_URL=${{ secrets.DEV_DISCORD_FEEDBACK_WEBHOOK_URL }}
             DISCORD_FEEDBACK_TAG_ID=${{ secrets.DEV_DISCORD_FEEDBACK_TAG_ID }}
             DISCORD_ISSUE_TAG_ID=${{ secrets.DEV_DISCORD_ISSUE_TAG_ID }}
+            DISCORD_WELCOME_WEBHOOK_URL=${{ secrets.DEV_DISCORD_WELCOME_WEBHOOK_URL }}
             EOF
 
       - name: Copy code to server

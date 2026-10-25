@@ -7,7 +7,9 @@
 #  4. We upsert the user in our LOCAL users table, link to a profile + org, and
 #     return a local Authlib JWT that the backend already validates.
 
+import logging
 import os
+import uuid
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
@@ -17,6 +19,8 @@ from config.db_config import get_db
 from models.models import Organization, Profile, OrgUser, User
 from utils.username import generate_username
 from config.users import get_jwt_strategy
+from routers.discord_link import (discord_identity, finish_discord_link,
+                                  link_discord_account, pop_pending_link)
 
 router = APIRouter()
 
@@ -56,6 +60,14 @@ async def oauth_callback(provider: str, request: Request, db: AsyncSession = Dep
     if client is None:
         raise HTTPException(status_code=400, detail="Unsupported provider")
 
+    # "Connect Discord" from the profile page comes back through this same
+    # callback (one redirect URL registered with Discord). It links the
+    # account instead of logging anyone in; see routers/discord_link.py.
+    if provider == "discord":
+        link_user = pop_pending_link(request)
+        if link_user:
+            return await finish_discord_link(request, client, db, link_user)
+
     try:
         token = await client.authorize_access_token(request)
         userinfo = await client.userinfo(token=token)
@@ -86,6 +98,15 @@ async def oauth_callback(provider: str, request: Request, db: AsyncSession = Dep
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not provision user: {str(e)}")
+
+    # Logging in with Discord also links the account (and welcomes it once).
+    if provider == "discord" and info.get("id"):
+        try:
+            discord_id, discord_username = discord_identity(info)
+            await link_discord_account(db, uuid.UUID(user_id), discord_id,
+                                       discord_username, replace=False)
+        except Exception as e:  # noqa: BLE001 — never block the login on this
+            logging.getLogger("oauth").warning("Discord link on login failed: %s", type(e).__name__)
 
     return _success_redirect(access_token)
 

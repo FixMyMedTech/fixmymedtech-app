@@ -42,6 +42,12 @@ class User(Base):
     # here gave User two ORM paths back to Profile and made User.profile
     # ambiguous. Referential integrity is enforced by migration 025 in SQL.
     invited_by     = Column(UUID(as_uuid=True))
+    # Linked Discord account (migration 027). discord_welcomed_at survives a
+    # disconnect so a reconnect never posts a second welcome.
+    discord_user_id     = Column(Text, unique=True)
+    discord_username    = Column(Text)
+    discord_linked_at   = Column(DateTime(timezone=True))
+    discord_welcomed_at = Column(DateTime(timezone=True))
     created_at     = Column(DateTime(timezone=True), server_default=func.now())
     updated_at     = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

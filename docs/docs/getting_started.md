@@ -256,6 +256,7 @@ docker compose up --build -d backend
 | `HEALTHSITES_API_KEY` | No | — | healthsites.io lookup when registering organizations |
 | `DISCORD_FEEDBACK_WEBHOOK_URL` | No | — | Webhook of a Discord forum channel; each feedback/issue report becomes a thread. Empty = reports are only stored (see `/admin` → Feedback) |
 | `DISCORD_FEEDBACK_TAG_ID` / `DISCORD_ISSUE_TAG_ID` | No | — | Forum tags applied to the new thread |
+| `DISCORD_WELCOME_WEBHOOK_URL` | No | — | Webhook of the welcome channel; posts a welcome mentioning the user the first time they connect Discord |
 | `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` / `SUPERUSER_NAME` | No | — | Auto-create a superuser on startup |
 
 ### Frontend

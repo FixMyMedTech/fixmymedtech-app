@@ -1,7 +1,8 @@
 # routers/profile.py — Profile endpoints (me, avatar, stats, network directory)
 #
 # Mounted under /api/auth, keeping the same frontend contract:
-#   GET   /api/auth/me         → {id, username, full_name, country, avatar_key, organizations}
+#   GET   /api/auth/me         → {id, username, full_name, country, avatar_key, email,
+#                                  is_verified, discord, organizations}
 #   PATCH /api/auth/me         → {id, username, full_name, country, avatar_key}
 #   POST  /api/auth/me/photo   → {avatar_key, mime_type}
 #   GET   /api/auth/me/photo   → avatar image bytes
@@ -53,12 +54,20 @@ async def me(
     profile = result.scalar_one_or_none()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
+    from routers.discord_link import discord_login_available
     return {
         "id": profile.id,
         "username": profile.username,
         "full_name": profile.full_name,
         "country": profile.country,
         "avatar_key": profile.avatar_key,
+        "email": user.email,
+        "is_verified": user.is_verified,
+        "discord": {
+            "available": discord_login_available(),
+            "linked": bool(user.discord_user_id),
+            "username": user.discord_username,
+        },
         "organizations": [
             {
                 "id": m.organization_id,

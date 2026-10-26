@@ -20,6 +20,8 @@
 #
 # The first link of an account posts a welcome message in the Discord welcome
 # channel (DISCORD_WELCOME_WEBHOOK_URL), mentioning the user. Never twice.
+# Newly registered devices are announced in the same channel
+# (announce_new_device), credited to the registrant if they linked Discord.
 
 import logging
 import os
@@ -37,7 +39,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_config import AsyncSessionLocal, get_db
-from config.discord import post_welcome, welcome_enabled
+from config.discord import post_to_welcome_channel, welcome_enabled
 from config.users import JWT_SECRET, UserManager, current_active_user, get_user_manager
 from models.models import Profile, User
 from utils.background import spawn
@@ -161,7 +163,7 @@ async def _send_welcome(user_id, discord_id: str) -> None:
         if details:
             content += "\n-# " + " · ".join(d for d in details if d)
         try:
-            await post_welcome(content, discord_id)
+            await post_to_welcome_channel(content, ping_user_id=discord_id)
             return
         except httpx.HTTPStatusError as e:
             # Not str(e): it contains the webhook URL, and the URL is the secret.
@@ -174,6 +176,34 @@ async def _send_welcome(user_id, discord_id: str) -> None:
         if user is not None:
             user.discord_welcomed_at = None
             await db.commit()
+
+
+# ── new device announcement (background) ─────────────────────────────────────
+
+async def announce_new_device(profile_id) -> None:
+    """Announce a newly registered device in the welcome channel.
+
+    Credits the registrant by their Discord name, as plain text rather than a
+    mention: a mention would notify them on every device, and shows as
+    "@unknown-user" if they haven't joined the server. Best-effort, never raises.
+    """
+    try:
+        async with AsyncSessionLocal() as db:
+            discord_name = (await db.execute(
+                select(User.discord_username)
+                .where(User.id == profile_id, User.discord_user_id.is_not(None))
+            )).scalar_one_or_none()
+        if discord_name:
+            content = f"🩺 **{_md(discord_name)}** registered a new device in **FixMyMedTech**!"
+        else:
+            content = "🩺 A new device has been registered in **FixMyMedTech**!"
+        await post_to_welcome_channel(content)
+    except httpx.HTTPStatusError as e:
+        # Not str(e): it contains the webhook URL, and the URL is the secret.
+        logger.warning("Discord device announcement failed: HTTP %s %s",
+                       e.response.status_code, e.response.text[:300])
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Discord device announcement failed: %s", type(e).__name__)
 
 
 # ── endpoints ────────────────────────────────────────────────────────────────

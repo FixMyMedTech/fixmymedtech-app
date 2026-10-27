@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 JWT_SECRET    = os.getenv("AUTH_JWT_SECRET", "dev-local-jwt-secret-change-me")
 FRONTEND_URL  = os.getenv("FRONTEND_URL", "http://localhost:8888")
 API_BASE_URL  = os.getenv("API_BASE_URL", "http://localhost:8888")
-TOKEN_TTL     = int(os.getenv("AUTH_TOKEN_TTL", str(60 * 24 * 7)))  # 7 days
+TOKEN_TTL     = int(os.getenv("AUTH_TOKEN_TTL", str(60 * 60 * 24 * 7)))  # seconds: 7 days
 
 
 # ── Password hashing ──────────────────────────────────────────────────────────

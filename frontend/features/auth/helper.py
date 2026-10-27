@@ -1,6 +1,7 @@
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
-import os, httpx
+from urllib.parse import urlencode
+import base64, json, os, time, httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,6 +18,33 @@ def get_token(req):
 def clear_session(req):
     """Clear all session data — call when token is invalid/expired."""
     req.session.clear()
+
+
+def token_expired(token: str) -> bool:
+    """True when the JWT's exp claim has passed, or the token can't be read.
+
+    Read locally from the payload (no API call, no signature check): it only
+    decides when to stop trusting the session. The API still verifies every
+    token it receives."""
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        exp = json.loads(base64.urlsafe_b64decode(payload)).get("exp")
+    except Exception:
+        return True
+    return exp is not None and exp <= time.time()
+
+
+def login_redirect(req):
+    """Send a signed-out visitor to /login: with the "session expired" notice
+    when their session just ended, and back to the page they wanted (GET only)."""
+    params = {}
+    if getattr(req.state, "session_expired", False):
+        params["expired"] = "1"
+    if req.method == "GET":
+        params["next"] = req.url.path + (f"?{req.url.query}" if req.url.query else "")
+    url = "/login" + (f"?{urlencode(params)}" if params else "")
+    return RedirectResponse(url, status_code=302 if req.method == "GET" else 303)
 
 async def verify_token(req) -> bool:
     """
@@ -154,7 +182,7 @@ def require_auth(req):
     """
     token = get_token(req)
     if not token:
-        return None, RedirectResponse("/login", status_code=302)
+        return None, login_redirect(req)
     return token, None
 
 async def require_auth_verified(req):
@@ -164,7 +192,7 @@ async def require_auth_verified(req):
     """
     token = get_token(req)
     if not token:
-        return None, RedirectResponse("/login", status_code=302)
+        return None, login_redirect(req)
     try:
         # Validate by hitting a protected endpoint
         await dashboard_api.get_dashboard_stats(token)

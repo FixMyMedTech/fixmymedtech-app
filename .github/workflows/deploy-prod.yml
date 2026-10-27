@@ -64,6 +64,7 @@ jobs:
             DISCORD_FEEDBACK_WEBHOOK_URL=${{ secrets.PROD_DISCORD_FEEDBACK_WEBHOOK_URL }}
             DISCORD_FEEDBACK_TAG_ID=${{ secrets.PROD_DISCORD_FEEDBACK_TAG_ID }}
             DISCORD_ISSUE_TAG_ID=${{ secrets.PROD_DISCORD_ISSUE_TAG_ID }}
+            DISCORD_WELCOME_WEBHOOK_URL=${{ secrets.PROD_DISCORD_WELCOME_WEBHOOK_URL }}
             EOF
 
       - name: Copy code to server

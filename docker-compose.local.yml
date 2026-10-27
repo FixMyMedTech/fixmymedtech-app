@@ -64,6 +64,7 @@ services:
       DISCORD_FEEDBACK_WEBHOOK_URL: ${DISCORD_FEEDBACK_WEBHOOK_URL:-}
       DISCORD_FEEDBACK_TAG_ID: ${DISCORD_FEEDBACK_TAG_ID:-}
       DISCORD_ISSUE_TAG_ID: ${DISCORD_ISSUE_TAG_ID:-}
+      DISCORD_WELCOME_WEBHOOK_URL: ${DISCORD_WELCOME_WEBHOOK_URL:-}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 30s

@@ -17,11 +17,13 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 _jinja = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
 
 MAIL_SERVER   = os.getenv("MAIL_SERVER", "")
-MAIL_PORT     = int(os.getenv("MAIL_PORT", "587"))
+# `or` rather than a getenv default: compose passes unset variables through
+# as empty strings, and int("") would crash the whole email module.
+MAIL_PORT     = int(os.getenv("MAIL_PORT") or 587)
 MAIL_USERNAME = os.getenv("MAIL_USERNAME", "")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
-MAIL_FROM     = os.getenv("MAIL_FROM", "noreply@fixmymedtech.org")
-MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "FixMyMedTech")
+MAIL_FROM     = os.getenv("MAIL_FROM") or "noreply@fixmymedtech.org"
+MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME") or "FixMyMedTech"
 LOGO_URL      = os.getenv("LOGO_URL", "https://fndvnrrmzfstflialpag.supabase.co/storage/v1/object/public/assets/fixmymedtech_africa.png")
 
 USE_TLS = os.getenv("MAIL_STARTTLS", "true").lower() == "true"

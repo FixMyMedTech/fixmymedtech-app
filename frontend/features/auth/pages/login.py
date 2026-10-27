@@ -43,6 +43,9 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
         try:
             await dashboard_api.get_dashboard_stats(token)
             target = next if next.startswith("/") else "/home"
+            if verified in ("0", "1"):
+                # Already signed in and coming from the verification email.
+                target = f"/profile?verified={verified}"
             return RedirectResponse(target, status_code=302)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:

@@ -2,13 +2,23 @@
 
 import httpx
 import os
+from contextvars import ContextVar
 
 API_URL = os.getenv("API_URL", "http://localhost:8888")
+
+# Set per request by UserContextMiddleware (frontend/main.py). A 401 on a call
+# that carried a token marks it, so the middleware can end the session even
+# when the page itself swallowed the error and rendered an empty page.
+token_rejected: ContextVar[dict | None] = ContextVar("token_rejected", default=None)
 
 
 def _raise(r: httpx.Response):
     if r.status_code < 400:
         return
+    if r.status_code == 401 and r.request.headers.get("authorization"):
+        flag = token_rejected.get()
+        if flag is not None:
+            flag["rejected"] = True
     try:
         detail = r.json().get("detail") or r.text
     except Exception:

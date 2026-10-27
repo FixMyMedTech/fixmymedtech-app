@@ -1,12 +1,14 @@
 # pages/my_profile.py — the signed-in user's own profile.
 #
 # Editable: avatar upload, name/username/country, stats. POSTs to itself.
+# Also: email verification (re-send the link) and connecting a Discord account.
 # A different page entirely from profile_detail (read-only, someone else's) —
 # profile_detail redirects here rather than rendering for yourself.
 
 import asyncio
+import httpx
 from fasthtml.common import *
-from starlette.responses import Response
+from starlette.responses import RedirectResponse, Response
 import features.profile.api as profile_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
@@ -80,20 +82,92 @@ def _account_section(me, _=None, saved=False, error=None):
     )
 
 
+# ?verify=… / ?discord=… / ?verified=… results shown above the cards: (key, alert type)
+NOTICES = {
+    ("verify", "sent"):      ("profile.verify_sent", "success"),
+    ("verify", "wait"):      ("profile.verify_wait", "warning"),
+    ("verify", "error"):     ("profile.verify_error", "error"),
+    ("verified", "1"):       ("profile.verified_ok", "success"),
+    ("verified", "0"):       ("profile.verified_fail", "error"),
+    ("discord", "linked"):   ("profile.discord_linked_ok", "success"),
+    ("discord", "unlinked"): ("profile.discord_unlinked", "success"),
+    ("discord", "taken"):    ("profile.discord_taken", "error"),
+    ("discord", "expired"):  ("profile.discord_error", "error"),
+    ("discord", "error"):    ("profile.discord_error", "error"),
+}
+
+
+def _notice(req, _):
+    for (param, value), (key, kind) in NOTICES.items():
+        if req.query_params.get(param) == value:
+            return Div(_(key), cls=f"alert alert-{kind}", style="max-width:720px;")
+    return None
+
+
+def _verification_section(me, _):
+    verified = me.get("is_verified")
+    badge = Span(_("profile.verified") if verified else _("profile.not_verified"),
+                 cls=f"badge {'badge-green' if verified else 'badge-amber'}")
+    return Div(
+        H3(_("profile.account_heading"), cls="card-title"),
+        Div(
+            Span(me.get("email", ""), style="font-weight:500;overflow-wrap:anywhere;"),
+            badge,
+            style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
+        ),
+        "" if verified else Div(
+            P(_("profile.verify_hint"), style="margin:10px 0;"),
+            Form(
+                Button(_("profile.verify_send"), type="submit", cls="btn btn-secondary"),
+                method="post", action="/profile/verify",
+            ),
+        ),
+        cls="card", style="max-width:720px;margin-top:20px;",
+    )
+
+
+def _discord_section(me, _):
+    discord = me.get("discord") or {}
+    if not discord.get("available"):
+        return None  # Discord login isn't configured on this server
+    if discord.get("linked"):
+        body = Div(
+            P(_("profile.discord_connected_as"), " ",
+              Strong(discord.get("username") or "Discord"), style="margin-bottom:10px;"),
+            Form(
+                Button(_("profile.discord_disconnect"), type="submit", cls="btn btn-secondary"),
+                method="post", action="/profile/discord/disconnect",
+            ),
+        )
+    else:
+        body = Div(
+            P(_("profile.discord_hint"), style="margin-bottom:10px;"),
+            A(_("profile.discord_connect"), href="/profile/discord/connect", cls="btn btn-primary"),
+        )
+    return Div(
+        H3(_("profile.discord_heading"), cls="card-title"),
+        body,
+        cls="card", style="max-width:720px;margin-top:20px;",
+    )
+
+
 def _stats_section(stats, _=None):
     _ = _ or (lambda k: k)
     return stats_section(stats, _)
 
 
-def _content(me, _, stats=None, saved=False, error=None):
+def _content(me, _, stats=None, saved=False, error=None, notice=None):
     return Div(
         Div(H1(_("profile.heading")), cls="page-header"),
+        notice,
         Form(
             _account_section(me, _, saved=saved, error=error),
             method="post", action="/profile",
             enctype="multipart/form-data",
             style="max-width:720px;"
         ),
+        _verification_section(me, _),
+        _discord_section(me, _),
         _stats_section(stats, _),
         Script("""
 function previewAvatar(input) {
@@ -136,7 +210,48 @@ async def get(req):
         req.session["user_username"] = me.get("username") or name
         req.session["user_avatar"] = me.get("avatar_key") or ""
 
-    return page_shell(_content(me, _, stats=stats), current="/profile", title=_("title.profile"), lang=lang)
+    return page_shell(_content(me, _, stats=stats, notice=_notice(req, _)),
+                      current="/profile", title=_("title.profile"), lang=lang)
+
+
+@rt("/profile/verify")
+async def post(req):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    try:
+        await profile_api.request_verification(token)
+        result = "sent"
+    except httpx.HTTPStatusError as e:
+        result = "wait" if e.response.status_code == 429 else "error"
+    except Exception:
+        result = "error"
+    return RedirectResponse(f"/profile?verify={result}", status_code=303)
+
+
+@rt("/profile/discord/connect")
+async def get(req):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    try:
+        url = await profile_api.discord_link_start(token)
+    except Exception:
+        return RedirectResponse("/profile?discord=error", status_code=302)
+    return RedirectResponse(url, status_code=302)
+
+
+@rt("/profile/discord/disconnect")
+async def post(req):
+    token, redirect = auth_helper.require_auth(req)
+    if redirect:
+        return redirect
+    try:
+        await profile_api.discord_unlink(token)
+        result = "unlinked"
+    except Exception:
+        result = "error"
+    return RedirectResponse(f"/profile?discord={result}", status_code=303)
 
 
 @rt("/profile")

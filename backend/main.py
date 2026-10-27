@@ -22,6 +22,13 @@ from utils.create_superuser import bootstrap_superuser_from_env
 
 load_dotenv()
 
+# Show the app's own INFO messages (e.g. "Email sent to …", "Password reset
+# requested") in the container log; by default Python only prints warnings.
+# Uvicorn's loggers don't propagate to the root logger, so nothing is doubled.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(message)s")
+# httpx logs every request URL at INFO, and Discord webhook URLs are secrets.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

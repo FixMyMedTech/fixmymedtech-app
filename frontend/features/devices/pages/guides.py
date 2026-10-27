@@ -129,8 +129,8 @@ async def get(req, device_id: str, slug: str):
                 P(_("guide.not_found_msg"), style="margin-bottom:16px;"),
                 A(_("guide.back"), href=f"/d/{device_id}", cls="btn btn-primary",
                   style="text-decoration:none;"),
-                style="text-align:center;padding:60px 24px;"
+                style="text-align:center;padding:60px 24px;",
+                cls="pub-page",
             ),
-            cls="pub-page"
-        ), lang=lang), status_code=404)
+            lang=lang)), status_code=404)
     return _guide_page(guide, lang, device_id)

@@ -52,8 +52,22 @@ class UserContextMiddleware(BaseHTTPMiddleware):
     is saved. No API call happens on page loads once cached.
     """
     async def dispatch(self, request, call_next):
-        data = {"name": "", "username": "", "email": "", "avatar": ""}
+        import features.auth.helper as auth_helper
+        from config.api import token_rejected
+
+        # An expired token must not keep a private page "open": clear the
+        # session first, so every require_auth() sends the visitor to /login.
         token = request.session.get("token", "")
+        if token and auth_helper.token_expired(token):
+            request.session.clear()
+            request.state.session_expired = True
+            token = ""
+
+        # Filled in by config/api.py when the API answers 401 to our token.
+        rejected = {}
+        token_rejected.set(rejected)
+
+        data = {"name": "", "username": "", "email": "", "avatar": ""}
         if token:
             if request.session.get("user_name"):
                 data = {
@@ -85,8 +99,26 @@ class UserContextMiddleware(BaseHTTPMiddleware):
                         "email": request.session.get("user_email", ""),
                         "avatar": request.session.get("user_avatar", ""),
                     }
+        if rejected.get("rejected"):
+            # Refused before the page even ran (e.g. after a JWT secret change).
+            request.session.clear()
+            request.state.session_expired = True
+            data = {"name": "", "username": "", "email": "", "avatar": ""}
+            rejected.clear()
+
         set_current_user(data)
-        return await call_next(request)
+        response = await call_next(request)
+
+        if rejected.get("rejected") and request.session.get("token"):
+            # The page ran but the API refused the token. End the session and,
+            # for a page load or form post, show login instead of the empty
+            # page. Background fetches (e.g. "Load more") just get their
+            # response, so they never append a login page.
+            request.session.clear()
+            request.state.session_expired = True
+            if request.method == "POST" or request.headers.get("sec-fetch-mode") == "navigate":
+                return auth_helper.login_redirect(request)
+        return response
 
 
 # Register INSIDE the session middleware FastHTML already installed (append =

@@ -18,6 +18,9 @@ from models.models import (
 )
 from config.storage import upload_file, get_file
 from config.db_config import AsyncSessionLocal
+from config.discord import welcome_enabled
+from routers.discord_link import announce_new_device
+from utils.background import spawn
 from utils.photo_processing import process_photo_to_white, compress_device_photo
 import asyncio
 import uuid
@@ -387,6 +390,9 @@ async def create_device(
     db.add(device)
     await db.commit()
     await db.refresh(device)
+
+    if welcome_enabled():
+        spawn(announce_new_device(profile.id))
     return device
 
 

@@ -272,11 +272,15 @@ async def forgot_password(
     request: Request,
     user_manager: UserManager = Depends(get_user_manager),
 ):
+    # Always the same response, so the endpoint can't be used to probe for
+    # accounts, but the log says what actually happened.
     try:
         user = await user_manager.get_by_email(body.email.lower())
         await user_manager.forgot_password(user, request=request)
+    except UserNotExists:
+        logger.info("Password reset requested for an email with no account: %s", body.email)
     except Exception:
-        pass  # Always return the same response to avoid leaking
+        logger.exception("Password reset failed for %s", body.email)
     return {"message": "If your email is registered, a password reset link has been sent."}
 
 

@@ -10,7 +10,8 @@ Configuration (environment variables, see docker-compose.yml / .env):
   Copy ID).
 * ``DISCORD_WELCOME_WEBHOOK_URL`` — webhook of the welcome channel. When set,
   a welcome message mentioning the user is posted the first time an app
-  account is linked to a Discord account.
+  account is linked to a Discord account, and every newly registered device
+  is announced there too.
 
 A webhook on a forum channel creates a new thread per message when
 ``thread_name`` is set, so no bot is needed.
@@ -88,13 +89,13 @@ async def create_forum_thread(
     return str(message["channel_id"])
 
 
-async def post_welcome(content: str, mention_user_id: str) -> None:
+async def post_to_welcome_channel(content: str, ping_user_id: Optional[str] = None) -> None:
     """Post in the welcome channel. Raises on any failure.
 
-    Only ``mention_user_id`` may be pinged: the text includes names the user
+    Only ``ping_user_id`` (if given) is notified: the text includes names users
     typed, so @everyone, roles and other users stay disabled.
     """
     await _execute(DISCORD_WELCOME_WEBHOOK_URL, {
         "content": content[:CONTENT_MAX],
-        "allowed_mentions": {"parse": [], "users": [mention_user_id]},
+        "allowed_mentions": {"parse": [], "users": [ping_user_id] if ping_user_id else []},
     })

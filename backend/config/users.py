@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 JWT_SECRET    = os.getenv("AUTH_JWT_SECRET", "dev-local-jwt-secret-change-me")
 FRONTEND_URL  = os.getenv("FRONTEND_URL", "http://localhost:8888")
 API_BASE_URL  = os.getenv("API_BASE_URL", "http://localhost:8888")
-TOKEN_TTL     = int(os.getenv("AUTH_TOKEN_TTL", str(60 * 24 * 7)))  # 7 days
+TOKEN_TTL     = int(os.getenv("AUTH_TOKEN_TTL", str(60 * 60 * 24 * 7)))  # seconds: 7 days
 
 
 # ── Password hashing ──────────────────────────────────────────────────────────
@@ -59,12 +59,17 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     ) -> None:
         logger.info("User registered: %s", user.email)
         try:
-            from config.email import send_welcome_email, send_verification_email
+            from config.email import send_welcome_email
             await send_welcome_email(user.email, user.full_name or user.email)
-            token = await self._generate_verification_token(user)
-            await send_verification_email(user.email, token, API_BASE_URL)
         except Exception:
-            logger.exception("Failed to send registration emails for %s", user.email)
+            logger.exception("Failed to send welcome email for %s", user.email)
+        if not user.is_verified:
+            try:
+                # Public API: mints the token and calls on_after_request_verify,
+                # which sends the verification email.
+                await self.request_verify(user, request)
+            except Exception:
+                logger.exception("Failed to send verification email for %s", user.email)
 
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None

@@ -59,12 +59,17 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     ) -> None:
         logger.info("User registered: %s", user.email)
         try:
-            from config.email import send_welcome_email, send_verification_email
+            from config.email import send_welcome_email
             await send_welcome_email(user.email, user.full_name or user.email)
-            token = await self._generate_verification_token(user)
-            await send_verification_email(user.email, token, API_BASE_URL)
         except Exception:
-            logger.exception("Failed to send registration emails for %s", user.email)
+            logger.exception("Failed to send welcome email for %s", user.email)
+        if not user.is_verified:
+            try:
+                # Public API: mints the token and calls on_after_request_verify,
+                # which sends the verification email.
+                await self.request_verify(user, request)
+            except Exception:
+                logger.exception("Failed to send verification email for %s", user.email)
 
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None

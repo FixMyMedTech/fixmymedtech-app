@@ -10,6 +10,9 @@ API_URL = os.getenv("API_URL", "http://localhost:8888")
 # that carried a token marks it, so the middleware can end the session even
 # when the page itself swallowed the error and rendered an empty page.
 token_rejected: ContextVar[dict | None] = ContextVar("token_rejected", default=None)
+# Set when the API answers 403 community_access_pending: the session still
+# thinks this account is a member, but it is (again) a community applicant.
+access_pending: ContextVar[dict | None] = ContextVar("access_pending", default=None)
 
 
 def _raise(r: httpx.Response):
@@ -23,6 +26,10 @@ def _raise(r: httpx.Response):
         detail = r.json().get("detail") or r.text
     except Exception:
         detail = r.text
+    if r.status_code == 403 and detail == "community_access_pending":
+        flag = access_pending.get()
+        if flag is not None:
+            flag["pending"] = True
     if isinstance(detail, list):
         detail = "; ".join(str(d.get("msg", d)) for d in detail if isinstance(d, dict))
     raise httpx.HTTPStatusError(detail, request=r.request, response=r)

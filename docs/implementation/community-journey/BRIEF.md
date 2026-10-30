@@ -38,7 +38,7 @@ The vault lives in `github.com/FixMyMedTech/fixmymedtech-docs` (`04-roadmap/feat
 
 Follow "Build order" in `docs/docs/community-journey.md`. Short version:
 
-- **Phase 1: joining, Ambassador, dashboard.** Migration `028_community_roles.sql` (next free number; check `infrastructure/migrations/` first) with seeds and backfill; `utils/community.py`; `/join`, `/community/start`; the gate; dashboard Applicants, Members, History, Roles read-only with assign and remove; journey, tree, role (read only), welcome pages; pytest for the engine.
+- **Phase 1: joining, Ambassador, dashboard.** Migration `029_community_roles.sql` (built; 028 was taken) with seeds and backfill; `utils/community.py`; `/join`, `/community/start`; the gate; dashboard Applicants, Members, History, Roles read-only with assign and remove; journey, tree, role (read only), welcome pages; pytest for the engine.
 - **Phase 1b: role editor** in the dashboard.
 - **Phase 2: unlocking and one app.** `check_unlocks` wired into actions; claiming and auto-unlocking roles; unlock screen; Discord posts; grouped sidebar and phone bottom bar; new home; combined profile; two-tab `/tasks`; progress toast; locked actions; design system tokens.
 - **Phase 3: roles that do something.** Confirmations, first `require_permission` checks, task board link.

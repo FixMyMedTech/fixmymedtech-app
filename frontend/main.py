@@ -70,7 +70,7 @@ class UserContextMiddleware(BaseHTTPMiddleware):
     """
     async def dispatch(self, request, call_next):
         import features.auth.helper as auth_helper
-        from config.api import token_rejected
+        from config.api import token_rejected, access_pending
 
         # An expired token must not keep a private page "open": clear the
         # session first, so every require_auth() sends the visitor to /login.
@@ -84,38 +84,35 @@ class UserContextMiddleware(BaseHTTPMiddleware):
         rejected = {}
         token_rejected.set(rejected)
 
+        # Filled in by config/api.py when the API answers 403
+        # community_access_pending (the account is a community applicant).
+        pending = {}
+        access_pending.set(pending)
+
+        def from_session():
+            return {
+                "name": request.session.get("user_name", ""),
+                "username": request.session.get("user_username", ""),
+                "email": request.session.get("user_email", ""),
+                "avatar": request.session.get("user_avatar", ""),
+                "member_status": request.session.get("member_status", ""),
+                "permissions": request.session.get("community_permissions", []),
+            }
+
         data = {"name": "", "username": "", "email": "", "avatar": ""}
         if token:
-            if request.session.get("user_name"):
-                data = {
-                    "name": request.session.get("user_name", ""),
-                    "username": request.session.get("user_username", ""),
-                    "email": request.session.get("user_email", ""),
-                    "avatar": request.session.get("user_avatar", ""),
-                }
+            # member_status was added with the community journey: sessions
+            # from before it are refreshed once.
+            if request.session.get("user_name") and request.session.get("member_status"):
+                data = from_session()
             else:
                 try:
                     import features.profile.api as profile_api
                     me = await profile_api.get_me(token)
-                    email = request.session.get("user_email", "") or ""
-                    name = me.get("full_name") or me.get("username") or email
-                    request.session["user_name"] = name
-                    request.session["user_username"] = me.get("username") or name
-                    request.session["user_email"] = email
-                    request.session["user_avatar"] = me.get("avatar_key") or ""
-                    data = {
-                        "name": name,
-                        "username": request.session["user_username"],
-                        "email": request.session["user_email"],
-                        "avatar": me.get("avatar_key") or "",
-                    }
+                    auth_helper.store_me(request, me)
                 except Exception:
-                    data = {
-                        "name": request.session.get("user_name", ""),
-                        "username": request.session.get("user_username", ""),
-                        "email": request.session.get("user_email", ""),
-                        "avatar": request.session.get("user_avatar", ""),
-                    }
+                    pass
+                data = from_session()
         if rejected.get("rejected"):
             # Refused before the page even ran (e.g. after a JWT secret change).
             request.session.clear()
@@ -125,6 +122,14 @@ class UserContextMiddleware(BaseHTTPMiddleware):
 
         set_current_user(data)
         response = await call_next(request)
+
+        if pending.get("pending") and request.session.get("token"):
+            # The session thought this account was a member; it is an
+            # applicant. Refresh the cache and show the start page.
+            request.session["member_status"] = "applicant"
+            if request.method == "GET" and request.headers.get("sec-fetch-mode") == "navigate" \
+                    and not auth_helper.applicant_allowed(request.url.path):
+                return RedirectResponse("/community/start", status_code=302)
 
         if rejected.get("rejected") and request.session.get("token"):
             # The page ran but the API refused the token. End the session and,
@@ -151,6 +156,12 @@ async def post(req):
         req.session["lang"] = lang
     referer = req.headers.get("Referer", "/")
     return RedirectResponse(referer, status_code=302)
+
+from features.community.pages import (
+    join as community_join, start as community_start, journey as community_journey,
+    tree as community_tree, role as community_role, welcome as community_welcome,
+    admin_applicants, admin_members, admin_roles, admin_history,
+)
 
 auth_login.rt.to_app(app)
 auth_signup.rt.to_app(app)
@@ -182,5 +193,16 @@ maintenance_log_detail.rt.to_app(app)
 guides.rt.to_app(app)
 feedback_pages.rt.to_app(app)
 documents_pages.rt.to_app(app)
+# Community journey (docs/docs/community-journey.md)
+community_join.rt.to_app(app)
+community_start.rt.to_app(app)
+community_welcome.rt.to_app(app)
+community_tree.rt.to_app(app)
+community_role.rt.to_app(app)
+community_journey.rt.to_app(app)
+admin_applicants.rt.to_app(app)
+admin_members.rt.to_app(app)
+admin_roles.rt.to_app(app)
+admin_history.rt.to_app(app)
 
 serve()

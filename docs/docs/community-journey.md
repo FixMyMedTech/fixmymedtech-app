@@ -1,6 +1,6 @@
 # Community journey and skill tree: technical plan
 
-Status: proposal, not built yet. Date: 2026-10-30. Screens: the "Community journey screens" design canvas.
+Status: phase 1 built (migration 029), see the [how-to guide](community-guide.md). Date: 2026-10-30. Screens: the "Community journey screens" design canvas.
 
 This plan says how to build the community journey in this codebase. The product rules (which roles exist, how they unlock, what they unlock) are in the product proposal, which will move to the docs vault as feature notes. This page covers the data, the code and the build order.
 
@@ -19,7 +19,7 @@ Every member starts as **Ambassador**. Doing tasks unlocks **community roles** (
 | Profile country | `profiles.country` | Local roles and team ("Mapper, Ghana") |
 | Superusers | `users.is_superuser`, SQLAdmin | Community team admins, for now |
 | Background tasks | `utils/background.py` `spawn` | Re-checking unlocks after an action without slowing the request |
-| Migration runner | `backend/migrations.py` | New tables, next number 028 |
+| Migration runner | `backend/migrations.py` | New tables, migration 029 (028 was taken) |
 
 Gaps: there is no applicant or member state today (any verified account can use the whole app), no city on profiles, no consent flags, no last-activity time.
 
@@ -29,7 +29,7 @@ The app already has **org roles** on `org_users.role` (admin, technician, clinic
 
 ## Data model
 
-One new migration, `infrastructure/migrations/028_community_roles.sql`, plus matching classes in `models/models.py`. All tables in schema `fixmymedtech`.
+One new migration, `infrastructure/migrations/029_community_roles.sql`, plus matching classes in `models/models.py`. All tables in schema `fixmymedtech`.
 
 ### The catalogue: `community_roles`
 
@@ -193,7 +193,7 @@ A refused applicant keeps an account that can only see a message with the reason
 
 ### Gating the platform
 
-- **Backend:** a new dependency `get_member_profile` in `utils/profile.py`: the same as `get_current_profile`, plus a `403 {"detail": "community_access_pending"}` when `member_status` is not `member` or `staff`. Staff pass it, but hold no community role, so every community permission check still refuses them. Every platform router switches to it (devices, faults, maintenance, organizations, dashboard, tasks…). The profile, Discord, community and auth routes keep `get_current_profile`, so applicants can do their quests. Public `/public/...` routes don't change.
+- **Backend:** a new dependency `get_member_profile` in `utils/profile.py`: the same as `get_current_profile`, plus a `403 {"detail": "community_access_pending"}` when `member_status` is not `member` or `staff`. Staff pass it, but hold no community role, so every community permission check still refuses them. Every platform router switches to it (devices, faults, maintenance, organizations, dashboard, tasks…). The profile, Discord, community and auth routes keep `get_current_profile`, so applicants can do their quests. Public `/public/...` routes don't change. *As built:* the check is one dependency, `require_platform_access`, attached to those routers in `main.py` rather than a change in every route.
 - **Frontend:** `require_auth` in `features/auth/helper.py` reads `member_status` from the session (cached by `UserContextMiddleware` from `/api/auth/me`) and redirects applicants to `/community/start`. When the API answers `community_access_pending`, the session is refreshed and the same redirect happens.
 
 ### Existing and invited accounts
@@ -406,7 +406,7 @@ A feature that a role unlocks is shown to everyone, locked for those who don't h
 
 Each phase is one pull request against `dev`.
 
-**Phase 1: joining, Ambassador and the dashboard.** Migration 028 with the catalogue seeded from the proposal, `community_applications`, `community_role_changes` and the backfill; `utils/community.py` (`progress`, `has_permission`, Ambassador quests and grant); `/join` and `/community/start` with the intro video and booking link; the platform gate (`get_member_profile`, `require_auth` redirect); the dashboard tabs Applicants, Members and History, and Roles read-only with assign and remove; `GET /tree`, `GET /me`, consent and story endpoints; pages journey, tree, role (read only), welcome. Existing accounts keep full access through the backfill.
+**Phase 1: joining, Ambassador and the dashboard.** Migration 029 with the catalogue seeded from the proposal, `community_applications`, `community_role_changes` and the backfill; `utils/community.py` (`progress`, `has_permission`, Ambassador quests and grant); `/join` and `/community/start` with the intro video and booking link; the platform gate (`require_platform_access`, `require_auth` redirect); the dashboard tabs Applicants, Members and History, and Roles read-only with assign and remove; `GET /tree`, `GET /me`, consent and story endpoints; pages journey, tree, role (read only), welcome. Existing accounts keep full access through the backfill.
 
 **Phase 1b: the role editor.** Create and edit roles, requirements and permissions in the dashboard (until then, the catalogue is edited through SQLAdmin).
 

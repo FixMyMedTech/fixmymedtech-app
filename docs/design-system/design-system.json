@@ -1,0 +1,85 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-23T21:50:33Z"
+ },
+ "title": "FixMyMedTech",
+ "namespace": "FixMyMedTech",
+ "libraries": [],
+ "sections": {},
+ "groups": [
+  "Logos"
+ ],
+ "assetGroups": {
+  "Logos": {
+   "name": "Logos",
+   "tile": "l",
+   "order": [
+    "fixmymedtech-mark.png",
+    "fixmymedtech-mark-black.png",
+    "fixmymedtech-mark-white.png",
+    "fixmymedtech-logo-stacked.png",
+    "fixmymedtech-africa.png",
+    "fixmymedtech-africa-black.png",
+    "fixmymedtech-africa-white.png"
+   ],
+   "files": {
+    "fixmymedtech-mark.png": {
+     "name": "fixmymedtech-mark.png",
+     "blob": "cb5e764c8227d6eb575d1a58d2a57fa3",
+     "size": 123694,
+     "type": "image/png"
+    },
+    "fixmymedtech-logo-stacked.png": {
+     "name": "fixmymedtech-logo-stacked.png",
+     "blob": "be3dd7fe89a4f9d95ceac5ba8e8013cd",
+     "size": 102972,
+     "type": "image/png"
+    },
+    "fixmymedtech-africa.png": {
+     "name": "fixmymedtech-africa.png",
+     "blob": "8dfba861cc2e637c171c8896c610b78d",
+     "size": 147879,
+     "type": "image/png"
+    },
+    "fixmymedtech-africa-black.png": {
+     "name": "fixmymedtech-africa-black.png",
+     "blob": "b886005bbb4185977badcdce18a0afeb",
+     "size": 29778,
+     "type": "image/png"
+    },
+    "fixmymedtech-africa-white.png": {
+     "name": "fixmymedtech-africa-white.png",
+     "blob": "89576061e2dfd5f9c6f04d5b1e9697d4",
+     "size": 27347,
+     "type": "image/png"
+    },
+    "fixmymedtech-mark-black.png": {
+     "name": "fixmymedtech-mark-black.png",
+     "blob": "94f78ca83790bde361450736bba59832",
+     "size": 18532,
+     "type": "image/png"
+    },
+    "fixmymedtech-mark-white.png": {
+     "name": "fixmymedtech-mark-white.png",
+     "blob": "c959c97ab2029d0e6274feb5bdc9b63d",
+     "size": 20726,
+     "type": "image/png"
+    }
+   }
+  }
+ },
+ "blobs": {},
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Jason",
+  "at": "2026-10-23T22:55:20Z",
+  "via": "Claude Code (web)",
+  "note": "Simplified: one gradient, 22 role-named colours, 7 text styles, system fonts, QR tag added"
+ }
+}

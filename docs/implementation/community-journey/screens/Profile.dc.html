@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#026fa8}a:hover{color:#01437a}
+.card{background:#ffffff;border:1px solid #d5e0e9;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.h{margin:0;font-size:12px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:#4f6276}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;min-height:32px}
+.pill{display:inline-flex;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500;white-space:nowrap}
+.stat{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
+.stat b{font-size:20px;font-weight:700}
+.stat span{font-size:12px;font-weight:500;color:#4f6276}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #f4f8fb; color: #132b45; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;">
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; overflow: hidden;">
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <div aria-hidden="true" style="width: 64px; height: 64px; border-radius: 9999px; background: #e9f0f5; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: #4f6276;">AM</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700;">Amina Mensah</h1>
+        <span style="font-size: 12px; font-weight: 500; color: #4f6276;">Biomedical engineer · Kumasi, Ghana · member since March 2026</span>
+      </div>
+    </div>
+
+    <div class="card" style="flex-direction: row; padding: 12px 8px;">
+      <div class="stat"><b>52</b><span>Devices</span></div>
+      <div class="stat"><b>3</b><span>Repairs</span></div>
+      <div class="stat"><b>7</b><span>Invited</span></div>
+      <div class="stat"><b>340</b><span>Points</span></div>
+    </div>
+
+    <section class="card">
+      <h2 class="h">Community roles</h2>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <span class="pill" style="background: #dcfce7; color: #15803d;">Ambassador</span>
+        <span class="pill" style="background: #dcfce7; color: #15803d;">Mapper · Ghana</span>
+        <span class="pill" style="background: #dcfce7; color: #15803d;">Verifier · Ghana</span>
+        <span class="pill" style="background: #dcfce7; color: #15803d;">Approval host · Ghana</span>
+      </div>
+      <a href="Main.dc.html" style="font-size: 14px; text-decoration: none;">See my skill tree</a>
+    </section>
+
+    <section class="card">
+      <h2 class="h">Clinics</h2>
+      <div class="row"><span>Komfo Anokye Teaching Hospital</span><span class="pill" style="background: #e9f0f5; color: #4f6276;">Technician</span></div>
+      <div class="row"><span>St. Michael's Clinic</span><span class="pill" style="background: #e9f0f5; color: #4f6276;">Responsible engineer</span></div>
+      <span style="font-size: 12px; font-weight: 500; line-height: 1.4; color: #4f6276;">Clinic roles are set by each clinic. Community roles come from the skill tree.</span>
+    </section>
+
+    <section class="card">
+      <h2 class="h">Achievements</h2>
+      <div class="row"><span>50 devices registered</span><span style="font-size: 12px; font-weight: 500; color: #4f6276;">Oct 2026</span></div>
+      <div class="row"><span>Region pioneer: Ashanti</span><span style="font-size: 12px; font-weight: 500; color: #4f6276;">Apr 2026</span></div>
+      <div class="row"><span>Active contributor (250 points)</span><span style="font-size: 12px; font-weight: 500; color: #4f6276;">Sep 2026</span></div>
+    </section>
+
+    <a href="#" style="display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 8px; border: 1px solid #728599; color: #132b45; font-size: 14px; font-weight: 500; text-decoration: none;">Share my roles on LinkedIn</a>
+  </div>
+
+  <nav aria-label="Main" style="flex-shrink: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #ffffff; border-top: 1px solid #d5e0e9;">
+    <a href="#" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #4f6276; text-decoration: none;">Devices</a>
+    <a href="#" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #4f6276; text-decoration: none;">Faults</a>
+    <a href="Journey.dc.html" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #4f6276; text-decoration: none;">Community</a>
+    <a href="#" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #026fa8; background: #e0f0f8; text-decoration: none;">Profile</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

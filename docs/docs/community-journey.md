@@ -1,6 +1,6 @@
 # Community journey and skill tree: technical plan
 
-Status: proposal, not built yet. Date: 2026-10-30.
+Status: proposal, not built yet. Date: 2026-10-30. Screens: the "Community journey screens" design canvas.
 
 This plan says how to build the community journey in this codebase. The product rules (which roles exist, how they unlock, what they unlock) are in the product proposal, which will move to the docs vault as feature notes. This page covers the data, the code and the build order.
 
@@ -325,6 +325,81 @@ Same pattern as the other features.
 - Add the member's role keys and permissions to what `UserContextMiddleware` caches from `/api/auth/me`, and refresh them after an unlock or an approval.
 - The tree is server-rendered HTML and CSS (a grid of cards, like the design canvas), no JS library. The screens to follow are in the "Community journey screens" design canvas.
 
+## One app: joining the platform and the community
+
+The community is not a second app. It is a second half of the same app: one login, one sidebar, one profile, one task list. The screens are in the "One app: work and community together" row of the design canvas.
+
+### Navigation
+
+`sidebar()` in `components.py` becomes grouped:
+
+| Group | Links | Notes |
+| --- | --- | --- |
+| (top) | Home | |
+| Work | Devices, Faults, Tasks, Clinics | Clinics is today's Groups page (`/groups`), renamed in the UI only; URLs stay |
+| Community | My journey, Skill tree, Members | Members replaces Network (`/network` redirects to `/community/members`) |
+| Admin | Community admin | Only when the member has a dashboard permission |
+| (bottom) | Profile, language, theme | |
+
+- Links are data: each entry may carry a required permission, and `sidebar()` skips the ones the member lacks. Applicants see only "Start" and Profile.
+- On phones, a bottom bar with Devices, Faults, Community and Profile (Community opens My journey; the rest of the sidebar stays in the menu). It is new CSS in `components.py`, shown under 760 px.
+- The member's roles and permissions are cached in the session by `UserContextMiddleware` (as the avatar data is today), so building the sidebar costs no API call.
+
+### Home: the bridge
+
+`/home` (today a landing card) becomes the member's home:
+
+1. **Next unlock** card: the closest role and its progress, with what it unlocks. From `GET /api/community/me`.
+2. **Open faults** and **Maintenance due**: from the existing `/api/dashboard/stats` and fault list, five lines each.
+3. **Community tasks near you**: from the community task board when it exists; hidden until then.
+4. **Near you this week**: a short line of local activity (from the activity feed plan).
+
+The landing card stays for visitors who are not signed in.
+
+### One profile
+
+`/profile` and the public profile (`/profile/{id}`) show three things on one page: clinic memberships with their org roles (today's content), community roles with their country or team, and achievements and points. A line explains the difference: clinic roles are set by each clinic, community roles come from the skill tree. "Share my roles on LinkedIn" opens the share kit.
+
+### One task inbox
+
+`/tasks` keeps its URL and gets two tabs: **My jobs** (today's fault and maintenance assignments, unchanged) and **Community** (the community tasks the member picked up or that their roles offer). The sidebar badge counts both. The community task board itself stays at `/community/tasks`.
+
+### Work feeds progress
+
+After an action that counts toward a role (device registered, fault resolved, maintenance closed, colleague invited), the page shows a small banner: "Fault resolved. 4 of 5 toward Repairer", linking to My journey.
+
+- The backend returns the progress with the action's response (`"community": {"role": "repairer", "done": 4, "needed": 5}`), computed by `utils/community.py`, so no second request is needed.
+- The frontend shows it with a new `progress_toast()` component in `components.py`, after the redirect that follows the form (kept for one request in the session, like a flash message).
+- If the action unlocked a role, the full unlock screen shows instead.
+
+### Locked features stay visible
+
+A feature that a role unlocks is shown to everyone, locked for those who don't have it: a dashed button with a padlock and "Unlock as Repairer", linking to the role page. Members meet the skill tree where they work.
+
+- One helper, `locked_action(label, role_key, lang)` in `components.py`, used wherever a gated action would appear (order spare parts, plan maintenance for a clinic, approve a clinic…).
+- The backend still refuses the action (`require_permission`); the locked button is only a signpost.
+- Lead and admin screens are hidden, not shown locked: only features that are part of the skill tree show a padlock.
+
+### Look and feel
+
+- One design system for both halves (the FixMyMedTech design system: tokens, badges, buttons). No separate community theme.
+- Community moments (unlock screen, progress banner, welcome) use `brand-deep` (#01437a) with white text, so they stand out without feeling like another product.
+- The community side follows the same i18n rule (en, es, fr) and the same "hospital words" voice.
+
+### Files touched
+
+| File | Change |
+| --- | --- |
+| `frontend/components.py` | Grouped `sidebar()` with permission-aware links, phone bottom bar, `progress_toast()`, `locked_action()` |
+| `frontend/main.py` | `UserContextMiddleware` caches roles, permissions and `member_status`; register community routers |
+| `frontend/features/home/pages.py` | New member home |
+| `frontend/features/profile/pages/my_profile.py`, `profile_detail.py` | Community roles and achievements sections |
+| `frontend/features/tasks/pages.py` | Two tabs |
+| `frontend/features/network/pages.py` | Redirect to `/community/members` once Members exists |
+| `frontend/features/groups/...` | UI label "Clinics" (i18n strings only) |
+| `backend/routers/devices.py`, `fault_reports.py`, `maintenance_logs.py`, `organizations.py` | Add the `community` progress block to the responses of counting actions |
+| `frontend/i18n.py` | New strings in en, es, fr |
+
 ## Build order
 
 Each phase is one pull request against `dev`.
@@ -333,7 +408,7 @@ Each phase is one pull request against `dev`.
 
 **Phase 1b: the role editor.** Create and edit roles, requirements and permissions in the dashboard (until then, the catalogue is edited through SQLAdmin).
 
-**Phase 2: unlocking.** `check_unlocks` wired into the actions above, claiming tier 1 roles, tier 2 automatic unlocks, the unlock screen, Discord posts, share kit link.
+**Phase 2: unlocking and one app.** `check_unlocks` wired into the actions above, claiming tier 1 roles, tier 2 automatic unlocks, the unlock screen, Discord posts, share kit link. The grouped sidebar and phone bottom bar, the new home, the combined profile, the two-tab task inbox, progress banners and locked actions.
 
 **Phase 3: roles that do something.** Confirmations (watched meetings), first permission checks (approvals, fault steps outside my orgs, area repair requests), link to the community task board when it exists.
 

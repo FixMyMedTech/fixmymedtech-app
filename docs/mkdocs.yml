@@ -17,6 +17,7 @@ nav:
     # - Authentication: auth.md
     # - Deployment: deployment.md
     - Collaboration: collaboration.md
+    - Community journey (plan): community-journey.md
   - Code of Conduct: CODE_OF_CONDUCT.md
   - License: LICENSE
 theme:

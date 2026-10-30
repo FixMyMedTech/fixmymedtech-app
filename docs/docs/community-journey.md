@@ -159,6 +159,15 @@ Phase 1 gates nothing that exists today. Later phases add checks with `require_p
 
 The fault workflow keeps its own org-based rules. A community permission can only add a way in, never remove one an org role already gives.
 
+## Adding new roles later
+
+Two cases, depending on whether the new role needs a new kind of access.
+
+1. **A new role made of existing permissions** (for example a "Trainer" who can confirm quests and create local tasks): no code, no release. A community team admin adds the role, its requirements and its permissions in the admin. It appears in the tree at once.
+2. **A role that needs a new kind of access** (for example "can publish training videos"): a small code change. A developer adds the permission key to `PERMISSIONS` in `utils/community.py` and one `require_permission("publish_training")` line on the router that does the action, in one pull request. Once it is deployed, admins attach the key to any role in the admin, as in case 1.
+
+So the code only ever answers "what can be done", and the admin decides "who can do it". Every key has a short description in `PERMISSIONS`, which the admin shows next to the checkbox, so admins see what they are granting. Every change to roles and their permissions is logged (who, when, what) in a `community_role_changes` table, and recorded in the decisions log.
+
 ## API: `backend/routers/community.py`, mounted at `/api/community`
 
 | Method and path | Who | Returns |

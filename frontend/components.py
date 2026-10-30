@@ -509,6 +509,15 @@ tr:hover td { background:var(--c-bg-2); }
 .fb-menu a { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r-md); font-size:.875rem; font-weight:500; color:var(--c-text-2); }
 .fb-menu a:hover, .fb-menu a:focus-visible { background:var(--c-bg-2); color:var(--c-primary); outline:none; }
 @media print { .fb-widget { display:none; } }
+/* Room at the end of every page so its last controls (e.g. the registration
+   wizard's Next button) can scroll clear of the fixed "?" button:
+   16px gap + 44px button + 24px breathing space, above the phone's home bar.
+   Inside the full-height containers (box-sizing: border-box), so a short
+   page doesn't become scrollable. */
+:root { --fb-clearance: calc(84px + env(safe-area-inset-bottom, 0px)); }
+.main, .public-shell, .pub-page { padding-bottom: var(--fb-clearance); }
+@media (max-width: 768px) { .auth-wrap { padding-bottom: var(--fb-clearance); } }
+@media print { .main, .public-shell, .pub-page, .auth-wrap { padding-bottom:0; } }
 
 /* Feedback form page */
 .fb-page { max-width:560px; margin:24px auto 80px; padding:0 16px; }
@@ -614,6 +623,7 @@ def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
 # Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
 # and stay crisp in both themes.
 LUCIDE_ICONS = {
+    "library": '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
     "home": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>'
             '<path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     "dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/>'
@@ -677,6 +687,7 @@ def sidebar(current: str = "", lang: str = "en"):
         ("/tasks",     "tasks",     _("nav.tasks")),
         ("/groups",    "groups",    _("nav.groups")),
         ("/network",   "network",   _("nav.network")),
+        ("/library",   "library",   _("nav.library")),
         ("/profile",   "profile",   _("nav.profile")),
         ("/logout",    "logout",    _("nav.logout")),
     ]
@@ -925,7 +936,8 @@ def topbar(authenticated: bool, current: str = "", lang: str = "en"):
     if authenticated:
         right.append(avatar_menu(lang))
     else:
-        right = [A(_("login.signin"), href="/login",
+        right = [A(_("nav.library"), href="/library", cls="btn btn-secondary btn-sm"),
+                 A(_("login.signin"), href="/login",
                     cls="btn btn-secondary btn-sm"),
                     language_switcher(lang)]
     return Header(

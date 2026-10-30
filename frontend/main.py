@@ -22,6 +22,7 @@ from features.auth.pages import forgot_password as auth_forgot
 from features.profile.pages import my_profile, profile_detail
 from features.network import pages as network_pages
 from features.feedback import pages as feedback_pages
+from features.documents import pages as documents_pages
 from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page, organization_detail, organization_manage
 from features.faults.pages import fault_list, report_page, fault_detail, public_fault
@@ -30,7 +31,10 @@ from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
 
+# Cookie name is configurable so two stacks on the same host (browsers keep
+# cookies per host, not per port) each keep their own login.
 app, route = fast_app(secret_key=SECRET,
+                      session_cookie=os.getenv("SESSION_COOKIE") or "session_",
                       static="/static/",
                       live=True,
                       hdrs=(
@@ -164,5 +168,6 @@ fault_detail.rt.to_app(app)
 maintenance_log_detail.rt.to_app(app)
 guides.rt.to_app(app)
 feedback_pages.rt.to_app(app)
+documents_pages.rt.to_app(app)
 
 serve()

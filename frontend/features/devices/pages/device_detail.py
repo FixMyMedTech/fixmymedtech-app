@@ -13,6 +13,7 @@ import features.devices.api as devices_api
 
 from components import page_shell, status_badge, fmt_date, map_component
 from features.devices.static.guides import category_label
+from features.documents.components import DOCS_CSS, doc_list
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -80,6 +81,17 @@ async def get_photo(req, device_id: str):
         return Response(content=content, media_type=ctype)
     except Exception:
         return Response(status_code=404)
+
+
+def _documents_card(_, docs):
+    """Read-only: what's attached. Managing documents is on the edit page."""
+    return Div(
+        Style(DOCS_CSS),
+        H3(_("docs.heading"), style="margin-bottom:12px;"),
+        doc_list(_, docs) if docs else
+        P(_("docs.none_assigned"), style="color:var(--c-text-3);font-size:.875rem;"),
+        id="documents", cls="card", style="margin-bottom:16px;",
+    )
 
 
 @rt("/device/{device_id}")
@@ -458,6 +470,7 @@ async def get(req, device_id: str):
             ),
             cls="two-col", style="margin-bottom:16px;"
         ),
+        _documents_card(_, docs),
         # Maintenance logs
         Div(
             Div(

@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
 from utils.create_superuser import bootstrap_superuser_from_env
@@ -65,6 +65,7 @@ app.add_middleware(
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("AUTH_SESSION_SECRET", "dev-admin-session-secret"),
+    session_cookie=os.getenv("ADMIN_SESSION_COOKIE") or "session",
     same_site="lax",
 )
 
@@ -84,6 +85,8 @@ app.include_router(organizations.router,    prefix="/api/organizations",     tag
 app.include_router(admin_email_router,      prefix="/admin-panel",           tags=["admin"])
 app.include_router(healthsites.router,      prefix="/api/healthsites",       tags=["healthsites"])
 app.include_router(feedback.router,         prefix="/api/feedback",          tags=["feedback"])
+app.include_router(documents.router,        prefix="/api/documents",         tags=["documents"])
+app.include_router(documents.device_router, prefix="/api/devices",           tags=["documents"])
 
 # ── SQLAdmin (browsable admin UI at /admin) ─────────────────
 from sqladmin import Admin, ModelView
@@ -242,9 +245,12 @@ class DeviceCategoryAdmin(ModelView, model=models.DeviceCategory):
     icon = "fa-solid fa-tags"
 
 class DocumentAdmin(ModelView, model=models.Document):
-    column_list = [models.Document.id, models.Document.title, models.Document.type, models.Document.language, models.Document.device_id, models.Document.url]
-    column_searchable_list = [models.Document.title]
-    column_sortable_list = [models.Document.title, models.Document.type, models.Document.created_at]
+    column_list = [models.Document.created_at, models.Document.title, models.Document.type, models.Document.source,
+                   models.Document.manufacturer, models.Document.model, models.Document.contribution_status]
+    column_searchable_list = [models.Document.title, models.Document.manufacturer, models.Document.model]
+    column_sortable_list = [models.Document.title, models.Document.type, models.Document.source,
+                            models.Document.contribution_status, models.Document.created_at]
+    column_default_sort = [(models.Document.created_at, True)]
     name = "Document"
     name_plural = "Documents"
     icon = "fa-solid fa-file-lines"

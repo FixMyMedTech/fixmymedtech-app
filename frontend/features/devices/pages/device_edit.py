@@ -14,6 +14,7 @@ import features.groups.api as org_api
 from components import page_shell, alert as alert_box, assignee_options, fmt_date, status_badge, map_component
 from i18n import t as make_t
 from features.devices.static.guides import category_label
+from features.documents.components import DOCS_CSS, doc_list, ifixit_picker, upload_form
 
 rt = APIRouter()
 
@@ -548,6 +549,45 @@ def _faults_card(faults: list, device_id: str, assignees: list, me: dict, lang: 
 # ROUTES
 # ══════════════════════════════════════════════════════════════
 
+DOC_NOTICES = {
+    "attached": ("docs.flash_attached", "success"),
+    "uploaded": ("docs.flash_uploaded", "success"),
+    "removed": ("docs.flash_removed", "success"),
+    "none_selected": ("docs.flash_none_selected", "warning"),
+    "error": ("docs.flash_error", "error"),
+}
+
+
+def _documents_card(_, req, device_id, d, docs, lang):
+    """Manage the device's documents: remove, attach from iFixit, upload."""
+    notice = ""
+    key = req.query_params.get("docs")
+    if key in DOC_NOTICES:
+        text_key, kind = DOC_NOTICES[key]
+        detail = req.query_params.get("docs_detail", "")
+        notice = Div(_(text_key) + (f" {detail}" if detail else ""), cls=f"alert alert-{kind}")
+    query = " ".join(x for x in (d.get("manufacturer"), d.get("model")) if x)
+    return Div(
+        Style(DOCS_CSS),
+        H3(_("docs.heading"), style="margin-bottom:12px;"),
+        notice,
+        doc_list(_, docs, device_id=device_id, can_remove=True),
+        Details(
+            Summary(_("docs.find_heading"), style="cursor:pointer;font-weight:600;margin-top:16px;"),
+            Form(ifixit_picker(_, query=query, submit_label=_("docs.attach_selected")),
+                 method="post", action=f"/device/{device_id}/documents/ifixit",
+                 style="margin-top:10px;"),
+            open=(key in ("none_selected",)),
+        ),
+        Details(
+            Summary(_("docs.upload_heading"), style="cursor:pointer;font-weight:600;margin-top:12px;"),
+            Div(upload_form(_, device_id, lang), style="margin-top:10px;"),
+            open=(key == "error"),
+        ),
+        id="documents", cls="card", style="margin-bottom:16px;",
+    )
+
+
 @rt("/devices/{device_id}/edit")
 async def get(req, device_id: str):
     token, redirect = auth_helper.require_auth(req)
@@ -637,6 +677,7 @@ async def get(req, device_id: str):
             cls="two-col", style="margin-bottom:16px;"),
         Div(_photo_card(d, device_id, _), _map_card(d, device_id, _),
             cls="two-col", style="margin-bottom:16px;"),
+        _documents_card(_, req, device_id, d, payload.get("documents") or [], lang),
         _history_card(logs, device_id, assignees, me, lang, _),
         _faults_card(faults, device_id, assignees, me, lang, _),
     )

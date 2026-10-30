@@ -509,6 +509,15 @@ tr:hover td { background:var(--c-bg-2); }
 .fb-menu a { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r-md); font-size:.875rem; font-weight:500; color:var(--c-text-2); }
 .fb-menu a:hover, .fb-menu a:focus-visible { background:var(--c-bg-2); color:var(--c-primary); outline:none; }
 @media print { .fb-widget { display:none; } }
+/* Room at the end of every page so its last controls (e.g. the registration
+   wizard's Next button) can scroll clear of the fixed "?" button:
+   16px gap + 44px button + 24px breathing space, above the phone's home bar.
+   Inside the full-height containers (box-sizing: border-box), so a short
+   page doesn't become scrollable. */
+:root { --fb-clearance: calc(84px + env(safe-area-inset-bottom, 0px)); }
+.main, .public-shell, .pub-page { padding-bottom: var(--fb-clearance); }
+@media (max-width: 768px) { .auth-wrap { padding-bottom: var(--fb-clearance); } }
+@media print { .main, .public-shell, .pub-page, .auth-wrap { padding-bottom:0; } }
 
 /* Feedback form page */
 .fb-page { max-width:560px; margin:24px auto 80px; padding:0 16px; }

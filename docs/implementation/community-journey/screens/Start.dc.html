@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Start: become an Ambassador</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#026fa8}a:hover{color:#01437a}
+.q{display:flex;gap:12px;align-items:center;min-height:40px;font-size:14px}
+.q .s{font-size:12px;font-weight:500;margin-left:auto;white-space:nowrap}
+.dot{width:24px;height:24px;border-radius:9999px;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.dot.ok{background:#dcfce7;color:#15803d}
+.dot.todo{border:2px solid #728599}
+.dot.now{border:2px solid #026fa8}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #f4f8fb; color: #132b45; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;">
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: #ffffff; border-bottom: 1px solid #d5e0e9;">
+    <span style="font-size: 16px; font-weight: 700;">Welcome, Esi</span>
+    <span style="padding: 2px 8px; border-radius: 9999px; background: #fef3c7; color: #b45309; font-size: 12px; font-weight: 500;">2 of 5 done</span>
+  </header>
+
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; overflow: hidden;">
+    <section aria-label="Intro video" style="border-radius: 12px; overflow: hidden; background: #01437a; color: #ffffff;">
+      <div style="height: 170px; display: flex; align-items: center; justify-content: center; position: relative;">
+        <a href="#" aria-label="Play the intro video" style="width: 64px; height: 64px; border-radius: 9999px; background: #ffffff; color: #01437a; display: flex; align-items: center; justify-content: center;">
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+        </a>
+        <span style="position: absolute; right: 12px; bottom: 8px; font-size: 12px; font-weight: 500;">4:30</span>
+      </div>
+      <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 16px; font-weight: 600;">Why FixMyMedTech exists</span>
+        <span style="font-size: 12px; font-weight: 500;">Watch it to the end to tick the quest</span>
+      </div>
+    </section>
+
+    <section style="background: #ffffff; border: 2px solid #026fa8; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600;">Meet a member of the community</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4f6276;">A 20-minute video call to get to know you and answer your questions.</p>
+      <a href="#" style="display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 8px; background: #026fa8; color: #ffffff; font-size: 14px; font-weight: 500; text-decoration: none;">Book my welcome meeting</a>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 2px;">
+      <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 600;">Your Ambassador quests</h2>
+      <div class="q"><span class="dot ok" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Complete your profile<span class="s" style="color: #15803d;">Done</span></div>
+      <div class="q"><span class="dot ok" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Answer the social media question<span class="s" style="color: #15803d;">Done</span></div>
+      <div class="q"><span class="dot now" aria-hidden="true"></span>Watch the intro video<span class="s" style="color: #026fa8;">Now</span></div>
+      <div class="q"><span class="dot todo" aria-hidden="true"></span>Meet a member of the community<span class="s" style="color: #4f6276;">To book</span></div>
+      <div class="q"><span class="dot todo" aria-hidden="true"></span><a href="#">Join the Discord</a><span class="s" style="color: #4f6276;">To do</span></div>
+    </section>
+
+    <p style="margin: 0; font-size: 12px; font-weight: 500; line-height: 1.4; color: #4f6276;">When all five are done you become an Ambassador and the platform opens: devices, faults, maintenance and the community.</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

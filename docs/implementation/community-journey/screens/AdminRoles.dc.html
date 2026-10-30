@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin: create a role</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#f4f8fb}
+a{color:#026fa8}a:hover{color:#01437a}
+.tab{padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none;color:#4f6276}
+.tab.on{background:#e0f0f8;color:#026fa8}
+.card{background:#ffffff;border:1px solid #d5e0e9;border-radius:12px;box-shadow:0 1px 2px rgba(19,43,69,0.05);padding:16px 24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label,.lg{font-size:12px;font-weight:500;color:#4f6276}
+.f input,.f select{min-height:36px;box-sizing:border-box;border:1px solid #728599;border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;color:#132b45;background:#ffffff;width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none}
+.perm{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.4}
+.perm small{display:block;font-size:12px;color:#4f6276}
+.req{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}
+</style>
+</helmet>
+<div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif; color: #132b45; background: #f4f8fb; min-height: 900px;">
+  <header style="display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 56px; background: #ffffff; border-bottom: 1px solid #d5e0e9; flex-wrap: wrap;">
+    <div style="font-weight: 700; font-size: 16px;">FixMyMedTech</div>
+    <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #007c88;">Community admin</span>
+    <nav aria-label="Admin" style="display: flex; gap: 4px; flex-wrap: wrap;">
+      <a href="AdminApplicants.dc.html" class="tab">Applicants</a>
+      <a href="AdminMembers.dc.html" class="tab">Members</a>
+      <a href="#" class="tab on">Roles</a>
+      <a href="#" class="tab">History</a>
+    </nav>
+  </header>
+  <main style="max-width: 1180px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <a href="#" style="font-size: 14px; text-decoration: none;">Roles</a>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; line-height: 1.25;">New role: Trainer</h1>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="#" class="btn" style="border: 1px solid #728599; color: #132b45;">Save as draft</a>
+        <a href="Main.dc.html" class="btn" style="background: #026fa8; color: #ffffff;">Publish to the tree</a>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start;">
+      <div style="flex: 999 1 560px; display: flex; flex-direction: column; gap: 16px; min-width: 0;">
+        <section class="card">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600;">The role</h2>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+            <div class="f"><label for="r-en">Name (English)</label><input id="r-en" value="Trainer"></div>
+            <div class="f"><label for="r-fr">Name (French)</label><input id="r-fr" value="Formateur"></div>
+            <div class="f"><label for="r-es">Name (Spanish)</label><input id="r-es" value="Formador"></div>
+          </div>
+          <div class="f"><label for="r-desc">What the role does (English)</label><input id="r-desc" value="Runs trainings for new members and confirms their quests."></div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+            <div class="f"><label for="r-path">Path</label><select id="r-path"><option>People</option></select></div>
+            <div class="f"><label for="r-tier">Tier</label><select id="r-tier"><option>2</option></select></div>
+            <div class="f"><label for="r-scope">Held for</label><select id="r-scope"><option>A country</option></select></div>
+            <div class="f"><label for="r-unlock">How it unlocks</label><select id="r-unlock"><option>Confirmed by a person</option></select></div>
+          </div>
+          <div class="f"><label for="r-li">LinkedIn title</label><input id="r-li" value="Trainer, FixMyMedTech"></div>
+        </section>
+
+        <section class="card">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600;">Requirements (all must be met)</h2>
+          <div class="req">
+            <div class="f"><label for="q1k">Kind</label><select id="q1k"><option>Hold a role</option></select></div>
+            <div class="f"><label for="q1r">Role</label><select id="q1r"><option>Mentor</option></select></div>
+            <div class="f"><label for="q1t">Count</label><input id="q1t" value="" placeholder="—"></div>
+          </div>
+          <div class="req">
+            <div class="f"><label for="q2k">Kind</label><select id="q2k"><option>A count reaches</option></select></div>
+            <div class="f"><label for="q2r">What</label><select id="q2r"><option>People invited</option></select></div>
+            <div class="f"><label for="q2t">Count</label><input id="q2t" value="10"></div>
+          </div>
+          <div class="req">
+            <div class="f"><label for="q3k">Kind</label><select id="q3k"><option>Confirmed by</option></select></div>
+            <div class="f"><label for="q3r">A holder of</label><select id="q3r"><option>Country lead</option></select></div>
+            <div class="f"><label for="q3t">Count</label><input id="q3t" value="" placeholder="—"></div>
+          </div>
+          <a href="#" class="btn" style="border: 1px solid #728599; color: #132b45; align-self: flex-start;">Add a requirement</a>
+        </section>
+      </div>
+
+      <section class="card" style="flex: 1 1 320px;">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600;">Permissions</h2>
+        <span class="lg">Community</span>
+        <label class="perm"><input type="checkbox" checked><span>Confirm quests<small>Confirm a step another member did, e.g. a watched meeting</small></span></label>
+        <label class="perm"><input type="checkbox" checked><span>Create local tasks<small>Add community tasks for their country</small></span></label>
+        <label class="perm"><input type="checkbox"><span>Decide applicants<small>Approve or reject applications in their country</small></span></label>
+        <label class="perm"><input type="checkbox"><span>View members<small>See members, roles and actions in their country</small></span></label>
+        <span class="lg">Devices and repairs</span>
+        <label class="perm"><input type="checkbox"><span>Order spare parts<small>Order from the spare parts catalogue</small></span></label>
+        <label class="perm"><input type="checkbox"><span>Receive area repair requests<small>Get requests from the maintenance button nearby</small></span></label>
+        <span class="lg">Admin</span>
+        <label class="perm"><input type="checkbox" disabled><span>Manage roles<small>Community team admins only</small></span></label>
+        <p style="margin: 0; font-size: 12px; font-weight: 500; line-height: 1.4; color: #4f6276;">Need an access that isn't listed? It takes a small code change; ask the software team.</p>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

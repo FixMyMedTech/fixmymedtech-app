@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Join the community</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#026fa8}a:hover{color:#01437a}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label,.lg{font-size:12px;font-weight:500;color:#4f6276}
+.f input,.f select,.f textarea{min-height:40px;box-sizing:border-box;border:1px solid #728599;border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;color:#132b45;background:#ffffff}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #f4f8fb; color: #132b45; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;">
+  <div style="padding: 24px 16px 16px; background: #01437a; border-top: 8px solid #1fb0a9; color: #ffffff; display: flex; flex-direction: column; gap: 4px;">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700; line-height: 1.25;">Join the community</h1>
+    <p style="margin: 0; font-size: 14px; line-height: 1.6;">Create your account, watch a short intro, meet one of us, and the platform is yours.</p>
+  </div>
+  <form style="padding: 16px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; overflow: hidden;">
+    <div class="f"><label for="j-name">Full name</label><input id="j-name" value="Esi Boateng"></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;"><div class="f"><label for="j-email">Email</label><input id="j-email" type="email" value="esi.boateng@example.org"></div><div class="f"><label for="j-pw">Password</label><input id="j-pw" type="password" value="xxxxxxxxxx"></div></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+      <div class="f"><label for="j-country">Country</label><select id="j-country"><option>Ghana</option></select></div>
+      <div class="f"><label for="j-city">City</label><input id="j-city" value="Kumasi"></div>
+    </div>
+    <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+      <legend class="lg" style="margin-bottom: 4px;">I am a…</legend>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <label style="display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 2px solid #026fa8; background: #e0f0f8; border-radius: 9999px; font-size: 14px;"><input type="radio" name="kind" checked> Biomedical engineer</label>
+        <label style="display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid #728599; border-radius: 9999px; font-size: 14px;"><input type="radio" name="kind"> Student</label>
+        <label style="display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid #728599; border-radius: 9999px; font-size: 14px;"><input type="radio" name="kind"> Clinician</label>
+        <label style="display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid #728599; border-radius: 9999px; font-size: 14px;"><input type="radio" name="kind"> Other</label>
+      </div>
+    </fieldset>
+        <div class="f"><label for="j-why">Why do you want to join?</label><textarea id="j-why" rows="3">Our incubators wait months for parts. I want to help fix that.</textarea></div>
+    <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 12px; font-weight: 500; line-height: 1.4; color: #4f6276;"><input type="checkbox" checked> I agree that FixMyMedTech contacts me to book my welcome meeting.</label>
+  </form>
+  <div style="padding: 16px; background: #ffffff; border-top: 1px solid #d5e0e9; display: flex; flex-direction: column; gap: 4px;">
+    <a href="Start.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 8px; background: #026fa8; color: #ffffff; font-size: 14px; font-weight: 500; text-decoration: none;">Create my account</a>
+    <span style="font-size: 12px; font-weight: 500; color: #4f6276; text-align: center;">Invited by Amina Mensah</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

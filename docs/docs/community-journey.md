@@ -201,7 +201,7 @@ A refused applicant keeps an account that can only see a message with the reason
 - Every existing account is backfilled as a member with Ambassador, so nobody loses access.
 - **Clinic staff invited by a clinic** (organisation invitation, `routers/organizations.py`) only have to **watch the video** before they get in (Jason, 2026-10-30). Their status becomes `staff`: they use the app inside their clinic with their org role (report faults, see devices, log maintenance), but hold no community role.
 - If they want more (community tasks, roles, the features roles unlock), they do the remaining Ambassador quests from the same start page: profile, meeting, Discord, consent. Then they become Ambassador and `member`, like everyone else.
-- The video quest is the same `intro_video` quest. A shorter clinic-staff video can be set separately (`STAFF_INTRO_VIDEO_URL`, falling back to the main one).
+- The video quest is the same `intro_video` quest. The main video URL is `COMMUNITY_INTRO_VIDEO_URL`; a shorter clinic-staff video can be set separately (`STAFF_INTRO_VIDEO_URL`, falling back to the main one).
 
 ## Permissions and features
 

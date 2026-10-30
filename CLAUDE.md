@@ -88,3 +88,8 @@ Browser → (nginx) → backend FastAPI :8888
 - Contribution flow: branch from `dev` and open PRs against `dev`. Maintainers merge `dev` into `main`.
 
 
+
+## Design system and current work
+
+- UI follows the FixMyMedTech design system in `docs/design-system/` (tokens, component classes, rules). Use its tokens and classes for any new or touched screen.
+- The community journey is being built from `docs/implementation/community-journey/BRIEF.md`. Read it before working on `/join`, `features/community` or `routers/community.py`.

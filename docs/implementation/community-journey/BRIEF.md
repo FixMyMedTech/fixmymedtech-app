@@ -115,11 +115,11 @@ The vault copy used for this brief is from 2026-10-23. Before starting a phase, 
 - Refresh the `UserContextMiddleware` session keys when roles or status change.
 - Escape JSON embedded in `<script>` like `_js_json` in `features/faults/pages/fault_list.py`.
 - New env vars (`COMMUNITY_BOOKING_URL`, `COMMUNITY_INTRO_VIDEO_URL`, `STAFF_INTRO_VIDEO_URL`) go in `.env.example`, the compose files and the deploy workflow heredocs.
+- Videos are on YouTube (Jason, 2026-10-30): embed through the YouTube IFrame Player API on `youtube-nocookie.com`, complete the `intro_video` quest on the `ENDED` state, and keep the "I've watched it" button as a fallback. The env vars hold YouTube URLs.
 - No secrets in code, docs or commits. The Healthsites API key stays in the local `.env`.
 
 ## 8. Open questions to ask Jason, not guess
 
-- Where the intro and staff videos are hosted (YouTube, Vimeo, MinIO). Until then, read the URLs from env vars.
 - Whether community team admins stay superusers.
 - Whether city-level roles are needed in phase 1.
 

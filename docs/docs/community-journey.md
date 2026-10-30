@@ -425,6 +425,6 @@ The repo has no test suite. Phase 1 adds `backend/tests/test_community.py` with 
 ## Open technical questions
 
 - Community team admins are superusers for now. When the community team grows, should it become its own community role with `manage_roles` and `assign_roles` instead of superuser access?
-- Where is the intro video hosted (YouTube, Vimeo, our MinIO)?
+- Intro and staff videos are hosted on YouTube (Jason, 2026-10-30): embed with the IFrame Player API (`youtube-nocookie.com`) and mark the quest done on the `ENDED` state, keeping the "I've watched it" fallback button.
 - Gating the platform touches every router's dependency. It is a mechanical change but a wide one: phase 1 should land it in its own commit, checked page by page with an applicant account and a member account.
 - Local roles are held per country first. Are cities needed from phase 1, or can they wait until there are City leads?

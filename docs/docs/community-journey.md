@@ -102,6 +102,10 @@ For the steps the app can't count from existing tables (watched an approval meet
 
 Quests that can be read from existing data (`discord_joined` = `users.discord_user_id is not null`, `colleague_invited` = someone has `invited_by` = me) are computed, not stored.
 
+### `community_role_changes`
+
+An append-only log: `id`, `actor_id`, `action` (`role_created`, `role_edited`, `role_assigned`, `role_removed`, `applicant_decided`…), `target` (role key, member or applicant id), `before` and `after` (jsonb), `reason`, `created_at`.
+
 ### New columns on `profiles`
 
 | Column | Type | Why |
@@ -109,14 +113,13 @@ Quests that can be read from existing data (`discord_joined` = `users.discord_us
 | `city` | text | Local roles, members page |
 | `country_trained` | text | Member story ("I was trained in…") |
 | `why_bme` | text, ≤ 500 | Member story ("I chose biomedical engineering because…") |
-| `member_status` | text default `pending` | `pending` until the approval meeting, then `member` |
-| `member_since` | timestamptz | |
+| `member_since` | timestamptz | When the application was approved (or the migration date for existing accounts) |
 | `social_consent` | bool, null | Null = not answered yet. Asked on its own page |
 | `social_consent_at` | timestamptz | |
 | `members_page_hidden` | bool default false | The member hid their card |
 | `last_active_at` | timestamptz | For pausing |
 
-Backfill in the same migration: every existing profile becomes `member_status = 'member'` and gets the Ambassador role, so nobody already on the platform loses access.
+Backfill in the same migration: every existing profile gets `member_since` and the Ambassador role, so nobody already on the platform loses access.
 
 ## Unlock engine: `backend/utils/community.py`
 
@@ -135,11 +138,53 @@ On a new unlock: post to Discord with the existing welcome webhook (one line, sa
 
 No scheduler is needed. `last_active_at` is updated (at most once a day) by `get_current_profile` in `utils/profile.py`. A role counts as paused when `last_active_at` is more than 6 months ago, computed when it is read, so the first action back un-pauses everything at once. The 5-month reminder email needs a daily job; it waits for phase 4.
 
-## Approval and the Ambassador role
+## Enrolment: community applicants
 
-- Sign-up creates a profile with `member_status = 'pending'`. Nothing in the app changes for them yet, apart from a "Book your welcome meeting" card on the home page and the journey page.
-- A community team admin approves the member after the meeting: `member_status = 'member'`, `member_since = now()`, Ambassador granted.
-- Accounts created through an engineer's invitation are approved at once (decision #15 in the vault).
+People who want to join fill in a public form. They are stored as **community applicants**, with no account yet. An account is only created when an admin approves them after the welcome meeting.
+
+### The form: `/join` (public, no login)
+
+Name, email, phone or WhatsApp (optional), country, city, "I am a…" (biomedical engineer, student, clinician, other), organisation or school, country trained in, why biomedical engineering (or why you want to join), how you heard of us, and a consent tick to be contacted about the application. A referral code in the link (`/join?ref=CODE`) is kept, so the member who shared gets the credit. A simple anti-spam check (a hidden field and a rate limit per IP) is enough at first.
+
+After sending, the applicant sees "Thank you, a member of the community will contact you to book a welcome meeting", and gets the same by email.
+
+### Table: `community_applicants`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | uuid | |
+| `full_name`, `email`, `phone` | text | `email` unique among open applications |
+| `country`, `city` | text | |
+| `kind` | text | `engineer`, `student`, `clinician`, `other` |
+| `organisation` | text | Clinic, hospital, company or school |
+| `country_trained`, `motivation`, `heard_from` | text | |
+| `referred_by` | uuid → profiles, null | From the referral code |
+| `contact_consent_at` | timestamptz | |
+| `status` | text | `new`, `contacted`, `meeting_booked`, `approved`, `rejected`, `withdrawn` |
+| `assigned_to` | uuid → profiles, null | The community member who handles it (an Approval host) |
+| `meeting_at` | timestamptz, null | |
+| `notes` | text | Internal, never shown to the applicant |
+| `decided_by`, `decided_at`, `decision_reason` | | |
+| `profile_id` | uuid → profiles, null | Set when the account is created |
+| `created_at`, `updated_at` | timestamptz | |
+
+Applicants are personal data of people who are not members yet: only roles with `view_applicants` can see them, and rejected or withdrawn applications are deleted after 12 months.
+
+### Approving an applicant
+
+An admin (or an Approval host) opens the application, records the meeting, and clicks **Approve**. In one transaction the app:
+
+1. creates the user and profile, the same way the existing invitation flow does (`routers/organizations.py`, invite by email: account created, set-password link emailed),
+2. copies country, city, country trained in and motivation onto the profile,
+3. sets `invited_by` to the referrer, if any,
+4. grants **Ambassador**,
+5. marks the application `approved` with `profile_id`.
+
+The member then sets a password from the email and lands on the welcome and consent page.
+
+### The existing sign-up page
+
+Today anyone can create an account at `/signup`. Once the form exists, `/signup` for newcomers points to `/join`. Accounts created through an engineer's invitation (clinic staff, colleagues) keep working as today and skip the applicant step (decision #15 in the vault). Existing accounts are backfilled as approved members with Ambassador.
 
 ## Permissions and features
 
@@ -148,16 +193,63 @@ Phase 1 gates nothing that exists today. Later phases add checks with `require_p
 | Permission | Granted by | Checked in |
 | --- | --- | --- |
 | `claim_verification_tasks` | Verifier | Community task board (not built yet) |
-| `approve_members`, `approve_clinics` | Approval host, community team | Community admin pages, clinic approval |
+| `decide_applicants`, `approve_clinics` | Approval host, community team | Applicants tab, clinic approval |
 | `receive_area_repair_requests` | Repairer | Public "request maintenance" flow |
 | `diagnose_outside_my_orgs` | Repairer | `routers/fault_reports.py` steps 3 and 5, today limited to the assignee |
 | `order_spare_parts` | Repairer only | Spare parts catalogue (not built yet) |
 | `publish_part_designs` | Part designer | Parts library (not built yet) |
 | `approve_part_designs` | Design reviewer | Parts library |
 | `supply_restricted_parts` | Certified maker (with a valid quality certificate) | Spare parts catalogue |
-| `assign_roles` | Community team | Community admin pages |
+| `manage_roles`, `assign_roles`, `view_members`, `view_applicants`, `view_role_history` | See the dashboard section | Community admin dashboard |
 
 The fault workflow keeps its own org-based rules. A community permission can only add a way in, never remove one an org role already gives.
+
+## The community admin dashboard: `/community/admin`
+
+One dashboard with four tabs. What each person sees depends on their permissions, so the same pages serve the community team and the leads.
+
+| Tab | What it does | Permission |
+| --- | --- | --- |
+| **Applicants** | The queue of applications: filter by status and country, assign to a member, record the meeting, approve or reject with a reason | `view_applicants`, `decide_applicants` |
+| **Members** | Every member with their roles, country, city, last activity and activity counts. Open a member: their roles and history, add or remove a role | `view_members`, `assign_roles` |
+| **Roles** | The tree as a list. Create a role, edit its names, path, tier, unlock type, requirements and permissions, or retire it | `manage_roles` |
+| **History** | Every change to roles, permissions and applications: who, what, when | `view_role_history` |
+
+### Creating a role
+
+**Roles › New role** opens one form:
+
+- names, description and LinkedIn title in English, French and Spanish,
+- path, tier, scope (local, global team, none),
+- how it unlocks: automatic, claimed by the member, confirmed by a person, or assigned by an admin,
+- requirements: rows of "hold role X", "count Y reaches N", "quest Z done", "confirmed by a holder of role W",
+- permissions: every key from `PERMISSIONS` as a checkbox with its plain description, grouped (community, devices and repairs, spare parts, admin).
+
+Saving checks that every requirement points to a real role, metric or quest and that the tree has no loops. A new role starts as a draft, visible only in the dashboard, until an admin publishes it to the tree.
+
+### Assigning a role
+
+From **Members**, open a member and click **Add role**: pick the role, the country or team it applies to, and a reason. The member gets a notification and the unlock screen on their next visit, and the change goes in History. Removing works the same way, and the reason is shown to the member.
+
+### Permissions for the dashboard itself
+
+| Permission | Given to |
+| --- | --- |
+| `manage_roles` (edit the tree and its permissions) | Community team admins only |
+| `assign_roles` (give or remove any role) | Community team admins only |
+| `view_applicants`, `decide_applicants` | Community team, Approval hosts (in their country) |
+| `view_members` | Community team (everyone), City and Country leads (their country), Team leads (their team) |
+| `view_role_history` | Community team |
+
+Superusers have every permission, so the first admins need nothing set up.
+
+## Members list for leads
+
+Leads open **Members** in the same dashboard, limited to their scope: a Country lead sees the members of their country, a Team lead the members of their team, the community team everyone.
+
+For each member: name, photo, city, roles (with paused ones marked), member since, last active, and their actions: devices registered, faults resolved, maintenance done, people invited, community tasks done, and the date of their last action. A member's page shows the timeline of their roles and contributions.
+
+Leads can see but not change roles. They can flag a member to the community team ("ready for Repairer", "inactive, contact them"). Email and phone are shown to leads only for members in their scope.
 
 ## Adding new roles later
 
@@ -166,7 +258,7 @@ Two cases, depending on whether the new role needs a new kind of access.
 1. **A new role made of existing permissions** (for example a "Trainer" who can confirm quests and create local tasks): no code, no release. A community team admin adds the role, its requirements and its permissions in the admin. It appears in the tree at once.
 2. **A role that needs a new kind of access** (for example "can publish training videos"): a small code change. A developer adds the permission key to `PERMISSIONS` in `utils/community.py` and one `require_permission("publish_training")` line on the router that does the action, in one pull request. Once it is deployed, admins attach the key to any role in the admin, as in case 1.
 
-So the code only ever answers "what can be done", and the admin decides "who can do it". Every key has a short description in `PERMISSIONS`, which the admin shows next to the checkbox, so admins see what they are granting. Every change to roles and their permissions is logged (who, when, what) in a `community_role_changes` table, and recorded in the decisions log.
+So the code only ever answers "what can be done", and the admin decides "who can do it". Every key has a short description in `PERMISSIONS`, which the admin shows next to the checkbox, so admins see what they are granting. Every change to roles and their permissions is logged (who, when, what) in a `community_role_changes` table, shown in the dashboard's History tab, and recorded in the decisions log.
 
 ## API: `backend/routers/community.py`, mounted at `/api/community`
 
@@ -179,8 +271,16 @@ So the code only ever answers "what can be done", and the admin decides "who can
 | `PATCH /me/story` | Member | city, country_trained, why_bme |
 | `GET /public/members` | Public | Listed members only: name, photo key, country, city, roles. No email, no ids beyond the profile id |
 | `GET /public/stats` | Public | Engineers, countries, members per country (for the "I joined" post and fixmymedtech.org) |
-| `GET /admin/pending` | `approve_members` | Profiles waiting for approval |
-| `POST /admin/members/{id}/approve` | `approve_members` | Approves, grants Ambassador |
+| `POST /public/applications` | Public | Stores a community applicant |
+| `GET /admin/applicants` | `view_applicants` | The applicant queue, in the caller's scope |
+| `PATCH /admin/applicants/{id}` | `decide_applicants` | Status, assignee, meeting, notes |
+| `POST /admin/applicants/{id}/approve` | `decide_applicants` | Creates the account, grants Ambassador |
+| `POST /admin/applicants/{id}/reject` | `decide_applicants` | With a reason |
+| `GET /admin/members` | `view_members` | Members with roles and activity, in the caller's scope |
+| `GET /admin/members/{id}` | `view_members` | One member's roles and timeline |
+| `GET /admin/roles`, `POST /admin/roles`, `PATCH /admin/roles/{key}` | `manage_roles` | The catalogue with requirements and permissions |
+| `GET /admin/permissions` | `manage_roles` | The keys from `PERMISSIONS` with descriptions |
+| `GET /admin/history` | `view_role_history` | The change log |
 | `POST /admin/members/{id}/roles` | `assign_roles` | Assigns a role (leads, confirmations) |
 | `DELETE /admin/member-roles/{id}` | `assign_roles` | Removes a role, with a reason |
 
@@ -197,25 +297,31 @@ Same pattern as the other features.
 | `pages/tree.py` | `/community/tree` | The skill tree, public (`pub_shell`) or personal (`page_shell`) |
 | `pages/role.py` | `/community/roles/{key}` | Role page: what it does, how to unlock, what it unlocks, LinkedIn title, Claim button |
 | `pages/welcome.py` | `/community/welcome` | Shown once after approval: welcome and social media consent |
-| `pages/admin.py` | `/community/admin` | Pending members, assign or remove roles |
+| `pages/join.py` | `/join` | The public enrolment form |
+| `pages/admin_applicants.py` | `/community/admin/applicants` | Applicant queue and decisions |
+| `pages/admin_members.py` | `/community/admin/members` | Members list and member page, add or remove roles |
+| `pages/admin_roles.py` | `/community/admin/roles` | Role list and role editor |
+| `pages/admin_history.py` | `/community/admin/history` | Change log |
 
 - Register every router in `frontend/main.py` with `xxx.rt.to_app(app)`.
 - Add `("/community", "community", _("nav.community"))` to `sidebar()` in `components.py`, with a Lucide icon.
 - New strings in `i18n.py` for en, es and fr.
-- Add the member's role keys and `member_status` to what `UserContextMiddleware` caches from `/api/auth/me`, and refresh them after an unlock or an approval.
+- Add the member's role keys and permissions to what `UserContextMiddleware` caches from `/api/auth/me`, and refresh them after an unlock or an approval.
 - The tree is server-rendered HTML and CSS (a grid of cards, like the design canvas), no JS library. The screens to follow are in the "Community journey screens" design canvas.
 
 ## Build order
 
 Each phase is one pull request against `dev`.
 
-**Phase 1: Ambassador and the journey page.** Migration 028 with the catalogue seeded from the proposal, approval state and backfill, `utils/community.py` (`progress`, Ambassador grant), `GET /tree`, `GET /me`, consent and story endpoints, admin approve and assign, pages journey, tree, role (read only), welcome, admin. Nothing in the existing app is gated.
+**Phase 1: enrolment, Ambassador and the dashboard.** Migration 028 with the catalogue seeded from the proposal, `community_applicants`, `community_role_changes` and the backfill; `utils/community.py` (`progress`, `has_permission`, Ambassador grant); the `/join` form; the dashboard tabs Applicants, Members and History, and Roles read-only with assign and remove; `GET /tree`, `GET /me`, consent and story endpoints; pages journey, tree, role (read only), welcome. Nothing in the existing app is gated.
+
+**Phase 1b: the role editor.** Create and edit roles, requirements and permissions in the dashboard (until then, the catalogue is edited through SQLAdmin).
 
 **Phase 2: unlocking.** `check_unlocks` wired into the actions above, claiming tier 1 roles, tier 2 automatic unlocks, the unlock screen, Discord posts, share kit link.
 
 **Phase 3: roles that do something.** Confirmations (watched meetings), first permission checks (approvals, fault steps outside my orgs, area repair requests), link to the community task board when it exists.
 
-**Phase 4: leads and upkeep.** City and country dashboards, pause reminders (daily job), tree editor for admins (SQLAdmin views of the three catalogue tables are a cheap first version), public members page and stats for fixmymedtech.org.
+**Phase 4: leads and upkeep.** City and country dashboards with local stats, flags from leads, pause reminders (daily job), public members page and stats for fixmymedtech.org.
 
 Spare parts permissions wait for the parts library and catalogue features themselves.
 
@@ -225,5 +331,6 @@ The repo has no test suite. Phase 1 adds `backend/tests/test_community.py` with 
 
 ## Open technical questions
 
-- Community team admins are superusers for now. When the community team grows, should it become its own community role with `assign_roles` (already in the catalogue) instead of superuser access?
+- Community team admins are superusers for now. When the community team grows, should it become its own community role with `manage_roles` and `assign_roles` instead of superuser access?
+- Should `/signup` close for newcomers once `/join` exists, or stay open for people who don't want to join the community (for example clinic staff who only report faults)?
 - Local roles are held per country first. Are cities needed from phase 1, or can they wait until there are City leads?

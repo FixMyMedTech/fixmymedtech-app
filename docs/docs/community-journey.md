@@ -113,7 +113,7 @@ An append-only log: `id`, `actor_id`, `action` (`role_created`, `role_edited`, `
 | `city` | text | Local roles, members page |
 | `country_trained` | text | Member story ("I was trained in…") |
 | `why_bme` | text, ≤ 500 | Member story ("I chose biomedical engineering because…") |
-| `member_status` | text default `applicant` | `applicant` until the Ambassador quests are done, then `member`; `refused` if the meeting ends in a refusal |
+| `member_status` | text default `applicant` | `applicant` until the Ambassador quests are done, then `member`; `staff` for invited clinic staff who watched the video; `refused` if the meeting ends in a refusal |
 | `member_since` | timestamptz | When the quests were completed (or the migration date for existing accounts) |
 | `social_consent` | bool, null | Null = not answered yet. Asked on its own page |
 | `social_consent_at` | timestamptz | |
@@ -193,13 +193,15 @@ A refused applicant keeps an account that can only see a message with the reason
 
 ### Gating the platform
 
-- **Backend:** a new dependency `get_member_profile` in `utils/profile.py`: the same as `get_current_profile`, plus a `403 {"detail": "community_access_pending"}` when `member_status != 'member'`. Every platform router switches to it (devices, faults, maintenance, organizations, dashboard, tasks…). The profile, Discord, community and auth routes keep `get_current_profile`, so applicants can do their quests. Public `/public/...` routes don't change.
+- **Backend:** a new dependency `get_member_profile` in `utils/profile.py`: the same as `get_current_profile`, plus a `403 {"detail": "community_access_pending"}` when `member_status` is not `member` or `staff`. Staff pass it, but hold no community role, so every community permission check still refuses them. Every platform router switches to it (devices, faults, maintenance, organizations, dashboard, tasks…). The profile, Discord, community and auth routes keep `get_current_profile`, so applicants can do their quests. Public `/public/...` routes don't change.
 - **Frontend:** `require_auth` in `features/auth/helper.py` reads `member_status` from the session (cached by `UserContextMiddleware` from `/api/auth/me`) and redirects applicants to `/community/start`. When the API answers `community_access_pending`, the session is refreshed and the same redirect happens.
 
 ### Existing and invited accounts
 
 - Every existing account is backfilled as a member with Ambassador, so nobody loses access.
-- Accounts created through an organisation invitation (clinic staff invited by an admin, `routers/organizations.py`) skip the quests and are members at once (decision #15 in the vault: joining through an engineer's invitation skips approval). To confirm with Jason.
+- **Clinic staff invited by a clinic** (organisation invitation, `routers/organizations.py`) only have to **watch the video** before they get in (Jason, 2026-10-30). Their status becomes `staff`: they use the app inside their clinic with their org role (report faults, see devices, log maintenance), but hold no community role.
+- If they want more (community tasks, roles, the features roles unlock), they do the remaining Ambassador quests from the same start page: profile, meeting, Discord, consent. Then they become Ambassador and `member`, like everyone else.
+- The video quest is the same `intro_video` quest. A shorter clinic-staff video can be set separately (`STAFF_INTRO_VIDEO_URL`, falling back to the main one).
 
 ## Permissions and features
 
@@ -423,7 +425,6 @@ The repo has no test suite. Phase 1 adds `backend/tests/test_community.py` with 
 ## Open technical questions
 
 - Community team admins are superusers for now. When the community team grows, should it become its own community role with `manage_roles` and `assign_roles` instead of superuser access?
-- Do accounts created by an organisation invitation (clinic staff) skip the Ambassador quests, as drafted?
 - Where is the intro video hosted (YouTube, Vimeo, our MinIO)?
 - Gating the platform touches every router's dependency. It is a mechanical change but a wide one: phase 1 should land it in its own commit, checked page by page with an applicant account and a member account.
 - Local roles are held per country first. Are cities needed from phase 1, or can they wait until there are City leads?

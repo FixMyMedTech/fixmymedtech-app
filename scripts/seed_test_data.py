@@ -146,7 +146,7 @@ async def seed():
                 """),
                 {
                     "id": str(user_id),
-                    "username": email.split("@")[0].replace(".", "_"),
+                    "username": email.split("@")[0].replace(".", "_") + "_" + email.split("@")[1].split(".")[0],
                     "full_name": full_name,
                 },
             )

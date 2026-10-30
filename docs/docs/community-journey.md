@@ -21,7 +21,7 @@ Every member starts as **Ambassador**. Doing tasks unlocks **community roles** (
 | Background tasks | `utils/background.py` `spawn` | Re-checking unlocks after an action without slowing the request |
 | Migration runner | `backend/migrations.py` | New tables, next number 028 |
 
-Gaps: there is no "approved member" state today (any verified account can use the app), no city on profiles, no consent flags, no last-activity time.
+Gaps: there is no applicant or member state today (any verified account can use the whole app), no city on profiles, no consent flags, no last-activity time.
 
 ## Naming: community roles, not roles
 
@@ -95,12 +95,12 @@ For the steps the app can't count from existing tables (watched an approval meet
 | Column | Type | Notes |
 | --- | --- | --- |
 | `profile_id` | uuid → profiles | |
-| `quest_key` | text | `profile_complete`, `discord_joined`, `consent_answered`, `colleague_invited`, `first_contribution`, `watched_approval_meeting`… |
+| `quest_key` | text | `intro_video`, `meeting_held`, `watched_approval_meeting`… |
 | `count` | int | For quests done several times (watched 2 meetings) |
 | `confirmed_by` | uuid → profiles, null | |
 | `updated_at` | timestamptz | |
 
-Quests that can be read from existing data (`discord_joined` = `users.discord_user_id is not null`, `colleague_invited` = someone has `invited_by` = me) are computed, not stored.
+Quests that can be read from existing data (`profile_complete`, `discord_joined` = `users.discord_user_id is not null`, `consent_answered` = `profiles.social_consent is not null`) are computed, not stored.
 
 ### `community_role_changes`
 
@@ -113,13 +113,14 @@ An append-only log: `id`, `actor_id`, `action` (`role_created`, `role_edited`, `
 | `city` | text | Local roles, members page |
 | `country_trained` | text | Member story ("I was trained in…") |
 | `why_bme` | text, ≤ 500 | Member story ("I chose biomedical engineering because…") |
-| `member_since` | timestamptz | When the application was approved (or the migration date for existing accounts) |
+| `member_status` | text default `applicant` | `applicant` until the Ambassador quests are done, then `member`; `refused` if the meeting ends in a refusal |
+| `member_since` | timestamptz | When the quests were completed (or the migration date for existing accounts) |
 | `social_consent` | bool, null | Null = not answered yet. Asked on its own page |
 | `social_consent_at` | timestamptz | |
 | `members_page_hidden` | bool default false | The member hid their card |
 | `last_active_at` | timestamptz | For pausing |
 
-Backfill in the same migration: every existing profile gets `member_since` and the Ambassador role, so nobody already on the platform loses access.
+Backfill in the same migration: every existing profile gets `member_status = 'member'`, `member_since` and the Ambassador role, so nobody already on the platform loses access.
 
 ## Unlock engine: `backend/utils/community.py`
 
@@ -138,57 +139,71 @@ On a new unlock: post to Discord with the existing welcome webhook (one line, sa
 
 No scheduler is needed. `last_active_at` is updated (at most once a day) by `get_current_profile` in `utils/profile.py`. A role counts as paused when `last_active_at` is more than 6 months ago, computed when it is read, so the first action back un-pauses everything at once. The 5-month reminder email needs a daily job; it waits for phase 4.
 
-## Enrolment: community applicants
+## Joining: `/join` creates the account
 
-People who want to join fill in a public form. They are stored as **community applicants**, with no account yet. An account is only created when an admin approves them after the welcome meeting.
+`/join` is the one way into the community. It creates an account straight away, but the account is a **community applicant**: it can only use the journey pages until the Ambassador quests are done. Then platform access opens.
 
-### The form: `/join` (public, no login)
+### The form: `/join` (public, replaces `/signup`)
 
-Name, email, phone or WhatsApp (optional), country, city, "I am a…" (biomedical engineer, student, clinician, other), organisation or school, country trained in, why biomedical engineering (or why you want to join), how you heard of us, and a consent tick to be contacted about the application. A referral code in the link (`/join?ref=CODE`) is kept, so the member who shared gets the credit. A simple anti-spam check (a hidden field and a rate limit per IP) is enough at first.
+Name, email, password, country, city, "I am a…" (biomedical engineer, student, clinician, other), organisation or school, country trained in, why you want to join, how you heard of us. A referral code in the link (`/join?ref=CODE`) sets `invited_by`, so the member who shared gets the credit. The existing email verification still applies. `/signup` redirects to `/join`.
 
-After sending, the applicant sees "Thank you, a member of the community will contact you to book a welcome meeting", and gets the same by email.
+### What the applicant sees: `/community/start`
 
-### Table: `community_applicants`
+Every page of the platform redirects an applicant here. It shows:
+
+1. the **intro video** (embedded; the quest is done when the video ends, or with an "I've watched it" button as a fallback),
+2. **book a welcome meeting** with a member of the community (a booking link, see below),
+3. the Ambassador quests as a checklist with progress,
+4. the Discord invite and a preview of the skill tree.
+
+### The Ambassador quests
+
+| Quest | Done when | Checked |
+| --- | --- | --- |
+| Complete your profile | Photo, country, city, country trained in, why you joined | Automatic |
+| Watch the intro video | The video reached its end | Automatic |
+| Meet a member of the community | The host marks the meeting as held | Confirmed by an Approval host or the community team |
+| Join the Discord | `users.discord_user_id` is set | Automatic |
+| Answer the social media consent | `profiles.social_consent` is not null (yes or no) | Automatic |
+
+When the last one is done, the member gets **Ambassador**, `member_status` becomes `member`, and the platform opens with a welcome screen. "Invite a colleague" and "first device or first community task" move to the tier 1 roles, since they need the platform.
+
+### Booking the meeting
+
+Phase 1 keeps it simple: one booking link (for example a shared Cal.com or Calendly page of the Approval hosts, set in `COMMUNITY_BOOKING_URL`), and the host records the meeting in the dashboard. A built-in calendar can come later.
+
+### Table: `community_applications`
+
+The join form answers and the meeting, one row per applicant, linked to their profile.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| `id` | uuid | |
-| `full_name`, `email`, `phone` | text | `email` unique among open applications |
-| `country`, `city` | text | |
+| `profile_id` | uuid → profiles, primary key | |
 | `kind` | text | `engineer`, `student`, `clinician`, `other` |
-| `organisation` | text | Clinic, hospital, company or school |
-| `country_trained`, `motivation`, `heard_from` | text | |
-| `referred_by` | uuid → profiles, null | From the referral code |
-| `contact_consent_at` | timestamptz | |
-| `status` | text | `new`, `contacted`, `meeting_booked`, `approved`, `rejected`, `withdrawn` |
-| `assigned_to` | uuid → profiles, null | The community member who handles it (an Approval host) |
+| `organisation`, `motivation`, `heard_from` | text | |
+| `host_id` | uuid → profiles, null | The member who meets them |
 | `meeting_at` | timestamptz, null | |
+| `meeting_held_at`, `meeting_confirmed_by` | | Completes the meeting quest |
 | `notes` | text | Internal, never shown to the applicant |
-| `decided_by`, `decided_at`, `decision_reason` | | |
-| `profile_id` | uuid → profiles, null | Set when the account is created |
+| `status` | text | `open`, `meeting_booked`, `met`, `refused`, `withdrawn` |
+| `decision_reason` | text | When refused |
 | `created_at`, `updated_at` | timestamptz | |
 
-Applicants are personal data of people who are not members yet: only roles with `view_applicants` can see them, and rejected or withdrawn applications are deleted after 12 months.
+A refused applicant keeps an account that can only see a message with the reason. Refused and withdrawn applications are deleted after 12 months.
 
-### Approving an applicant
+### Gating the platform
 
-An admin (or an Approval host) opens the application, records the meeting, and clicks **Approve**. In one transaction the app:
+- **Backend:** a new dependency `get_member_profile` in `utils/profile.py`: the same as `get_current_profile`, plus a `403 {"detail": "community_access_pending"}` when `member_status != 'member'`. Every platform router switches to it (devices, faults, maintenance, organizations, dashboard, tasks…). The profile, Discord, community and auth routes keep `get_current_profile`, so applicants can do their quests. Public `/public/...` routes don't change.
+- **Frontend:** `require_auth` in `features/auth/helper.py` reads `member_status` from the session (cached by `UserContextMiddleware` from `/api/auth/me`) and redirects applicants to `/community/start`. When the API answers `community_access_pending`, the session is refreshed and the same redirect happens.
 
-1. creates the user and profile, the same way the existing invitation flow does (`routers/organizations.py`, invite by email: account created, set-password link emailed),
-2. copies country, city, country trained in and motivation onto the profile,
-3. sets `invited_by` to the referrer, if any,
-4. grants **Ambassador**,
-5. marks the application `approved` with `profile_id`.
+### Existing and invited accounts
 
-The member then sets a password from the email and lands on the welcome and consent page.
-
-### The existing sign-up page
-
-Today anyone can create an account at `/signup`. Once the form exists, `/signup` for newcomers points to `/join`. Accounts created through an engineer's invitation (clinic staff, colleagues) keep working as today and skip the applicant step (decision #15 in the vault). Existing accounts are backfilled as approved members with Ambassador.
+- Every existing account is backfilled as a member with Ambassador, so nobody loses access.
+- Accounts created through an organisation invitation (clinic staff invited by an admin, `routers/organizations.py`) skip the quests and are members at once (decision #15 in the vault: joining through an engineer's invitation skips approval). To confirm with Jason.
 
 ## Permissions and features
 
-Phase 1 gates nothing that exists today. Later phases add checks with `require_permission(...)`:
+Phase 1 only adds the applicant gate above. Role permissions start in later phases, with `require_permission(...)`:
 
 | Permission | Granted by | Checked in |
 | --- | --- | --- |
@@ -210,7 +225,7 @@ One dashboard with four tabs. What each person sees depends on their permissions
 
 | Tab | What it does | Permission |
 | --- | --- | --- |
-| **Applicants** | The queue of applications: filter by status and country, assign to a member, record the meeting, approve or reject with a reason | `view_applicants`, `decide_applicants` |
+| **Applicants** | New accounts still doing their quests: quest progress, filter by status and country, assign a host, record the meeting (which completes that quest), or refuse with a reason | `view_applicants`, `decide_applicants` |
 | **Members** | Every member with their roles, country, city, last activity and activity counts. Open a member: their roles and history, add or remove a role | `view_members`, `assign_roles` |
 | **Roles** | The tree as a list. Create a role, edit its names, path, tier, unlock type, requirements and permissions, or retire it | `manage_roles` |
 | **History** | Every change to roles, permissions and applications: who, what, when | `view_role_history` |
@@ -271,11 +286,11 @@ So the code only ever answers "what can be done", and the admin decides "who can
 | `PATCH /me/story` | Member | city, country_trained, why_bme |
 | `GET /public/members` | Public | Listed members only: name, photo key, country, city, roles. No email, no ids beyond the profile id |
 | `GET /public/stats` | Public | Engineers, countries, members per country (for the "I joined" post and fixmymedtech.org) |
-| `POST /public/applications` | Public | Stores a community applicant |
-| `GET /admin/applicants` | `view_applicants` | The applicant queue, in the caller's scope |
+| `GET /admin/applicants` | `view_applicants` | Applicants with quest progress, in the caller's scope |
 | `PATCH /admin/applicants/{id}` | `decide_applicants` | Status, assignee, meeting, notes |
-| `POST /admin/applicants/{id}/approve` | `decide_applicants` | Creates the account, grants Ambassador |
-| `POST /admin/applicants/{id}/reject` | `decide_applicants` | With a reason |
+| `POST /admin/applicants/{id}/meeting-held` | `decide_applicants` | Completes the meeting quest; grants Ambassador if it was the last one |
+| `POST /admin/applicants/{id}/refuse` | `decide_applicants` | With a reason |
+| `POST /me/quests/intro_video` | Applicant | Marks the intro video as watched |
 | `GET /admin/members` | `view_members` | Members with roles and activity, in the caller's scope |
 | `GET /admin/members/{id}` | `view_members` | One member's roles and timeline |
 | `GET /admin/roles`, `POST /admin/roles`, `PATCH /admin/roles/{key}` | `manage_roles` | The catalogue with requirements and permissions |
@@ -297,8 +312,9 @@ Same pattern as the other features.
 | `pages/tree.py` | `/community/tree` | The skill tree, public (`pub_shell`) or personal (`page_shell`) |
 | `pages/role.py` | `/community/roles/{key}` | Role page: what it does, how to unlock, what it unlocks, LinkedIn title, Claim button |
 | `pages/welcome.py` | `/community/welcome` | Shown once after approval: welcome and social media consent |
-| `pages/join.py` | `/join` | The public enrolment form |
-| `pages/admin_applicants.py` | `/community/admin/applicants` | Applicant queue and decisions |
+| `pages/join.py` | `/join` | The public join form; creates the account |
+| `pages/start.py` | `/community/start` | Applicant home: intro video, book a meeting, quests |
+| `pages/admin_applicants.py` | `/community/admin/applicants` | Applicants, their quests and meetings |
 | `pages/admin_members.py` | `/community/admin/members` | Members list and member page, add or remove roles |
 | `pages/admin_roles.py` | `/community/admin/roles` | Role list and role editor |
 | `pages/admin_history.py` | `/community/admin/history` | Change log |
@@ -313,7 +329,7 @@ Same pattern as the other features.
 
 Each phase is one pull request against `dev`.
 
-**Phase 1: enrolment, Ambassador and the dashboard.** Migration 028 with the catalogue seeded from the proposal, `community_applicants`, `community_role_changes` and the backfill; `utils/community.py` (`progress`, `has_permission`, Ambassador grant); the `/join` form; the dashboard tabs Applicants, Members and History, and Roles read-only with assign and remove; `GET /tree`, `GET /me`, consent and story endpoints; pages journey, tree, role (read only), welcome. Nothing in the existing app is gated.
+**Phase 1: joining, Ambassador and the dashboard.** Migration 028 with the catalogue seeded from the proposal, `community_applications`, `community_role_changes` and the backfill; `utils/community.py` (`progress`, `has_permission`, Ambassador quests and grant); `/join` and `/community/start` with the intro video and booking link; the platform gate (`get_member_profile`, `require_auth` redirect); the dashboard tabs Applicants, Members and History, and Roles read-only with assign and remove; `GET /tree`, `GET /me`, consent and story endpoints; pages journey, tree, role (read only), welcome. Existing accounts keep full access through the backfill.
 
 **Phase 1b: the role editor.** Create and edit roles, requirements and permissions in the dashboard (until then, the catalogue is edited through SQLAdmin).
 
@@ -332,5 +348,7 @@ The repo has no test suite. Phase 1 adds `backend/tests/test_community.py` with 
 ## Open technical questions
 
 - Community team admins are superusers for now. When the community team grows, should it become its own community role with `manage_roles` and `assign_roles` instead of superuser access?
-- Should `/signup` close for newcomers once `/join` exists, or stay open for people who don't want to join the community (for example clinic staff who only report faults)?
+- Do accounts created by an organisation invitation (clinic staff) skip the Ambassador quests, as drafted?
+- Where is the intro video hosted (YouTube, Vimeo, our MinIO)?
+- Gating the platform touches every router's dependency. It is a mechanical change but a wide one: phase 1 should land it in its own commit, checked page by page with an applicant account and a member account.
 - Local roles are held per country first. Are cities needed from phase 1, or can they wait until there are City leads?

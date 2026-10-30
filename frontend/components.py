@@ -77,6 +77,48 @@ CSS = """
   --color-theme-1: var(--c-primary);
   --color-theme-2: var(--c-primary-mid);
 
+
+  /* FixMyMedTech design system tokens (docs/design-system/tokens.json).
+     New screens use these names; the --c-* names above stay until phase 2
+     moves the whole app over. */
+  --brand-teal: #1fb0a9;
+  --brand-deep: #01437a;
+  --brand-navy: #132b45;
+  --on-brand: #ffffff;
+  --bg: #f4f8fb;
+  --surface: #ffffff;
+  --sunken: #e9f0f5;
+  --border: #d5e0e9;
+  --border-strong: #728599;
+  --text: #132b45;
+  --text-muted: #4f6276;
+  --primary: #026fa8;
+  --primary-hover: #01437a;
+  --primary-tint: #e0f0f8;
+  --on-primary: #ffffff;
+  --accent: #007c88;
+  --ok: #15803d;
+  --ok-tint: #dcfce7;
+  --warn: #b45309;
+  --warn-tint: #fef3c7;
+  --danger: #b91c1c;
+  --danger-tint: #fee2e2;
+  --shadow-card: 0 1px 2px rgba(19,43,69,0.05);
+  --shadow-float: 0 12px 32px rgba(19,43,69,0.14);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-pill: 9999px;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, "Adwaita Sans", sans-serif;
+  --font-mono-ds: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", "Noto Sans Mono", monospace;
+  --gradient-brand: linear-gradient(135deg, var(--brand-teal) 0%, var(--brand-deep) 100%);
+
   --sidebar-w: 248px;
   --topbar-h: 58px;
   --r-sm: 6px; --r-md: 8px; --r-lg: 12px;
@@ -105,6 +147,26 @@ CSS = """
   --color-bg-0:  var(--c-bg);
   --color-bg-1:  var(--c-bg);
   --color-bg-2:  var(--c-bg-2);
+  --bg: #0b1a2c;
+  --surface: #13283f;
+  --sunken: #112538;
+  --border: #26405a;
+  --border-strong: #6a85a0;
+  --text: #e6eef5;
+  --text-muted: #a9bccd;
+  --primary: #4fb6e8;
+  --primary-hover: #8acff0;
+  --primary-tint: #0e3550;
+  --on-primary: #0b1a2c;
+  --accent: #3cc3cf;
+  --ok: #4ade80;
+  --ok-tint: #12391f;
+  --warn: #fbbf24;
+  --warn-tint: #3d2a0a;
+  --danger: #f87171;
+  --danger-tint: #44161a;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-float: 0 12px 32px rgba(0,0,0,0.55);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -565,6 +627,88 @@ dialog::backdrop {
   animation:spin .6s linear infinite;
 }
 @keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Community journey (design system tokens only) ───────────── */
+.cj { display:flex; flex-direction:column; gap:var(--space-4); max-width:1032px; width:100%; }
+.cj-narrow { max-width:640px; }
+.cj h1 { font-size:24px; line-height:1.25; font-weight:700; color:var(--text); }
+.cj h2 { font-size:20px; line-height:1.3; font-weight:700; color:var(--text); }
+.cj h3 { font-size:16px; line-height:1.35; font-weight:600; color:var(--text); }
+.cj p { color:var(--text-muted); font-size:14px; line-height:1.6; }
+.cj-small { font-size:12px; line-height:1.4; font-weight:500; color:var(--text-muted); }
+.cj-eyebrow { font-size:12px; line-height:1.4; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); }
+.cj-hero { background:var(--brand-deep); border-top:8px solid var(--brand-teal); color:var(--on-brand); border-radius:var(--radius-card); padding:var(--space-6); display:flex; flex-direction:column; gap:var(--space-2); }
+.cj-hero h1, .cj-hero h2, .cj-hero p, .cj-hero .cj-eyebrow { color:var(--on-brand); }
+.cj-hero p { opacity:.92; }
+.cj-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card); box-shadow:var(--shadow-card); padding:var(--space-4) var(--space-6); display:flex; flex-direction:column; gap:var(--space-3); min-width:0; }
+.cj-card.is-focus { border:2px solid var(--primary); }
+.cj-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:var(--space-4); }
+.cj-row { display:flex; flex-wrap:wrap; gap:var(--space-2); align-items:center; }
+.cj-between { display:flex; justify-content:space-between; align-items:center; gap:var(--space-3); flex-wrap:wrap; }
+.cj-quest { display:flex; gap:var(--space-3); align-items:flex-start; padding:var(--space-3) 0; border-top:1px solid var(--border); }
+.cj-quest:first-child { border-top:0; }
+.cj-check { width:24px; height:24px; flex-shrink:0; border-radius:9999px; border:2px solid var(--border-strong); display:flex; align-items:center; justify-content:center; color:var(--on-primary); }
+.cj-check svg { width:14px; height:14px; }
+.cj-quest.done .cj-check { background:var(--ok); border-color:var(--ok); }
+.cj-quest-body { flex:1; display:flex; flex-direction:column; gap:var(--space-2); min-width:0; }
+.cj-quest-title { font-size:14px; font-weight:600; color:var(--text); }
+.cj-bar { height:6px; border-radius:9999px; background:var(--border); overflow:hidden; }
+.cj-bar > span { display:block; height:6px; background:var(--primary); border-radius:9999px; }
+.cj-hero .cj-bar { background:rgba(255,255,255,.3); }
+.cj-hero .cj-bar > span { background:var(--on-brand); }
+.badge-ok { background:var(--ok-tint); color:var(--ok); }
+.badge-warn { background:var(--warn-tint); color:var(--warn); }
+.badge-danger { background:var(--danger-tint); color:var(--danger); }
+.badge-neutral { background:var(--sunken); color:var(--text-muted); }
+.cj .badge { font-family:var(--font-sans); font-size:12px; font-weight:500; letter-spacing:0; padding:2px 8px; }
+.cj .btn-primary { background:var(--primary); color:var(--on-primary); }
+.cj .btn-primary:hover { background:var(--primary-hover); color:var(--on-primary); }
+.cj .btn-secondary { background:var(--surface); color:var(--text); border-color:var(--border-strong); }
+.cj .btn-secondary:hover { border-color:var(--primary); color:var(--primary); }
+.cj .btn-danger { background:var(--danger-tint); color:var(--danger); }
+.cj .btn { min-height:36px; }
+.cj .input, .cj select.input, .cj textarea.input { border-color:var(--border-strong); background:var(--surface); color:var(--text); }
+.cj .label { color:var(--text-muted); font-size:12px; font-weight:500; }
+.cj :focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.cj-video { position:relative; width:100%; aspect-ratio:16/9; border-radius:var(--radius-control); overflow:hidden; background:var(--sunken); }
+.cj-video iframe, .cj-video > div { position:absolute; inset:0; width:100%; height:100%; border:0; }
+.cj-pills { display:flex; gap:6px; flex-wrap:wrap; }
+.cj-choice { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; border:1px solid var(--border-strong); border-radius:var(--radius-control); background:var(--surface); font-size:14px; font-weight:500; color:var(--text); cursor:pointer; }
+.cj-choice:has(input:checked) { border:2px solid var(--primary); background:var(--primary-tint); }
+/* Skill tree */
+.cj-tree { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:var(--space-3); }
+.cj-path { display:flex; flex-direction:column; gap:var(--space-2); }
+.cj-path-title { font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); padding:0 4px; }
+.cj-node { display:flex; flex-direction:column; gap:4px; padding:var(--space-3); border-radius:var(--radius-card); border:1px solid var(--border); background:var(--surface); color:var(--text); text-decoration:none; }
+.cj-node:hover { border-color:var(--primary); color:var(--text); }
+.cj-node.held { border:2px solid var(--ok); }
+.cj-node.open { border:2px solid var(--primary); }
+.cj-node.locked { background:var(--sunken); border-style:dashed; border-color:var(--border-strong); }
+.cj-node-name { font-size:14px; font-weight:600; }
+.cj-node-meta { font-size:12px; color:var(--text-muted); font-weight:500; }
+/* Dashboard */
+.cj-tabs { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--border); padding-bottom:var(--space-2); }
+.cj-tab { padding:8px 12px; border-radius:var(--radius-control); font-size:14px; font-weight:500; color:var(--text-muted); text-decoration:none; }
+.cj-tab:hover { color:var(--primary); }
+.cj-tab.on { background:var(--primary-tint); color:var(--primary); }
+.cj-table { width:100%; border-collapse:collapse; font-size:14px; }
+.cj-table th { text-align:left; font-size:12px; font-weight:500; color:var(--text-muted); background:var(--sunken); padding:8px 12px; white-space:nowrap; }
+.cj-table td { padding:10px 12px; border-top:1px solid var(--border); vertical-align:top; color:var(--text); }
+.cj-table td.n, .cj-table th.n { text-align:right; font-variant-numeric:tabular-nums; }
+.cj-table tr.sel td { background:var(--primary-tint); }
+.cj-tablewrap { overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-card); background:var(--surface); }
+.cj-split { display:flex; gap:var(--space-4); flex-wrap:wrap; align-items:flex-start; }
+.cj-split > .wide { flex:999 1 560px; min-width:0; }
+.cj-split > .side { flex:1 1 320px; min-width:0; }
+.cj-dl { display:grid; grid-template-columns:max-content 1fr; gap:6px 12px; font-size:14px; }
+.cj-dl dt { color:var(--text-muted); font-size:12px; font-weight:500; padding-top:2px; }
+.cj-dl dd { margin:0; color:var(--text); overflow-wrap:anywhere; }
+.cj-locked { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; padding:0 12px; border-radius:var(--radius-control); border:1px dashed var(--border-strong); background:var(--sunken); color:var(--text-muted); font-size:14px; font-weight:500; text-decoration:none; }
+@media (max-width: 760px) {
+  .cj-card { padding:var(--space-4); }
+  .cj-hero { padding:var(--space-4); }
+  .cj .form-row { grid-template-columns:1fr; }
+}
 """
 
 
@@ -635,6 +779,12 @@ def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
 # Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
 # and stay crisp in both themes.
 LUCIDE_ICONS = {
+    "journey": '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+    "tree": '<rect width="6" height="6" x="9" y="2" rx="1"/><rect width="6" height="6" x="2" y="16" rx="1"/><rect width="6" height="6" x="16" y="16" rx="1"/><path d="M12 8v4"/><path d="M5 16v-2a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"/>',
+    "shield": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    "check": '<path d="M20 6 9 17l-5-5"/>',
+    "lock": '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    "flag": '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
     "library": '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
     "home": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>'
             '<path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -689,20 +839,42 @@ def lucide(name: str, cls: str = ""):
     )
 
 
+# Permissions that open the community admin dashboard (utils/community.py).
+DASHBOARD_PERMISSIONS = ("view_applicants", "view_members", "assign_roles", "manage_roles", "view_role_history")
+
+
 def sidebar(current: str = "", lang: str = "en"):
     _ = make_t(lang)
-    links = [
-        ("/home",      "home",      _("nav.home")),
-        ("/dashboard", "dashboard", _("nav.dashboard")),
-        ("/devices",   "devices",   _("nav.devices")),
-        ("/faults",    "faults",    _("nav.faults")),
-        ("/tasks",     "tasks",     _("nav.tasks")),
-        ("/groups",    "groups",    _("nav.groups")),
-        ("/network",   "network",   _("nav.network")),
-        ("/library",   "library",   _("nav.library")),
-        ("/profile",   "profile",   _("nav.profile")),
-        ("/logout",    "logout",    _("nav.logout")),
-    ]
+    user = current_user_ctx()
+    status = user.get("member_status") or "member"
+    perms = set(user.get("permissions") or [])
+    if status in ("applicant", "refused"):
+        # Applicants only see their start page until the welcome quests are done.
+        links = [
+            ("/community/start", "journey", _("nav.community_start")),
+            ("/community/tree",  "tree",    _("nav.community_tree")),
+            ("/profile",         "profile", _("nav.profile")),
+            ("/logout",          "logout",  _("nav.logout")),
+        ]
+    else:
+        links = [
+            ("/home",      "home",      _("nav.home")),
+            ("/dashboard", "dashboard", _("nav.dashboard")),
+            ("/devices",   "devices",   _("nav.devices")),
+            ("/faults",    "faults",    _("nav.faults")),
+            ("/tasks",     "tasks",     _("nav.tasks")),
+            ("/groups",    "groups",    _("nav.groups")),
+            ("/network",   "network",   _("nav.network")),
+            ("/library",   "library",   _("nav.library")),
+            ("/community", "journey",   _("nav.community")),
+            ("/community/tree", "tree", _("nav.community_tree")),
+        ]
+        if perms & set(DASHBOARD_PERMISSIONS):
+            links.append(("/community/admin", "shield", _("nav.community_admin")))
+        links += [
+            ("/profile",   "profile",   _("nav.profile")),
+            ("/logout",    "logout",    _("nav.logout")),
+        ]
     return Aside(
         Div(
             A(

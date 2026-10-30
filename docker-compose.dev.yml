@@ -45,6 +45,10 @@ services:
       DISCORD_FEEDBACK_TAG_ID: ${DISCORD_FEEDBACK_TAG_ID:-}
       DISCORD_ISSUE_TAG_ID: ${DISCORD_ISSUE_TAG_ID:-}
       DISCORD_WELCOME_WEBHOOK_URL: ${DISCORD_WELCOME_WEBHOOK_URL:-}
+      COMMUNITY_BOOKING_URL: ${COMMUNITY_BOOKING_URL:-}
+      COMMUNITY_INTRO_VIDEO_URL: ${COMMUNITY_INTRO_VIDEO_URL:-}
+      STAFF_INTRO_VIDEO_URL: ${STAFF_INTRO_VIDEO_URL:-}
+      DISCORD_INVITE_URL: ${DISCORD_INVITE_URL:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; r = urllib.request.urlopen('http://localhost:8888/health', timeout=5); raise SystemExit(0 if r.status == 200 else 1)"]
       interval: 30s

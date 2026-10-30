@@ -175,14 +175,55 @@ def user_can_edit_log(me, log):
         or user_id == str(log.get("assigned_to", ""))
     )
 
+# ── Community gate ───────────────────────────────────────────
+# A community applicant (still doing the welcome quests) or a refused account
+# can only open these pages; everything else redirects to /community/start.
+# The backend enforces the same rule (403 community_access_pending).
+APPLICANT_PATHS = ("/community/start", "/community/welcome", "/community/tree",
+                   "/community/roles", "/profile", "/logout", "/lang", "/feedback")
+
+
+def applicant_allowed(path: str) -> bool:
+    return any(path == p or path.startswith(p + "/") for p in APPLICANT_PATHS)
+
+
+def is_applicant(req) -> bool:
+    return req.session.get("member_status") in ("applicant", "refused")
+
+
+def store_me(req, me: dict) -> None:
+    """Cache what the shell needs from /api/auth/me in the session: avatar
+    menu data, member status and community permissions (for the sidebar and
+    the gate). Call it whenever the profile or the community status changes."""
+    email = req.session.get("user_email", "") or me.get("email") or ""
+    name = me.get("full_name") or me.get("username") or email
+    community = me.get("community") or {}
+    old_status = req.session.get("member_status")
+    req.session["user_name"] = name
+    req.session["user_username"] = me.get("username") or name
+    req.session["user_email"] = email
+    req.session["user_avatar"] = me.get("avatar_key") or ""
+    req.session["member_status"] = me.get("member_status") or "member"
+    req.session["community_permissions"] = list(community.get("permissions") or [])
+    req.session["community_roles"] = list(community.get("roles") or [])
+    if old_status in ("applicant", "staff") and req.session["member_status"] == "member":
+        # Shown once: the "You're an Ambassador" page.
+        req.session["show_welcome"] = "1"
+
+
 def require_auth(req):
     """
     Fast check — just verifies session has a token.
     For full token validation use require_auth_verified.
+
+    Also the community gate: an applicant is sent to /community/start for
+    every page outside APPLICANT_PATHS.
     """
     token = get_token(req)
     if not token:
         return None, login_redirect(req)
+    if is_applicant(req) and not applicant_allowed(req.url.path):
+        return token, RedirectResponse("/community/start", status_code=302 if req.method == "GET" else 303)
     return token, None
 
 async def require_auth_verified(req):

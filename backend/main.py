@@ -15,7 +15,9 @@ import logging
 
 from models import models
 from config.db_config import engine
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents, community
+from fastapi import Depends
+from utils.profile import require_platform_access
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
 from utils.create_superuser import bootstrap_superuser_from_env
@@ -77,16 +79,20 @@ app.include_router(auth.router,             prefix="/api/auth",              tag
 app.include_router(profile.router,          prefix="/api/auth",              tags=["profile"])
 app.include_router(oauth.router,            prefix="/api/auth",              tags=["auth"])
 app.include_router(discord_link.router,     prefix="/api/auth",              tags=["auth"])
-app.include_router(devices.router,          prefix="/api/devices",           tags=["devices"])
-app.include_router(fault_reports.router,    prefix="/api/faults",            tags=["faults"])
-app.include_router(maintenance_logs.router, prefix="/api/maintenance-logs",  tags=["maintenance-logs"])
-app.include_router(dashboard.router,        prefix="/api/dashboard",         tags=["dashboard"])
-app.include_router(organizations.router,    prefix="/api/organizations",     tags=["organizations"])
+# Platform routers: a community applicant (still doing the welcome quests)
+# gets 403 community_access_pending here. See utils/profile.py.
+platform = [Depends(require_platform_access)]
+app.include_router(devices.router,          prefix="/api/devices",           tags=["devices"], dependencies=platform)
+app.include_router(fault_reports.router,    prefix="/api/faults",            tags=["faults"], dependencies=platform)
+app.include_router(maintenance_logs.router, prefix="/api/maintenance-logs",  tags=["maintenance-logs"], dependencies=platform)
+app.include_router(dashboard.router,        prefix="/api/dashboard",         tags=["dashboard"], dependencies=platform)
+app.include_router(organizations.router,    prefix="/api/organizations",     tags=["organizations"], dependencies=platform)
 app.include_router(admin_email_router,      prefix="/admin-panel",           tags=["admin"])
-app.include_router(healthsites.router,      prefix="/api/healthsites",       tags=["healthsites"])
+app.include_router(healthsites.router,      prefix="/api/healthsites",       tags=["healthsites"], dependencies=platform)
+app.include_router(community.router,        prefix="/api/community",         tags=["community"])
 app.include_router(feedback.router,         prefix="/api/feedback",          tags=["feedback"])
 app.include_router(documents.router,        prefix="/api/documents",         tags=["documents"])
-app.include_router(documents.device_router, prefix="/api/devices",           tags=["documents"])
+app.include_router(documents.device_router, prefix="/api/devices",           tags=["documents"], dependencies=platform)
 
 # ── SQLAdmin (browsable admin UI at /admin) ─────────────────
 from sqladmin import Admin, ModelView
@@ -265,6 +271,31 @@ class FeedbackAdmin(ModelView, model=models.Feedback):
     name_plural = "Feedback"
     icon = "fa-solid fa-comment-dots"
 
+# Community journey catalogue (migration 029). Until the role editor exists
+# (phase 1b), the community team edits roles, requirements and permissions here.
+class CommunityRoleAdmin(ModelView, model=models.CommunityRole):
+    column_list = [models.CommunityRole.key, models.CommunityRole.path, models.CommunityRole.tier,
+                   models.CommunityRole.scope, models.CommunityRole.unlock, models.CommunityRole.active]
+    column_sortable_list = [models.CommunityRole.key, models.CommunityRole.path, models.CommunityRole.tier]
+    name = "Community role"
+    name_plural = "Community roles"
+    icon = "fa-solid fa-sitemap"
+
+class CommunityRoleRequirementAdmin(ModelView, model=models.CommunityRoleRequirement):
+    column_list = [models.CommunityRoleRequirement.role_key, models.CommunityRoleRequirement.kind,
+                   models.CommunityRoleRequirement.ref, models.CommunityRoleRequirement.threshold]
+    column_sortable_list = [models.CommunityRoleRequirement.role_key]
+    name = "Role requirement"
+    name_plural = "Role requirements"
+    icon = "fa-solid fa-list-check"
+
+class CommunityRolePermissionAdmin(ModelView, model=models.CommunityRolePermission):
+    column_list = [models.CommunityRolePermission.role_key, models.CommunityRolePermission.permission]
+    column_sortable_list = [models.CommunityRolePermission.role_key]
+    name = "Role permission"
+    name_plural = "Role permissions"
+    icon = "fa-solid fa-key"
+
 admin = Admin(
     app, engine=engine, title="FixMyMedTech Admin",
     authentication_backend=AdminAuth(),
@@ -280,6 +311,9 @@ admin.add_view(DocumentAdmin)
 admin.add_view(FaultAdmin)
 admin.add_view(MaintenanceLogAdmin)
 admin.add_view(FeedbackAdmin)
+admin.add_view(CommunityRoleAdmin)
+admin.add_view(CommunityRoleRequirementAdmin)
+admin.add_view(CommunityRolePermissionAdmin)
 
 
 @app.get("/health")

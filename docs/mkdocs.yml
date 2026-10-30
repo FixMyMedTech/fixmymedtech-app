@@ -18,6 +18,7 @@ nav:
     # - Deployment: deployment.md
     - Collaboration: collaboration.md
     - Community journey (plan): community-journey.md
+    - Community journey (how to use): community-guide.md
   - Code of Conduct: CODE_OF_CONDUCT.md
   - License: LICENSE
 theme:

@@ -136,19 +136,30 @@ async def seed():
                 )
                 print(f"  ✓ {email:<30} → {user_id}")
 
-            # Insert into profiles
+            # Insert into profiles. Test users are community members already
+            # (status 'member' + Ambassador, see migration 029), so they can
+            # use the whole platform without doing the welcome quests.
             await db.execute(
                 text(f"""
-                    INSERT INTO {SCHEMA}.profiles (id, username, full_name)
-                    VALUES (:id, :username, :full_name)
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, member_status, member_since)
+                    VALUES (:id, :username, :full_name, :country, 'member', NOW())
                     ON CONFLICT (id) DO UPDATE SET
                         full_name=EXCLUDED.full_name
                 """),
                 {
                     "id": str(user_id),
-                    "username": email.split("@")[0].replace(".", "_"),
+                    "username": email.replace("@", "_").split(".")[0],
                     "full_name": full_name,
+                    "country": ORGANIZATIONS[org_idx]["country"],
                 },
+            )
+            await db.execute(
+                text(f"""
+                    INSERT INTO {SCHEMA}.member_roles (profile_id, role_key, country, source)
+                    VALUES (:id, 'ambassador', :country, 'backfill')
+                    ON CONFLICT DO NOTHING
+                """),
+                {"id": str(user_id), "country": ORGANIZATIONS[org_idx]["country"]},
             )
 
             # Insert into org_users (junction table)
@@ -163,6 +174,42 @@ async def seed():
 
         await db.commit()
         print(f"✓ {len(USERS)} users seeded")
+
+        # ── 3. Community journey test accounts ───────────────
+        # tech@mulago.org is Country lead for Uganda (sees Ugandan members and
+        # applicants in /community/admin). applicant@test.org has just joined
+        # and only sees /community/start.
+        lead = (await db.execute(
+            text(f"SELECT id FROM {SCHEMA}.users WHERE email = 'tech@mulago.org'"))).scalar()
+        if lead:
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.member_roles (profile_id, role_key, country, source)
+                VALUES (:id, 'country_lead', 'Uganda', 'assigned') ON CONFLICT DO NOTHING
+            """), {"id": str(lead)})
+        app_id = (await db.execute(
+            text(f"SELECT id FROM {SCHEMA}.users WHERE email = 'applicant@test.org'"))).scalar()
+        if not app_id:
+            app_id = uuid.uuid4()
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.users (id, email, hashed_password, is_active, is_superuser, is_verified, full_name)
+                VALUES (:id, 'applicant@test.org', :pwd, TRUE, FALSE, TRUE, 'Esi Boateng')
+            """), {"id": str(app_id), "pwd": _bcrypt_hash("Pass123!")})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, city)
+                VALUES (:id, 'esi_boateng', 'Esi Boateng', 'Uganda', 'Kampala')
+            """), {"id": str(app_id)})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.org_users (profile_id, organization_id, role)
+                VALUES (:id, :org, 'admin')
+            """), {"id": str(app_id), "org": ORGANIZATIONS[0]["id"]})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.community_applications (profile_id, kind, organisation, motivation)
+                VALUES (:id, 'engineer', 'Mulago National Referral Hospital',
+                        'Our incubators wait months for parts. I want to help fix that.')
+            """), {"id": str(app_id)})
+        await db.commit()
+        print("✓ community accounts seeded: tech@mulago.org is Country lead (Uganda), "
+              "applicant@test.org is an applicant")
 
     await engine.dispose()
     print("\nDone. You can now log in with any of these credentials.")

@@ -50,6 +50,9 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 auth_helper.clear_session(req)  # clear expired token, show login
+            elif e.response.status_code == 403:
+                # Signed in, but still a community applicant.
+                return RedirectResponse("/community/start", status_code=302)
         except Exception:
             return RedirectResponse("/home", status_code=302)
 
@@ -99,7 +102,7 @@ async def get(req, expired: str = "", next: str = "", verified: str = ""):
                 Button(_("login.signin"), type="submit", cls="btn btn-primary",
                     style="width:100%;justify-content:center;margin-top:4px;"),
                 P(
-                    _("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
+                    _("login.signup_link"), A(_("login.signup_link_action"), href="/join"),
                     cls="auth-link", style="margin-top:12px;"
                 ),
                 # _oauth_buttons(_),
@@ -179,7 +182,7 @@ async def post(req, email: str, password: str, next: str = ""):
                 ),
                 Button(_("login.signin"), type="submit", cls="btn btn-primary",
                     style="width:100%;justify-content:center;margin-top:4px;"),
-                P(_("login.signup_link"), A(_("login.signup_link_action"), href="/signup"),
+                P(_("login.signup_link"), A(_("login.signup_link_action"), href="/join"),
                     cls="auth-link", style="margin-top:12px;"),
                 # _oauth_buttons(_),
                 cls="auth-card"

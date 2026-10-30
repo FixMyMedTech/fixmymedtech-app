@@ -31,7 +31,10 @@ from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
 
+# Cookie name is configurable so two stacks on the same host (browsers keep
+# cookies per host, not per port) each keep their own login.
 app, route = fast_app(secret_key=SECRET,
+                      session_cookie=os.getenv("SESSION_COOKIE") or "session_",
                       static="/static/",
                       live=True,
                       hdrs=(

@@ -20,9 +20,9 @@ python scripts/seed_test_data.py        # test orgs/users (all passwords Pass123
 
 Source isn't volume-mounted into the containers, so code changes need `up --build`.
 
-- App: http://localhost:5001 (also reachable through the backend at :8888)
-- API + Swagger: http://localhost:8888/docs
-- SQLAdmin: http://localhost:8888/admin/ (superusers only)
+- App: http://localhost:8890 (frontend alone: :5003). The local stack uses 8890/5003 so it can run next to the Supabase stack (`docker-compose.yml`, 8888/5001); override with `LOCAL_*_PORT` in `.env`.
+- API + Swagger: http://localhost:8890/docs
+- SQLAdmin: http://localhost:8890/admin/ (superusers only)
 - MinIO console: http://localhost:9003
 
 To run outside Docker: `cd backend && uvicorn main:app --reload --port 8888` and `cd frontend && python main.py` (FastHTML `serve()` with live reload). The frontend reads `API_URL` (default `http://localhost:8888`).

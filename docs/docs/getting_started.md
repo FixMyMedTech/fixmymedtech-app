@@ -64,8 +64,8 @@ This builds and starts four containers:
 |-----------|-----|--------------|
 | **db**       | `localhost:5432` | PostgreSQL 16 (isolated `pg-data` volume) |
 | **minio**    | console `http://localhost:9003` | S3-compatible file storage |
-| **backend**  | `http://localhost:8888` | FastAPI REST API |
-| **frontend** | `http://localhost:5001` | FastHTML server-side UI |
+| **backend**  | `http://localhost:8890` | FastAPI REST API (also serves the app) |
+| **frontend** | `http://localhost:5003` | FastHTML server-side UI |
 
 On first boot the database is initialised from `infrastructure/db/init.sql`, then the backend
 auto-applies every migration in `infrastructure/migrations/` in order.
@@ -93,9 +93,13 @@ This builds and starts three containers:
 
 Once running:
 
-- **App:** <http://localhost:5001>
-- **API docs (Swagger):** <http://localhost:8888/docs>
-- **Admin portal:** <http://localhost:8888/admin/> *(superuser only — see below)*
+- **App:** <http://localhost:8890> with Option A, <http://localhost:8888> with Option B
+- **API docs (Swagger):** `/docs` on the same address
+- **Admin portal:** `/admin/` on the same address *(superuser only — see below)*
+
+The local stack (Option A) uses 8890 / 5003 so it can run at the same time as
+Option B on 8888 / 5001. Change them with `LOCAL_BACKEND_PORT` /
+`LOCAL_FRONTEND_PORT` in `.env`.
 - **MinIO console:** <http://localhost:9003> with Option A, <http://localhost:9001> with Option B *(creds `minioadmin`/`minioadmin` unless overridden)*
 
 ### First-time setup — create a superuser

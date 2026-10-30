@@ -24,7 +24,7 @@ MAIL_USERNAME = os.getenv("MAIL_USERNAME", "")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
 MAIL_FROM     = os.getenv("MAIL_FROM") or "noreply@fixmymedtech.org"
 MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME") or "FixMyMedTech"
-LOGO_URL      = os.getenv("LOGO_URL", "https://fndvnrrmzfstflialpag.supabase.co/storage/v1/object/public/assets/fixmymedtech_africa.png")
+LOGO_URL      = os.getenv("LOGO_URL") or "https://fndvnrrmzfstflialpag.supabase.co/storage/v1/object/public/assets/fixmymedtech_africa.png"
 
 USE_TLS = os.getenv("MAIL_STARTTLS", "true").lower() == "true"
 USE_SSL = os.getenv("MAIL_SSL_TLS", "false").lower() == "true"

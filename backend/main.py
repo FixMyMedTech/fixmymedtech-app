@@ -65,6 +65,7 @@ app.add_middleware(
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("AUTH_SESSION_SECRET", "dev-admin-session-secret"),
+    session_cookie=os.getenv("ADMIN_SESSION_COOKIE") or "session",
     same_site="lax",
 )
 

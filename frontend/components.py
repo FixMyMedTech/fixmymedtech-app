@@ -614,6 +614,7 @@ def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
 # Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
 # and stay crisp in both themes.
 LUCIDE_ICONS = {
+    "library": '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
     "home": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>'
             '<path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     "dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/>'
@@ -677,6 +678,7 @@ def sidebar(current: str = "", lang: str = "en"):
         ("/tasks",     "tasks",     _("nav.tasks")),
         ("/groups",    "groups",    _("nav.groups")),
         ("/network",   "network",   _("nav.network")),
+        ("/library",   "library",   _("nav.library")),
         ("/profile",   "profile",   _("nav.profile")),
         ("/logout",    "logout",    _("nav.logout")),
     ]
@@ -925,7 +927,8 @@ def topbar(authenticated: bool, current: str = "", lang: str = "en"):
     if authenticated:
         right.append(avatar_menu(lang))
     else:
-        right = [A(_("login.signin"), href="/login",
+        right = [A(_("nav.library"), href="/library", cls="btn btn-secondary btn-sm"),
+                 A(_("login.signin"), href="/login",
                     cls="btn btn-secondary btn-sm"),
                     language_switcher(lang)]
     return Header(

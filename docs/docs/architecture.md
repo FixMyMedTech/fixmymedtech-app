@@ -163,6 +163,25 @@ open ──(maintenance-org admin assigns)──► assigned
 `in_progress` is an optional step when the assignee goes on site. A device
 without a healthsite is approved by the maintenance-org admin.
 
+### Document library
+
+Manuals and guides live in `fixmymedtech.documents`, and devices link to them
+through `device_documents` (many to many), so one manual serves every device
+of that model. A document is either:
+
+- **from iFixit** (`source = 'ifixit'`): a *link* to a PDF in the iFixit
+  library, found by manufacturer and model. The file is never copied; the row
+  stores the URL and iFixit ids, once per iFixit document. Metadata always
+  comes from iFixit itself (`backend/config/ifixit.py`, cached for a day).
+- **uploaded** (`source = 'upload'`): a PDF stored in MinIO. Uploads start
+  with `contribution_status = 'pending'`; sending them to the iFixit library
+  after a superuser's approval is planned.
+
+Anyone can read documents (device page, public QR page, `/library`).
+Attaching, uploading and removing need a logged-in user. Uploads are limited
+to PDFs of `DOCUMENT_MAX_MB` (50 MB by default); the nginx `client_max_body_size`
+in front of the app must allow that size.
+
 ### Feedback button
 
 Every page shows a **?** button (bottom-right) with two choices, *Send feedback*

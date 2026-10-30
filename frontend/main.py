@@ -10,7 +10,7 @@ from fasthtml.common import *
 
 load_dotenv()
 
-from components import set_current_user
+from components import set_current_user, brand_head
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
@@ -39,12 +39,25 @@ app, route = fast_app(secret_key=SECRET,
                       live=True,
                       hdrs=(
                         Script(src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"),
-                        Link(rel="icon", type="image/png", href="/static/logo_BW_white.png"),
+                        *brand_head(),
                     )
     )
-                    
-# put favicon.ico in your project root or /static
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# Browsers and crawlers ask for these at the site root, whatever the page says.
+# They go first: fast_app's own static route would otherwise catch *.ico/*.png
+# and look for them in this folder, not in static/.
+from starlette.routing import Route
+
+def _root_file(path, media_type):
+    return lambda request: FileResponse(path, media_type=media_type)
+
+app.router.routes[0:0] = [
+    Route("/favicon.ico", _root_file("static/favicon.ico", "image/x-icon")),
+    Route("/apple-touch-icon.png", _root_file("static/apple-touch-icon.png", "image/png")),
+]
 
 
 class UserContextMiddleware(BaseHTTPMiddleware):

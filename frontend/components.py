@@ -26,6 +26,18 @@ AVATAR_IMG_STYLE = (
 TRANSPARENT_GIF = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
 
 
+# ── Favicons and app icons, shared by every page <head> ──────
+def brand_head():
+    """Favicon, touch icon and web manifest links (files in static/)."""
+    return (
+        Link(rel="icon", href="/favicon.ico", sizes="48x48"),
+        Link(rel="icon", type="image/png", sizes="32x32", href="/static/favicon-32.png"),
+        Link(rel="apple-touch-icon", href="/static/apple-touch-icon.png"),
+        Link(rel="manifest", href="/static/site.webmanifest"),
+        Meta(name="theme-color", content="#01437a"),
+    )
+
+
 # ── Design tokens ────────────────────────────────────────────
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -975,6 +987,7 @@ def shell(content, title: str = "FixMyMedTech", lang: str = "en",
             Meta(charset="utf-8"),
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
+            *brand_head(),
             Style(CSS),
         ),
         Body(
@@ -1006,6 +1019,7 @@ def auth_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
             Meta(charset="utf-8"),
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
+            *brand_head(),
             Style(CSS),
         ),
         Body(

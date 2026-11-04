@@ -74,6 +74,10 @@ services:
       DISCORD_FEEDBACK_TAG_ID: ${DISCORD_FEEDBACK_TAG_ID:-}
       DISCORD_ISSUE_TAG_ID: ${DISCORD_ISSUE_TAG_ID:-}
       DISCORD_WELCOME_WEBHOOK_URL: ${DISCORD_WELCOME_WEBHOOK_URL:-}
+      COMMUNITY_BOOKING_URL: ${COMMUNITY_BOOKING_URL:-}
+      COMMUNITY_INTRO_VIDEO_URL: ${COMMUNITY_INTRO_VIDEO_URL:-}
+      STAFF_INTRO_VIDEO_URL: ${STAFF_INTRO_VIDEO_URL:-}
+      DISCORD_INVITE_URL: ${DISCORD_INVITE_URL:-}
       # Background-removal model (~176 MB), kept in a volume so it is
       # downloaded once instead of after every rebuild.
       U2NET_HOME: /models

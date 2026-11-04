@@ -65,6 +65,10 @@ jobs:
             DISCORD_FEEDBACK_TAG_ID=${{ secrets.PROD_DISCORD_FEEDBACK_TAG_ID }}
             DISCORD_ISSUE_TAG_ID=${{ secrets.PROD_DISCORD_ISSUE_TAG_ID }}
             DISCORD_WELCOME_WEBHOOK_URL=${{ secrets.PROD_DISCORD_WELCOME_WEBHOOK_URL }}
+            COMMUNITY_BOOKING_URL=${{ vars.COMMUNITY_BOOKING_URL }}
+            COMMUNITY_INTRO_VIDEO_URL=${{ vars.COMMUNITY_INTRO_VIDEO_URL }}
+            STAFF_INTRO_VIDEO_URL=${{ vars.STAFF_INTRO_VIDEO_URL }}
+            DISCORD_INVITE_URL=${{ vars.DISCORD_INVITE_URL }}
             EOF
 
       - name: Copy code to server

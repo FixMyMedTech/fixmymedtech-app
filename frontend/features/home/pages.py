@@ -42,7 +42,14 @@ async def get(req):
         cls="card", style="max-width:460px;margin:80px auto;padding:40px 32px;align-self:start;"
     )
 
+    if redirect and token:
+        # Signed in but still a community applicant: their home is the start page.
+        if req.session.pop("show_welcome", None):
+            return RedirectResponse("/community/welcome", status_code=302)
+        return redirect
     if redirect:
         return pub_shell(landing, title=_("title.home"), lang=lang)
+    if req.session.pop("show_welcome", None):
+        return RedirectResponse("/community/welcome", status_code=302)
 
     return page_shell(landing, current="/home", title=_("title.home"), lang=lang)

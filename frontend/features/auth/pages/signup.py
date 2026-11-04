@@ -96,15 +96,10 @@ def _signup_form(t, errors=None, values=None):
 
 @rt("/signup")
 async def get(req):
-    lang = req.session.get("lang", "en")
-    _ = make_t(lang)
-    if auth_helper.get_token(req):
-        return RedirectResponse("/home", status_code=302)
-
-    return auth_shell(
-        Form(_signup_form(_), method="post", action="/signup"),
-        title=_("title.signup"), lang=lang
-    )
+    # /join is now the one way in (community journey, migration 029): it
+    # creates the account and leads to the welcome quests.
+    query = f"?{req.url.query}" if req.url.query else ""
+    return RedirectResponse(f"/join{query}", status_code=302)
 
 
 @rt("/signup")

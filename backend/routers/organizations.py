@@ -627,6 +627,9 @@ async def invite_organization_member(
             id=user.id,
             username=await _unique_username(db, _username_base(email)),
             full_name=user.full_name,
+            # Staff invited by a clinic only watch the intro video before they
+            # get in (status 'staff'); the other welcome quests unlock more.
+            join_path="clinic_staff",
         ))
         created_user = True
 

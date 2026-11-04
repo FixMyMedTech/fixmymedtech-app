@@ -55,6 +55,9 @@ async def me(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     from routers.discord_link import discord_login_available
+    from utils import community as cm
+    powers = await cm.powers_for(db, profile, user)
+    places = await cm.team_places(db, profile.id)
     return {
         "id": profile.id,
         "username": profile.username,
@@ -63,6 +66,16 @@ async def me(
         "avatar_key": profile.avatar_key,
         "email": user.email,
         "is_verified": user.is_verified,
+        "is_superuser": bool(user.is_superuser),
+        # Community journey (migration 029): cached in the frontend session
+        # to gate pages and build the sidebar.
+        "member_status": profile.member_status,
+        "join_path": profile.join_path,
+        "community": {
+            "teams": {m.team_key: m.level for m in places},
+            "permissions": powers.as_list(),
+            "paused": cm.is_paused(profile.last_active_at),
+        },
         "discord": {
             "available": discord_login_available(),
             "linked": bool(user.discord_user_id),

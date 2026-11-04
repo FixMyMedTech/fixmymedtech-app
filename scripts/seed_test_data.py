@@ -136,21 +136,23 @@ async def seed():
                 )
                 print(f"  ✓ {email:<30} → {user_id}")
 
-            # Insert into profiles
+            # Insert into profiles. Test users are community members already
+            # (status 'member' + Ambassador, see migration 029), so they can
+            # use the whole platform without doing the welcome quests.
             await db.execute(
                 text(f"""
-                    INSERT INTO {SCHEMA}.profiles (id, username, full_name)
-                    VALUES (:id, :username, :full_name)
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, member_status, member_since)
+                    VALUES (:id, :username, :full_name, :country, 'member', NOW())
                     ON CONFLICT (id) DO UPDATE SET
                         full_name=EXCLUDED.full_name
                 """),
                 {
                     "id": str(user_id),
-                    "username": email.split("@")[0].replace(".", "_"),
+                    "username": email.replace("@", "_").split(".")[0],
                     "full_name": full_name,
+                    "country": ORGANIZATIONS[org_idx]["country"],
                 },
             )
-
             # Insert into org_users (junction table)
             await db.execute(
                 text(f"""
@@ -163,6 +165,68 @@ async def seed():
 
         await db.commit()
         print(f"✓ {len(USERS)} users seeded")
+
+        # ── 3. Community journey test accounts ───────────────
+        # Teams (see /community/achievements and /community/admin):
+        #   tech@mulago.org    John Okello, lead of Community Builders: reviews
+        #                      applicants, adds Community Builders, recognises
+        #                      Supporter / Event Organiser / Active Builder
+        #   admin@kenyatta.org lead of Communicators
+        #   eng@mulago.org     Paul Wasswa, member of Clinics Connectors
+        #   nurse@mulago.org   candidate Communicator
+        # applicant@test.org has just joined and only sees /community/start.
+        async def profile_id(email):
+            return (await db.execute(
+                text(f"SELECT id FROM {SCHEMA}.users WHERE email = :e"), {"e": email})).scalar()
+
+        places = [("tech@mulago.org", "community_builder", "lead"),
+                  ("admin@kenyatta.org", "communicator", "lead"),
+                  ("eng@mulago.org", "clinics_connector", "member"),
+                  ("nurse@mulago.org", "communicator", "candidate")]
+        for email, team, level in places:
+            pid = await profile_id(email)
+            if pid:
+                await db.execute(text(f"""
+                    INSERT INTO {SCHEMA}.team_members (profile_id, team_key, level)
+                    SELECT :id, :team, :level
+                    WHERE NOT EXISTS (SELECT 1 FROM {SCHEMA}.team_members
+                                      WHERE profile_id = :id AND team_key = :team AND status = 'active')
+                """), {"id": str(pid), "team": team, "level": level})
+        john, paul = await profile_id("tech@mulago.org"), await profile_id("eng@mulago.org")
+        if john and paul:
+            already = (await db.execute(text(
+                f"SELECT count(*) FROM {SCHEMA}.achievement_records WHERE profile_id = :p"),
+                {"p": str(paul)})).scalar()
+            if not already:
+                await db.execute(text(f"""
+                    INSERT INTO {SCHEMA}.achievement_records (profile_id, achievement_key, count, note, recognised_by)
+                    VALUES (:p, 'supporter', 2, 'Helped Kigali fix an infusion pump alarm', :j),
+                           (:p, 'active_builder', 4, 'October and November community calls', :j)
+                """), {"p": str(paul), "j": str(john)})
+        app_id = (await db.execute(
+            text(f"SELECT id FROM {SCHEMA}.users WHERE email = 'applicant@test.org'"))).scalar()
+        if not app_id:
+            app_id = uuid.uuid4()
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.users (id, email, hashed_password, is_active, is_superuser, is_verified, full_name)
+                VALUES (:id, 'applicant@test.org', :pwd, TRUE, FALSE, TRUE, 'Esi Boateng')
+            """), {"id": str(app_id), "pwd": _bcrypt_hash("Pass123!")})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, city)
+                VALUES (:id, 'esi_boateng', 'Esi Boateng', 'Uganda', 'Kampala')
+            """), {"id": str(app_id)})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.org_users (profile_id, organization_id, role)
+                VALUES (:id, :org, 'admin')
+            """), {"id": str(app_id), "org": ORGANIZATIONS[0]["id"]})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.community_applications (profile_id, kind, organisation, motivation)
+                VALUES (:id, 'engineer', 'Mulago National Referral Hospital',
+                        'Our incubators wait months for parts. I want to help fix that.')
+            """), {"id": str(app_id)})
+        await db.commit()
+        print("✓ community accounts seeded: tech@mulago.org leads Community Builders, "
+              "admin@kenyatta.org leads Communicators, applicant@test.org is an applicant")
 
     await engine.dispose()
     print("\nDone. You can now log in with any of these credentials.")

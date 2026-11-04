@@ -114,6 +114,19 @@ class Profile(Base):
     avatar_key      = Column(Text)
     country         = Column(Text)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
+    # Community journey (migration 029). member_status gates the platform:
+    # applicant (doing the welcome quests) → member; staff for clinic staff
+    # invited by a clinic who watched the video; refused.
+    city                = Column(Text)
+    country_trained     = Column(Text)
+    why_bme             = Column(Text)
+    member_status       = Column(Text, nullable=False, default="applicant", server_default="applicant")
+    join_path           = Column(Text, nullable=False, default="community", server_default="community")
+    member_since        = Column(DateTime(timezone=True))
+    social_consent      = Column(Boolean)
+    social_consent_at   = Column(DateTime(timezone=True))
+    members_page_hidden = Column(Boolean, nullable=False, default=False, server_default="false")
+    last_active_at      = Column(DateTime(timezone=True))
 
     # Relationships
     user            = relationship("User", back_populates="profile", lazy="selectin")
@@ -523,3 +536,127 @@ class Feedback(Base):
 
     def __repr__(self):
         return f"<Feedback {self.type}: {self.summary[:40]!r} [{self.discord_status}]>"
+
+
+# ══════════════════════════════════════════════════════════════
+# COMMUNITY JOURNEY (migration 029) — community teams, not org roles
+# ══════════════════════════════════════════════════════════════
+#
+# Plain FK columns and no relationships to Profile, on purpose: nothing here
+# can drag Profile.user (and its hashed_password) into a response.
+
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
+
+
+class CommunityTeam(Base):
+    """Communicator, Community Builder, Clinics Connector. Texts are {lang: text}."""
+    __tablename__ = "community_teams"
+    __table_args__ = {"schema": SCHEMA}
+
+    key             = Column(Text, primary_key=True)
+    sort            = Column(Integer, nullable=False, default=0)
+    names           = Column(JSONB, nullable=False)
+    descriptions    = Column(JSONB, nullable=False, default=dict)
+    tasks           = Column(JSONB, nullable=False, default=dict)    # {lang: [line, ...]}
+    linkedin_titles = Column(JSONB, nullable=False, default=dict)
+    active          = Column(Boolean, nullable=False, default=True)
+    updated_by      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<CommunityTeam {self.key}>"
+
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+    __table_args__ = {"schema": SCHEMA}
+
+    id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    team_key       = Column(Text, ForeignKey(f"{SCHEMA}.community_teams.key"), nullable=False)
+    level          = Column(Text, nullable=False)                     # candidate | member | lead
+    status         = Column(Text, nullable=False, default="active")   # active | removed
+    granted_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    granted_at     = Column(DateTime(timezone=True), server_default=func.now())
+    removed_at     = Column(DateTime(timezone=True))
+    removed_reason = Column(Text)
+
+
+class Achievement(Base):
+    """Something members earn, with 10 star levels. Edit thresholds in SQLAdmin."""
+    __tablename__ = "achievements"
+    __table_args__ = {"schema": SCHEMA}
+
+    key          = Column(Text, primary_key=True)
+    team_key     = Column(Text, ForeignKey(f"{SCHEMA}.community_teams.key"), nullable=False)
+    source       = Column(Text, nullable=False)          # metric | recognised
+    metric       = Column(Text)                          # for source = metric
+    levels       = Column(ARRAY(Integer), nullable=False)  # 10 ascending thresholds
+    sort         = Column(Integer, nullable=False, default=0)
+    names        = Column(JSONB, nullable=False)
+    descriptions = Column(JSONB, nullable=False, default=dict)
+    active       = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f"<Achievement {self.key}>"
+
+
+class AchievementRecord(Base):
+    """One recognition: 'Amina helped an engineer' (count 1), by a team member."""
+    __tablename__ = "achievement_records"
+    __table_args__ = {"schema": SCHEMA}
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    achievement_key = Column(Text, ForeignKey(f"{SCHEMA}.achievements.key"), nullable=False)
+    count           = Column(Integer, nullable=False, default=1)
+    note            = Column(Text)
+    recognised_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MemberQuest(Base):
+    __tablename__ = "member_quests"
+    __table_args__ = {"schema": SCHEMA}
+
+    profile_id   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), primary_key=True)
+    quest_key    = Column(Text, primary_key=True)
+    count        = Column(Integer, nullable=False, default=1)
+    confirmed_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    updated_at   = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CommunityApplication(Base):
+    """The /join answers and the welcome meeting, one row per applicant."""
+    __tablename__ = "community_applications"
+    __table_args__ = {"schema": SCHEMA}
+
+    profile_id           = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), primary_key=True)
+    kind                 = Column(Text, nullable=False, default="other")
+    organisation         = Column(Text)
+    motivation           = Column(Text)
+    heard_from           = Column(Text)
+    host_id              = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    meeting_at           = Column(DateTime(timezone=True))
+    meeting_held_at      = Column(DateTime(timezone=True))
+    meeting_confirmed_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    notes                = Column(Text)
+    status               = Column(Text, nullable=False, default="open")
+    decision_reason      = Column(Text)
+    created_at           = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at           = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CommunityChange(Base):
+    """Append-only log of team, achievement and applicant changes."""
+    __tablename__ = "community_changes"
+    __table_args__ = {"schema": SCHEMA}
+
+    id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    actor_id   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    action     = Column(Text, nullable=False)
+    target     = Column(Text)
+    before     = Column(JSONB)
+    after      = Column(JSONB)
+    reason     = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

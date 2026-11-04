@@ -179,8 +179,8 @@ def user_can_edit_log(me, log):
 # A community applicant (still doing the welcome quests) or a refused account
 # can only open these pages; everything else redirects to /community/start.
 # The backend enforces the same rule (403 community_access_pending).
-APPLICANT_PATHS = ("/community/start", "/community/welcome", "/community/tree",
-                   "/community/roles", "/profile", "/logout", "/lang", "/feedback")
+APPLICANT_PATHS = ("/community/start", "/community/welcome", "/community/achievements",
+                   "/community/tree", "/profile", "/logout", "/lang", "/feedback")
 
 
 def applicant_allowed(path: str) -> bool:
@@ -205,9 +205,9 @@ def store_me(req, me: dict) -> None:
     req.session["user_avatar"] = me.get("avatar_key") or ""
     req.session["member_status"] = me.get("member_status") or "member"
     req.session["community_permissions"] = list(community.get("permissions") or [])
-    req.session["community_roles"] = list(community.get("roles") or [])
+    req.session["community_teams"] = dict(community.get("teams") or {})
     if old_status in ("applicant", "staff") and req.session["member_status"] == "member":
-        # Shown once: the "You're an Ambassador" page.
+        # Shown once: the "You're a member" welcome page.
         req.session["show_welcome"] = "1"
 
 

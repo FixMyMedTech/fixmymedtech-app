@@ -1,9 +1,8 @@
 # /community/admin/applicants — new accounts still doing their welcome quests.
 #
-# Who sees what (permissions from utils/community.py):
-#   view_applicants    see the list and an applicant's answers (in your country)
-#   decide_applicants  assign a host, record the meeting, refuse or reopen
-#   confirm_quests     mark Discord joined for someone who joined without linking
+# Community Builders (members and leads) and superusers see this tab: they
+# set a host and a call time, record the call, confirm Discord for someone
+# who joined without linking it, refuse or reopen (utils/community.py powers_from).
 
 from urllib.parse import quote
 
@@ -169,10 +168,9 @@ async def get(req, status: str = "pending", sel: str = "", msg: str = "", err: s
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 403:
             return RedirectResponse("/community", status_code=302)
-        data = {"items": [], "counts": {}, "scope": {}}
+        data = {"items": [], "counts": {}}
     items = data.get("items") or []
     counts = data.get("counts") or {}
-    scope = data.get("scope") or {}
 
     detail = ""
     if sel:
@@ -196,8 +194,6 @@ async def get(req, status: str = "pending", sel: str = "", msg: str = "", err: s
                  "all": sum(v for k, v in counts.items() if k != "member")}
     filters = Div(*[A(f"{_(f'cj.admin.filter_{f}')} · {count_for[f]}", href=f"?status={f}",
                       cls="cj-tab" + (" on" if f == status else "")) for f in FILTERS], cls="cj-row")
-    scope_text = _("cj.admin.scope_all") if scope.get("everywhere") else \
-        _("cj.admin.scope_countries").format(c=", ".join(scope.get("countries") or []) or "—")
 
     content = Div(
         Div(H1(_("cj.admin.title")), cls="cj-between"),
@@ -205,7 +201,6 @@ async def get(req, status: str = "pending", sel: str = "", msg: str = "", err: s
         flash(_(f"cj.admin.msg_{msg}", _("cj.saved"))) if msg else "",
         flash(_(f"cj.error.{err}", err), "error") if err else "",
         Div(H2(_("cj.admin.tab_applicants")), filters, cls="cj-between"),
-        Span(scope_text, cls="cj-small"),
         Div(Div(_table(items, sel, status, _), cls="wide"), Div(detail, cls="side") if detail else "",
             cls="cj-split"),
         cls="cj",

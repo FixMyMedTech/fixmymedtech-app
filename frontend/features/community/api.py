@@ -11,8 +11,8 @@ def _qs(**params) -> str:
 
 
 # ── Public ──
-async def get_tree():
-    return await _get("/api/community/tree")
+async def get_catalogue():
+    return await _get("/api/community/catalogue")
 
 
 async def get_config():
@@ -38,10 +38,6 @@ async def set_consent(token: str, social: bool):
 
 async def update_story(token: str, data: dict):
     return await _patch("/api/community/me/story", data, token)
-
-
-async def claim_role(token: str, role_key: str, team: str | None = None):
-    return await _post(f"/api/community/me/claim/{role_key}", {"team": team}, token)
 
 
 # ── Dashboard ──
@@ -77,24 +73,34 @@ async def list_hosts(token: str):
     return await _get("/api/community/admin/hosts", token)
 
 
-async def list_members(token: str, q: str = "", role: str = "", country: str = "", offset: int = 0):
-    return await _get(f"/api/community/admin/members{_qs(q=q, role=role, country=country, offset=offset or None)}", token)
+async def list_members(token: str, q: str = "", team: str = "", country: str = "", offset: int = 0):
+    return await _get(f"/api/community/admin/members{_qs(q=q, team=team, country=country, offset=offset or None)}", token)
 
 
 async def get_member(token: str, profile_id: str):
     return await _get(f"/api/community/admin/members/{profile_id}", token)
 
 
-async def assign_role(token: str, profile_id: str, data: dict):
-    return await _post(f"/api/community/admin/members/{profile_id}/roles", data, token)
+async def set_team(token: str, profile_id: str, data: dict):
+    """data: {team_key, level: candidate|member|lead, reason}"""
+    return await _post(f"/api/community/admin/members/{profile_id}/teams", data, token)
 
 
-async def remove_role(token: str, holding_id: str, reason: str):
-    return await _delete(f"/api/community/admin/member-roles/{holding_id}{_qs(reason=reason)}", token)
+async def remove_from_team(token: str, place_id: str, reason: str):
+    return await _delete(f"/api/community/admin/team-members/{place_id}{_qs(reason=reason)}", token)
 
 
-async def list_permissions(token: str):
-    return await _get("/api/community/admin/permissions", token)
+async def recognise(token: str, profile_id: str, data: dict):
+    """data: {achievement_key, count, note}"""
+    return await _post(f"/api/community/admin/members/{profile_id}/achievements", data, token)
+
+
+async def remove_record(token: str, record_id: str, reason: str):
+    return await _delete(f"/api/community/admin/achievement-records/{record_id}{_qs(reason=reason)}", token)
+
+
+async def edit_team(token: str, team_key: str, data: dict):
+    return await _patch(f"/api/community/admin/teams/{team_key}", data, token)
 
 
 async def history(token: str, offset: int = 0):

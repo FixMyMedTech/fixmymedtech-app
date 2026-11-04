@@ -676,17 +676,40 @@ dialog::backdrop {
 .cj-choice { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; border:1px solid var(--border-strong); border-radius:var(--radius-control); background:var(--surface); font-size:14px; font-weight:500; color:var(--text); cursor:pointer; }
 .cj-choice:has(input:checked) { border:2px solid var(--primary); background:var(--primary-tint); }
 /* Skill tree */
-.cj-tree { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:var(--space-3); }
-.cj-path { display:flex; flex-direction:column; gap:var(--space-2); }
-.cj-path-title { font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); padding:0 4px; }
-.cj-node { display:flex; flex-direction:column; gap:4px; padding:var(--space-3); border-radius:var(--radius-card); border:1px solid var(--border); background:var(--surface); color:var(--text); text-decoration:none; }
-.cj-node:hover { border-color:var(--primary); color:var(--text); }
-.cj-node.held { border:2px solid var(--ok); }
-.cj-node.open { border:2px solid var(--primary); }
-.cj-node.locked { background:var(--sunken); border-style:dashed; border-color:var(--border-strong); }
-.cj-node-name { font-size:14px; font-weight:600; }
-.cj-node-meta { font-size:12px; color:var(--text-muted); font-weight:500; }
-/* Dashboard */
+/* Achievements map: hexagon tiles (features/community/ui.py hex_map) */
+.cj-mapsplit { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:var(--space-4); align-items:start; }
+@media (max-width: 860px) { .cj-mapsplit { grid-template-columns:1fr; } }
+.cj-legend { display:flex; flex-wrap:wrap; gap:var(--space-3); font-size:12px; color:var(--text-muted); font-weight:500; }
+.cj-legend span { display:inline-flex; align-items:center; gap:6px; }
+.cj-legend i { width:12px; height:12px; border-radius:2px; display:inline-block; }
+.cj-legend .done { background:var(--ok-tint); border:1px solid var(--ok); }
+.cj-legend .now { background:var(--surface); border:2px solid var(--primary); }
+.cj-legend .next { background:var(--surface); border:1px dashed var(--border-strong); }
+.cj-legend .fog { background:var(--sunken); }
+.cj-hexmap { position:relative; width:100%; height:0; }
+.cj-hex { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; text-align:center; text-decoration:none; color:var(--text); }
+.cj-hex > span { position:relative; z-index:1; width:84%; }
+.cj-hex-shape { position:absolute; left:3%; top:3%; width:94%; height:94%; overflow:visible; z-index:0; }
+.cj-hex-shape polygon { fill:var(--sunken); stroke:var(--border); stroke-width:1.5; vector-effect:non-scaling-stroke; transition:stroke .15s; }
+.cj-hex-name { font-size:clamp(9px, 1vw, 13px); font-weight:600; line-height:1.2; overflow-wrap:normal; }
+.cj-hex-sub { font-size:clamp(9px, .95vw, 12px); color:var(--text-muted); font-weight:500; line-height:1.2; }
+.cj-hex.fog polygon { stroke:transparent; }
+.cj-hex.team .cj-hex-name { font-size:clamp(9px, 1.05vw, 14px); }
+.cj-hex.done polygon { fill:var(--ok-tint); stroke:var(--ok); }
+.cj-hex.now polygon { fill:var(--surface); stroke:var(--primary); stroke-width:3; }
+.cj-hex.next polygon { fill:var(--surface); stroke:var(--border-strong); stroke-dasharray:5 4; }
+.cj-hex.next .cj-hex-name { color:var(--text-muted); font-weight:500; }
+.cj-hex:hover polygon, .cj-hex:focus-visible polygon { stroke:var(--primary); stroke-width:3; }
+.cj-hex:focus-visible { outline:none; }
+.cj-hex.sel polygon { stroke:var(--brand-deep); stroke-width:4; }
+.cj-hex.sel { filter:drop-shadow(0 2px 6px rgba(0,0,0,.18)); z-index:2; }
+.cj-stars { display:inline-flex; gap:2px; color:var(--border-strong); font-size:18px; line-height:1; }
+.cj-stars .on, .cj-hex-stars .on { color:var(--warn); }
+.cj-hex > .cj-hex-stars { display:flex; flex-wrap:wrap; justify-content:center; width:58%; color:var(--border-strong); font-size:clamp(7px, .8vw, 11px); line-height:1; letter-spacing:-.5px; }
+.cj-levels { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; }
+.cj-levels span { text-align:center; padding:6px 0; border-radius:var(--radius-control); border:1px solid var(--border); font-size:12px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+.cj-levels span.on { background:var(--warn-tint); border-color:var(--warn); color:var(--text); font-weight:600; }
+
 .cj-tabs { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--border); padding-bottom:var(--space-2); }
 .cj-tab { padding:8px 12px; border-radius:var(--radius-control); font-size:14px; font-weight:500; color:var(--text-muted); text-decoration:none; }
 .cj-tab:hover { color:var(--primary); }
@@ -780,7 +803,7 @@ def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
 # and stay crisp in both themes.
 LUCIDE_ICONS = {
     "journey": '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
-    "tree": '<rect width="6" height="6" x="9" y="2" rx="1"/><rect width="6" height="6" x="2" y="16" rx="1"/><rect width="6" height="6" x="16" y="16" rx="1"/><path d="M12 8v4"/><path d="M5 16v-2a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"/>',
+    "hexagon": '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
     "shield": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
     "check": '<path d="M20 6 9 17l-5-5"/>',
     "lock": '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
@@ -840,7 +863,7 @@ def lucide(name: str, cls: str = ""):
 
 
 # Permissions that open the community admin dashboard (utils/community.py).
-DASHBOARD_PERMISSIONS = ("view_applicants", "view_members", "assign_roles", "manage_roles", "view_role_history")
+DASHBOARD_PERMISSIONS = ("view_applicants", "view_members", "view_history")
 
 
 def sidebar(current: str = "", lang: str = "en"):
@@ -852,7 +875,7 @@ def sidebar(current: str = "", lang: str = "en"):
         # Applicants only see their start page until the welcome quests are done.
         links = [
             ("/community/start", "journey", _("nav.community_start")),
-            ("/community/tree",  "tree",    _("nav.community_tree")),
+            ("/community/achievements", "hexagon", _("nav.community_achievements")),
             ("/profile",         "profile", _("nav.profile")),
             ("/logout",          "logout",  _("nav.logout")),
         ]
@@ -867,7 +890,7 @@ def sidebar(current: str = "", lang: str = "en"):
             ("/network",   "network",   _("nav.network")),
             ("/library",   "library",   _("nav.library")),
             ("/community", "journey",   _("nav.community")),
-            ("/community/tree", "tree", _("nav.community_tree")),
+            ("/community/achievements", "hexagon", _("nav.community_achievements")),
         ]
         if perms & set(DASHBOARD_PERMISSIONS):
             links.append(("/community/admin", "shield", _("nav.community_admin")))

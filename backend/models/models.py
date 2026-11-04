@@ -539,72 +539,80 @@ class Feedback(Base):
 
 
 # ══════════════════════════════════════════════════════════════
-# COMMUNITY JOURNEY (migration 029) — community roles, not org roles
+# COMMUNITY JOURNEY (migration 029) — community teams, not org roles
 # ══════════════════════════════════════════════════════════════
 #
 # Plain FK columns and no relationships to Profile, on purpose: nothing here
 # can drag Profile.user (and its hashed_password) into a response.
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 
 
-class CommunityRole(Base):
-    """One node of the skill tree. The tree is data: edit it in SQLAdmin."""
-    __tablename__ = "community_roles"
+class CommunityTeam(Base):
+    """Communicator, Community Builder, Clinics Connector. Texts are {lang: text}."""
+    __tablename__ = "community_teams"
     __table_args__ = {"schema": SCHEMA}
 
     key             = Column(Text, primary_key=True)
-    path            = Column(Text, nullable=False)
-    tier            = Column(Integer, nullable=False)
-    scope           = Column(Text, nullable=False)     # local | global | none
-    unlock          = Column(Text, nullable=False)     # auto | claim | confirmed | assigned
+    sort            = Column(Integer, nullable=False, default=0)
     names           = Column(JSONB, nullable=False)
     descriptions    = Column(JSONB, nullable=False, default=dict)
+    tasks           = Column(JSONB, nullable=False, default=dict)    # {lang: [line, ...]}
     linkedin_titles = Column(JSONB, nullable=False, default=dict)
-    sort            = Column(Integer, nullable=False, default=0)
     active          = Column(Boolean, nullable=False, default=True)
-    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+    updated_by      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     def __repr__(self):
-        return f"<CommunityRole {self.key}>"
+        return f"<CommunityTeam {self.key}>"
 
 
-class CommunityRoleRequirement(Base):
-    __tablename__ = "community_role_requirements"
-    __table_args__ = {"schema": SCHEMA}
-
-    id        = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    role_key  = Column(Text, ForeignKey(f"{SCHEMA}.community_roles.key", ondelete="CASCADE"), nullable=False)
-    kind      = Column(Text, nullable=False)           # role | metric | quest | confirmation
-    ref       = Column(Text, nullable=False)
-    threshold = Column(Integer)
-
-
-class CommunityRolePermission(Base):
-    __tablename__ = "community_role_permissions"
-    __table_args__ = {"schema": SCHEMA}
-
-    role_key   = Column(Text, ForeignKey(f"{SCHEMA}.community_roles.key", ondelete="CASCADE"), primary_key=True)
-    permission = Column(Text, primary_key=True)
-
-
-class MemberRole(Base):
-    __tablename__ = "member_roles"
+class TeamMember(Base):
+    __tablename__ = "team_members"
     __table_args__ = {"schema": SCHEMA}
 
     id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     profile_id     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
-    role_key       = Column(Text, ForeignKey(f"{SCHEMA}.community_roles.key"), nullable=False)
-    country        = Column(Text)
-    city           = Column(Text)
-    team           = Column(Text)
+    team_key       = Column(Text, ForeignKey(f"{SCHEMA}.community_teams.key"), nullable=False)
+    level          = Column(Text, nullable=False)                     # candidate | member | lead
     status         = Column(Text, nullable=False, default="active")   # active | removed
-    source         = Column(Text, nullable=False)                     # auto | claim | confirmed | assigned | backfill
     granted_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
     granted_at     = Column(DateTime(timezone=True), server_default=func.now())
     removed_at     = Column(DateTime(timezone=True))
     removed_reason = Column(Text)
+
+
+class Achievement(Base):
+    """Something members earn, with 10 star levels. Edit thresholds in SQLAdmin."""
+    __tablename__ = "achievements"
+    __table_args__ = {"schema": SCHEMA}
+
+    key          = Column(Text, primary_key=True)
+    team_key     = Column(Text, ForeignKey(f"{SCHEMA}.community_teams.key"), nullable=False)
+    source       = Column(Text, nullable=False)          # metric | recognised
+    metric       = Column(Text)                          # for source = metric
+    levels       = Column(ARRAY(Integer), nullable=False)  # 10 ascending thresholds
+    sort         = Column(Integer, nullable=False, default=0)
+    names        = Column(JSONB, nullable=False)
+    descriptions = Column(JSONB, nullable=False, default=dict)
+    active       = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f"<Achievement {self.key}>"
+
+
+class AchievementRecord(Base):
+    """One recognition: 'Amina helped an engineer' (count 1), by a team member."""
+    __tablename__ = "achievement_records"
+    __table_args__ = {"schema": SCHEMA}
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    achievement_key = Column(Text, ForeignKey(f"{SCHEMA}.achievements.key"), nullable=False)
+    count           = Column(Integer, nullable=False, default=1)
+    note            = Column(Text)
+    recognised_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class MemberQuest(Base):
@@ -639,9 +647,9 @@ class CommunityApplication(Base):
     updated_at           = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class CommunityRoleChange(Base):
-    """Append-only log of role, permission and applicant changes."""
-    __tablename__ = "community_role_changes"
+class CommunityChange(Base):
+    """Append-only log of team, achievement and applicant changes."""
+    __tablename__ = "community_changes"
     __table_args__ = {"schema": SCHEMA}
 
     id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

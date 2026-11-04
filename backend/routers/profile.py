@@ -56,8 +56,8 @@ async def me(
         raise HTTPException(status_code=404, detail="Profile not found")
     from routers.discord_link import discord_login_available
     from utils import community as cm
-    scopes = await cm.permission_scopes(db, profile, user)
-    held = await cm.active_roles(db, profile.id)
+    powers = await cm.powers_for(db, profile, user)
+    places = await cm.team_places(db, profile.id)
     return {
         "id": profile.id,
         "username": profile.username,
@@ -72,8 +72,8 @@ async def me(
         "member_status": profile.member_status,
         "join_path": profile.join_path,
         "community": {
-            "roles": sorted({h.role_key for h in held}),
-            "permissions": sorted(scopes.keys()),
+            "teams": {m.team_key: m.level for m in places},
+            "permissions": powers.as_list(),
             "paused": cm.is_paused(profile.last_active_at),
         },
         "discord": {

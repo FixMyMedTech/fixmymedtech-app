@@ -1,7 +1,7 @@
 # Tests for the community journey rules (utils/community.py).
 #
 # Run from backend/:  python -m pytest tests -q
-# These cover the pure rules that decide who gets in and what unlocks. They
+# These cover the pure rules: who gets in, star levels and who can do what. They
 # need no database.
 
 import os
@@ -13,42 +13,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import community as cm  # noqa: E402
 
 ALL_QUESTS = {q: 1 for q in cm.WELCOME_QUESTS}
-
-
-def status(req, held=(), metrics=None, quests=None, confirmations=()):
-    return cm.requirement_status(req, set(held), metrics or {}, quests or {}, set(confirmations))
-
-
-# ── Requirements ─────────────────────────────────────────────
-
-def test_role_requirement():
-    req = {"kind": "role", "ref": "mapper", "threshold": None}
-    assert status(req)["met"] is False
-    assert status(req, held=["mapper"])["met"] is True
-
-
-def test_metric_requirement_counts_up_to_threshold():
-    req = {"kind": "metric", "ref": "repairs_and_maintenance", "threshold": 5}
-    s = status(req, metrics={"repairs_and_maintenance": 3})
-    assert s == {"met": False, "done": 3, "needed": 5}
-    s = status(req, metrics={"repairs_and_maintenance": 9})
-    assert s == {"met": True, "done": 5, "needed": 5}
-
-
-def test_quest_requirement_with_count():
-    req = {"kind": "quest", "ref": "watched_approval_meeting", "threshold": 2}
-    assert status(req, quests={"watched_approval_meeting": 1})["met"] is False
-    assert status(req, quests={"watched_approval_meeting": 2})["met"] is True
-
-
-def test_confirmation_requirement():
-    req = {"kind": "confirmation", "ref": "community_team", "threshold": None}
-    assert status(req)["met"] is False
-    assert status(req, confirmations=["community_team"])["met"] is True
-
-
-def test_unknown_kind_is_never_met():
-    assert status({"kind": "vote", "ref": "x", "threshold": None})["met"] is False
 
 
 # ── Member status ────────────────────────────────────────────
@@ -85,37 +49,94 @@ def test_quests_done_keeps_order():
 
 # ── Pausing ──────────────────────────────────────────────────
 
-def test_roles_pause_after_six_months():
+def test_powers_pause_after_six_months():
     at = datetime(2026, 10, 30, tzinfo=timezone.utc)
     assert cm.is_paused(None, at) is False
     assert cm.is_paused(at - timedelta(days=30), at) is False
     assert cm.is_paused(at - timedelta(days=200), at) is True
 
 
-# ── Scopes ───────────────────────────────────────────────────
+# ── Star levels ──────────────────────────────────────────────
 
-def test_scope_covers_countries_and_teams():
-    s = cm.Scope()
-    assert not s
-    s.countries.add("Ghana")
-    assert s.covers(country="Ghana")
-    assert not s.covers(country="Kenya")
-    s.teams.add("software")
-    assert s.covers(teams={"software"})
-    everywhere = cm.Scope(); everywhere.everywhere = True
-    assert everywhere.covers(country="Kenya")
+LEVELS = [1, 3, 5, 10, 15, 25, 40, 60, 80, 100]
 
 
-def test_every_seeded_permission_is_known():
-    """The migration may only grant keys the code defines."""
-    path = os.path.join(os.path.dirname(__file__), "..", "..", "infrastructure", "migrations",
-                        "029_community_roles.sql")
-    sql = open(path, encoding="utf-8").read()
-    block = sql.split("INSERT INTO fixmymedtech.community_role_permissions", 1)[1].split(";", 1)[0]
+def test_star_level_counts_thresholds_reached():
+    assert cm.star_level(0, LEVELS) == {"level": 0, "count": 0, "next": 1, "prev": 0}
+    assert cm.star_level(1, LEVELS)["level"] == 1
+    assert cm.star_level(4, LEVELS) == {"level": 2, "count": 4, "next": 5, "prev": 3}
+    assert cm.star_level(100, LEVELS) == {"level": 10, "count": 100, "next": None, "prev": 100}
+    assert cm.star_level(500, LEVELS)["level"] == 10
+
+
+def test_seeded_achievements_have_ten_ascending_levels():
     import re
-    keys = set(re.findall(r"\('[a-z_]+', '([a-z_]+)'\)", block))
-    assert keys, "no permissions found in the seed"
-    assert keys <= set(cm.PERMISSIONS), keys - set(cm.PERMISSIONS)
+    path = os.path.join(os.path.dirname(__file__), "..", "..", "infrastructure", "migrations",
+                        "029_community_journey.sql")
+    sql = open(path, encoding="utf-8").read()
+    block = sql.split("INSERT INTO fixmymedtech.achievements", 1)[1].split(";", 1)[0]
+    levels = re.findall(r"'\{([0-9,]+)\}'", block)
+    assert len(levels) == 5
+    for raw in levels:
+        values = [int(v) for v in raw.split(",")]
+        assert len(values) == cm.STAR_LEVELS
+        assert values == sorted(set(values))
+
+
+# ── Powers ───────────────────────────────────────────────────
+
+TEAMS = ("communicator", "community_builder", "clinics_connector")
+
+
+def powers(places, status="member", paused=False, superuser=False):
+    return cm.powers_from(superuser, status, paused, places, TEAMS)
+
+
+def test_superuser_can_do_everything():
+    p = powers({}, status="applicant", superuser=True)
+    assert p.view_applicants and p.view_history and p.name_leads
+    assert p.can_add("communicator", "lead")
+    assert p.recognise == set(TEAMS)
+
+
+def test_candidates_and_outsiders_have_no_powers():
+    assert cm.powers_from(False, "member", False, {}, TEAMS).as_list() == []
+    assert powers({"communicator": "candidate"}).as_list() == []
+
+
+def test_team_member_recognises_own_category_only():
+    p = powers({"clinics_connector": "member"})
+    assert p.recognise == {"clinics_connector"}
+    assert p.view_members
+    assert not p.view_applicants
+    assert not p.can_add("clinics_connector", "candidate")
+
+
+def test_community_builders_welcome_and_make_candidates_anywhere():
+    p = powers({"community_builder": "member"})
+    assert p.view_applicants and p.decide_applicants and p.confirm_quests
+    assert p.can_add("communicator", "candidate")
+    assert not p.can_add("communicator", "member")
+    assert not p.view_history
+
+
+def test_lead_manages_own_team_but_not_leads():
+    p = powers({"communicator": "lead"})
+    assert p.can_add("communicator", "member") and p.can_add("communicator", "candidate")
+    assert not p.can_add("clinics_connector", "member")
+    assert not p.can_add("communicator", "lead")
+    assert p.edit_team == {"communicator"}
+    assert p.view_history
+
+
+def test_paused_or_non_members_have_no_powers():
+    assert powers({"communicator": "lead"}, paused=True).as_list() == []
+    assert powers({"community_builder": "lead"}, status="staff").as_list() == []
+
+
+def test_powers_as_list_names_teams():
+    keys = powers({"communicator": "lead"}).as_list()
+    assert "manage_members:communicator" in keys and "recognise:communicator" in keys
 
 
 def test_localized_falls_back_to_english():

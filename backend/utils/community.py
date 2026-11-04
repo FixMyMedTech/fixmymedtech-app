@@ -1,22 +1,21 @@
-# utils/community.py — the community journey engine (skill tree of community roles)
+# utils/community.py — the community journey rules: teams, achievements, welcome quests
 #
-# Community roles (Ambassador, Mapper, Repairer, City lead…) are not org roles.
-# org_users.role decides what someone can do inside one organization; a
-# community role is what a member is in the community, and it grants
-# community PERMISSIONS. Plan: docs/docs/community-journey.md
+# Community teams (Communicator, Community Builder, Clinics Connector) are not
+# org roles. org_users.role decides what someone can do inside one
+# organization; a team place is what a member does for the community. Each
+# place has a level: candidate, member or lead.
 #
-# The split of responsibilities:
-#   - The code answers "what can be done": the PERMISSIONS keys below, each
-#     checked by a router with require_permission(...).
-#   - The database answers "who can do it": community_role_permissions says
-#     which role grants which key, and admins edit it.
+# Achievements (Mapper, Ambassador, Supporter…) belong to one team's category
+# and have 10 star levels. Mapper is counted by the platform; the others are
+# recognised by members of their team. Guide: docs/docs/community-guide.md
 #
-# Pure helpers (requirement_status, is_paused, quests_done) have no database
-# access, so the rules can be unit-tested (backend/tests/test_community.py).
+# Who can do what is decided in code (powers_from), from the caller's team
+# places. Pure helpers have no database access, so the rules are unit-tested
+# in backend/tests/test_community.py.
 
 from __future__ import annotations
 
-import uuid
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException
@@ -26,63 +25,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_config import get_db
 from config.users import current_active_user
 from models.models import (
-    User, Profile, Device, FaultReport, MaintenanceLog, Document,
-    CommunityRole, CommunityRoleRequirement, CommunityRolePermission,
-    MemberRole, MemberQuest, CommunityApplication, CommunityRoleChange,
+    User, Profile, Document,
+    CommunityTeam, TeamMember, Achievement, AchievementRecord,
+    MemberQuest, CommunityApplication, CommunityChange,
 )
 
-# ── Permission keys ──────────────────────────────────────────
-# Adding a role made of these keys needs no code. A new KIND of access needs
-# a new key here plus one require_permission("key") on the router that does
-# the action. `checked` says whether a router enforces the key yet.
-
-PERMISSIONS: dict[str, dict] = {
-    # Community admin dashboard
-    "view_applicants":   {"group": "admin", "checked": True,  "en": "See applicants and their quests (in your country)"},
-    "decide_applicants": {"group": "admin", "checked": True,  "en": "Assign a host, record the welcome meeting, refuse an applicant"},
-    "view_members":      {"group": "admin", "checked": True,  "en": "See members, their roles and actions (in your country or team)"},
-    "assign_roles":      {"group": "admin", "checked": True,  "en": "Give or remove any community role (community team admins)"},
-    "manage_roles":      {"group": "admin", "checked": True,  "en": "Edit the skill tree and its permissions (community team admins)"},
-    "view_role_history": {"group": "admin", "checked": True,  "en": "See the history of role and applicant changes"},
-    "confirm_quests":    {"group": "community", "checked": True, "en": "Confirm a quest another member did, e.g. Discord joined or a watched meeting"},
-    # Community
-    "claim_verification_tasks": {"group": "community", "checked": False, "en": "Pick up verification tasks on the community task board"},
-    "approve_clinics":   {"group": "community", "checked": False, "en": "Approve or refuse pending clinics"},
-    "invite_clinics":    {"group": "community", "checked": False, "en": "Send invitation links to clinics"},
-    "create_local_tasks": {"group": "community", "checked": False, "en": "Create community tasks for your country"},
-    "approve_team_contributions": {"group": "community", "checked": False, "en": "Approve contributions in your global team"},
-    # Devices and repairs
-    "register_devices_for_clinics": {"group": "devices", "checked": False, "en": "Register devices at any approved clinic that asks for help"},
-    "receive_area_repair_requests": {"group": "devices", "checked": False, "en": "Receive repair requests from the maintenance button in your area"},
-    "diagnose_outside_my_orgs":     {"group": "devices", "checked": False, "en": "Diagnose and repair faults at clinics that are not yours"},
-    "plan_clinic_maintenance":      {"group": "devices", "checked": False, "en": "Plan preventive maintenance for a whole clinic"},
-    "add_manuals":       {"group": "knowledge", "checked": False, "en": "Add and link manuals to models"},
-    "approve_manuals":   {"group": "knowledge", "checked": False, "en": "Approve manuals and guides others added"},
-    "merge_entries":     {"group": "knowledge", "checked": False, "en": "Merge duplicate brands and models"},
-    # Spare parts (wait for the parts library and catalogue)
-    "order_spare_parts":       {"group": "parts", "checked": False, "en": "Order from the spare parts catalogue (Repairers only)"},
-    "publish_part_designs":    {"group": "parts", "checked": False, "en": "Publish part designs to the parts library"},
-    "approve_part_designs":    {"group": "parts", "checked": False, "en": "Approve part designs into the library"},
-    "make_noncritical_parts":  {"group": "parts", "checked": False, "en": "Make non-critical parts by digital manufacturing"},
-    "supply_restricted_parts": {"group": "parts", "checked": False, "en": "Supply parts beyond the non-critical list, with quality certificates"},
-}
-
-# The five welcome quests. When all are done the member becomes Ambassador
+# The five welcome quests. When all are done the applicant becomes a member
 # and the platform opens.
 WELCOME_QUESTS = ("profile_complete", "intro_video", "meeting_held", "discord_joined", "consent_answered")
-# Quests a person (host, mentor, community team) can mark as done for someone.
-CONFIRMABLE_QUESTS = ("meeting_held", "discord_joined", "watched_approval_meeting", "workshop_declared", "quality_certificate")
+# Quests a Community Builder can mark as done for someone.
+CONFIRMABLE_QUESTS = ("meeting_held", "discord_joined")
 
-METRICS = (
-    "devices_registered", "faults_resolved", "maintenance_performed", "invites",
-    "repairs_and_maintenance", "manuals_added",
-    # Counted once their features exist (task board, parts library):
-    "verifications", "team_contributions", "designs_accepted", "parts_delivered",
-)
-
-TEAMS = ("software", "data", "hardware", "manufacturing", "partnerships", "communications")
+METRICS = ("devices_registered", "faults_resolved", "maintenance_performed", "invites", "manuals_added")
+LEVELS = ("candidate", "member", "lead")
 MEMBER_STATUSES = ("applicant", "member", "staff", "refused")
+STAR_LEVELS = 10
 PAUSE_AFTER = timedelta(days=183)  # about 6 months
+
+# The team whose members welcome applicants (and can make anyone a candidate).
+WELCOMING_TEAM = "community_builder"
 
 
 def now() -> datetime:
@@ -92,35 +53,12 @@ def now() -> datetime:
 # ── Pure rules (unit-tested) ─────────────────────────────────
 
 def is_paused(last_active_at: datetime | None, at: datetime | None = None) -> bool:
-    """A member's roles pause after 6 months without activity. No activity
+    """Team powers pause after 6 months without activity. No activity
     recorded yet (new or backfilled account) counts as active."""
     if last_active_at is None:
         return False
     at = at or now()
     return at - last_active_at > PAUSE_AFTER
-
-
-def requirement_status(req: dict, held: set[str], metrics: dict, quests: dict,
-                       confirmations: set[str]) -> dict:
-    """How far one requirement is: {"met", "done", "needed"}.
-
-    req is {"kind", "ref", "threshold"}. held is the set of active role keys,
-    metrics the counts, quests {quest_key: count}, confirmations the role keys
-    whose holders have confirmed this member for the role being checked.
-    """
-    kind, ref = req["kind"], req["ref"]
-    needed = req.get("threshold") or 1
-    if kind == "role":
-        done = 1 if ref in held else 0
-    elif kind == "metric":
-        done = int(metrics.get(ref, 0))
-    elif kind == "quest":
-        done = int(quests.get(ref, 0))
-    elif kind == "confirmation":
-        done = 1 if ref in confirmations else 0
-    else:
-        done = 0
-    return {"met": done >= needed, "done": min(done, needed), "needed": needed}
 
 
 def quests_done(quests: dict) -> list[str]:
@@ -143,24 +81,107 @@ def next_status(current: str, join_path: str, quests: dict) -> str:
     return current
 
 
+def star_level(count: int, thresholds: list[int]) -> dict:
+    """{"level": 0-10, "count", "next": count needed for the next star or None}."""
+    level = sum(1 for t in thresholds if count >= t)
+    nxt = thresholds[level] if level < len(thresholds) else None
+    prev = thresholds[level - 1] if level > 0 else 0
+    return {"level": level, "count": count, "next": nxt, "prev": prev}
+
+
 def localized(value: dict | None, lang: str) -> str:
     value = value or {}
     return value.get(lang) or value.get("en") or ""
 
 
+@dataclass
+class Powers:
+    """What the caller can do in the community. Built by powers_from."""
+    superuser: bool = False
+    view_applicants: bool = False
+    decide_applicants: bool = False
+    confirm_quests: bool = False
+    view_members: bool = False
+    view_history: bool = False
+    name_leads: bool = False
+    set_candidate: set = field(default_factory=set)    # teams where they can add candidates
+    manage_members: set = field(default_factory=set)   # teams where they add/remove members
+    edit_team: set = field(default_factory=set)        # teams whose texts they edit
+    recognise: set = field(default_factory=set)        # achievement categories they record
+
+    def can_add(self, team: str, level: str) -> bool:
+        if level == "lead":
+            return self.name_leads
+        if level == "member":
+            return team in self.manage_members
+        return team in self.set_candidate or team in self.manage_members
+
+    def can_remove(self, team: str, level: str) -> bool:
+        return self.can_add(team, level)
+
+    def as_list(self) -> list[str]:
+        """Flat keys for the frontend (sidebar, buttons)."""
+        out = [k for k in ("view_applicants", "decide_applicants", "confirm_quests",
+                           "view_members", "view_history", "name_leads") if getattr(self, k)]
+        for name in ("set_candidate", "manage_members", "edit_team", "recognise"):
+            out += [f"{name}:{t}" for t in sorted(getattr(self, name))]
+        return out
+
+
+def powers_from(superuser: bool, member_status: str, paused: bool, places: dict[str, str],
+                all_teams: tuple | list = ()) -> Powers:
+    """places is {team_key: level} for the caller's active places.
+
+    - Superusers can do everything.
+    - Candidates have no powers; paused or non-member accounts neither.
+    - A team member (or lead) recognises achievements of their team's
+      category and sees the members list.
+    - Community Builders also welcome applicants (review, host the call,
+      confirm Discord) and can make anyone a candidate for any team.
+    - A lead adds and removes members of their own team, edits its texts and
+      sees the history. Only superusers name leads.
+    """
+    p = Powers()
+    teams = set(all_teams) | set(places)
+    if superuser:
+        p.superuser = True
+        p.view_applicants = p.decide_applicants = p.confirm_quests = True
+        p.view_members = p.view_history = p.name_leads = True
+        p.set_candidate = set(teams)
+        p.manage_members = set(teams)
+        p.edit_team = set(teams)
+        p.recognise = set(teams)
+        return p
+    if member_status != "member" or paused:
+        return p
+    for team, level in places.items():
+        if level not in ("member", "lead"):
+            continue
+        p.view_members = True
+        p.recognise.add(team)
+        if team == WELCOMING_TEAM:
+            p.view_applicants = p.decide_applicants = p.confirm_quests = True
+            p.set_candidate |= teams
+        if level == "lead":
+            p.view_history = True
+            p.manage_members.add(team)
+            p.edit_team.add(team)
+            p.set_candidate.add(team)
+    return p
+
+
 # ── Reading state ────────────────────────────────────────────
 
 async def metrics_for(db: AsyncSession, profile_id) -> dict:
-    """Every count a requirement can use. The four activity counts are the
-    same SQL the Network directory sorts by (routers/profile.py)."""
+    """Activity counts. The first four are the same SQL the Network directory
+    sorts by (routers/profile.py)."""
     from routers.profile import _counts_for
     counts = await _counts_for(db, profile_id)
     manuals = await db.scalar(
         select(func.count()).select_from(Document).where(Document.uploaded_by == profile_id)
     ) or 0
     out = {m: 0 for m in METRICS}
-    out.update(counts)
-    out["repairs_and_maintenance"] = counts["faults_resolved"] + counts["maintenance_performed"]
+    out.update({k: int(v) for k, v in counts.items()})
     out["manuals_added"] = int(manuals)
     return out
 
@@ -190,86 +211,67 @@ async def quests_for(db: AsyncSession, profile: Profile, user: User | None = Non
     return quests
 
 
-async def active_roles(db: AsyncSession, profile_id) -> list[MemberRole]:
-    return list((await db.execute(
-        select(MemberRole)
-        .where(MemberRole.profile_id == profile_id, MemberRole.status == "active")
-        .order_by(MemberRole.granted_at)
-    )).scalars().all())
-
-
-async def load_catalogue(db: AsyncSession, include_inactive: bool = False) -> list[dict]:
-    q = select(CommunityRole).order_by(CommunityRole.tier, CommunityRole.path, CommunityRole.sort)
+async def load_teams(db: AsyncSession, include_inactive: bool = False) -> list[dict]:
+    q = select(CommunityTeam).order_by(CommunityTeam.sort, CommunityTeam.key)
     if not include_inactive:
-        q = q.where(CommunityRole.active.is_(True))
-    roles = (await db.execute(q)).scalars().all()
-    reqs = (await db.execute(select(CommunityRoleRequirement))).scalars().all()
-    perms = (await db.execute(select(CommunityRolePermission))).scalars().all()
-    by_role_req: dict[str, list] = {}
-    for r in reqs:
-        by_role_req.setdefault(r.role_key, []).append(
-            {"kind": r.kind, "ref": r.ref, "threshold": r.threshold})
-    by_role_perm: dict[str, list] = {}
-    for p in perms:
-        by_role_perm.setdefault(p.role_key, []).append(p.permission)
-    order = {"role": 0, "quest": 1, "metric": 2, "confirmation": 3}
+        q = q.where(CommunityTeam.active.is_(True))
+    return [team_out(t) for t in (await db.execute(q)).scalars().all()]
+
+
+def team_out(t: CommunityTeam) -> dict:
+    return {"key": t.key, "sort": t.sort, "names": t.names or {}, "descriptions": t.descriptions or {},
+            "tasks": t.tasks or {}, "linkedin_titles": t.linkedin_titles or {}, "active": t.active}
+
+
+async def load_achievements(db: AsyncSession, include_inactive: bool = False) -> list[dict]:
+    q = select(Achievement).order_by(Achievement.sort, Achievement.key)
+    if not include_inactive:
+        q = q.where(Achievement.active.is_(True))
     return [
-        {
-            "key": r.key, "path": r.path, "tier": r.tier, "scope": r.scope,
-            "unlock": r.unlock, "sort": r.sort, "active": r.active,
-            "names": r.names or {}, "descriptions": r.descriptions or {},
-            "linkedin_titles": r.linkedin_titles or {},
-            "requirements": sorted(by_role_req.get(r.key, []), key=lambda x: (order.get(x["kind"], 9), x["ref"])),
-            "permissions": sorted(by_role_perm.get(r.key, [])),
-        }
-        for r in roles
+        {"key": a.key, "team_key": a.team_key, "source": a.source, "metric": a.metric,
+         "levels": list(a.levels or []), "sort": a.sort, "names": a.names or {},
+         "descriptions": a.descriptions or {}, "active": a.active}
+        for a in (await db.execute(q)).scalars().all()
     ]
 
 
-async def confirmations_for(db: AsyncSession, profile_id) -> dict[str, set[str]]:
-    """{role_key: {confirming role keys}} from member_quests rows named
-    confirm:<role_key>:<by_role>. Phase 3 adds the confirm buttons; until then
-    admins assign confirmed roles directly."""
+async def team_places(db: AsyncSession, profile_id) -> list[TeamMember]:
+    return list((await db.execute(
+        select(TeamMember)
+        .where(TeamMember.profile_id == profile_id, TeamMember.status == "active")
+        .order_by(TeamMember.granted_at)
+    )).scalars().all())
+
+
+async def recognised_counts(db: AsyncSession, profile_id) -> dict[str, int]:
     rows = (await db.execute(
-        select(MemberQuest.quest_key).where(
-            MemberQuest.profile_id == profile_id, MemberQuest.quest_key.like("confirm:%"))
-    )).scalars().all()
-    out: dict[str, set[str]] = {}
-    for key in rows:
-        parts = key.split(":")
-        if len(parts) == 3:
-            out.setdefault(parts[1], set()).add(parts[2])
+        select(AchievementRecord.achievement_key, func.sum(AchievementRecord.count))
+        .where(AchievementRecord.profile_id == profile_id)
+        .group_by(AchievementRecord.achievement_key)
+    )).all()
+    return {k: int(n or 0) for k, n in rows}
+
+
+async def achievement_progress(db: AsyncSession, profile_id, achievements: list[dict] | None = None,
+                               metrics: dict | None = None) -> list[dict]:
+    """Every achievement with this member's count and star level."""
+    achievements = achievements if achievements is not None else await load_achievements(db)
+    metrics = metrics if metrics is not None else await metrics_for(db, profile_id)
+    recognised = await recognised_counts(db, profile_id)
+    out = []
+    for a in achievements:
+        count = int(metrics.get(a["metric"], 0)) if a["source"] == "metric" else recognised.get(a["key"], 0)
+        out.append({"key": a["key"], "team_key": a["team_key"], **star_level(count, a["levels"])})
     return out
 
 
-async def progress(db: AsyncSession, profile: Profile, user: User | None = None,
-                   catalogue: list[dict] | None = None) -> dict:
-    """Everything the journey page needs: held roles, quests, metrics and,
-    for every role, how far each requirement is."""
-    catalogue = catalogue if catalogue is not None else await load_catalogue(db)
-    roles = await active_roles(db, profile.id)
-    held = {r.role_key for r in roles}
-    metrics = await metrics_for(db, profile.id)
-    quests = await quests_for(db, profile, user)
-    confirmations = await confirmations_for(db, profile.id)
-    per_role = {}
-    for role in catalogue:
-        reqs = [
-            {**req, **requirement_status(req, held, metrics, quests, confirmations.get(role["key"], set()))}
-            for req in role["requirements"]
-        ]
-        done = sum(1 for r in reqs if r["met"])
-        per_role[role["key"]] = {
-            "held": role["key"] in held,
-            "requirements": reqs,
-            "met": done,
-            "total": len(reqs),
-            "ready": bool(reqs) and done == len(reqs),
-        }
-    return {
-        "held": held, "roles": roles, "metrics": metrics, "quests": quests,
-        "per_role": per_role, "paused": is_paused(profile.last_active_at),
-    }
+async def powers_for(db: AsyncSession, profile: Profile, user: User | None = None) -> Powers:
+    if user is None:
+        user = await db.get(User, profile.id)
+    places = {m.team_key: m.level for m in await team_places(db, profile.id)}
+    all_teams = (await db.execute(select(CommunityTeam.key))).scalars().all()
+    return powers_from(bool(user and user.is_superuser), profile.member_status,
+                       is_paused(profile.last_active_at), places, all_teams)
 
 
 # ── Changing state ───────────────────────────────────────────
@@ -277,64 +279,54 @@ async def progress(db: AsyncSession, profile: Profile, user: User | None = None,
 async def log_change(db: AsyncSession, actor_id, action: str, target: str | None,
                      before: dict | None = None, after: dict | None = None,
                      reason: str | None = None) -> None:
-    db.add(CommunityRoleChange(
+    db.add(CommunityChange(
         actor_id=actor_id, action=action, target=target,
         before=before, after=after, reason=reason,
     ))
 
 
-async def grant_role(db: AsyncSession, profile: Profile, role_key: str, source: str,
-                     granted_by=None, country: str | None = None, team: str | None = None,
-                     reason: str | None = None) -> MemberRole | None:
-    """Give a role. Idempotent: an active holding is returned as is, a removed
-    one is reactivated. Returns None when the role doesn't exist."""
-    role = await db.get(CommunityRole, role_key)
-    if role is None:
-        return None
-    if role.scope == "local":
-        country = (country or profile.country or "").strip() or None
-        team = None
-    elif role.scope == "global":
-        country = None
-    else:
-        country, team = None, None
-    existing = await db.scalar(
-        select(MemberRole).where(
-            MemberRole.profile_id == profile.id,
-            MemberRole.role_key == role_key,
-            func.coalesce(MemberRole.country, "") == (country or ""),
-            func.coalesce(MemberRole.team, "") == (team or ""),
-        )
-    )
-    if existing and existing.status == "active":
+async def set_team_place(db: AsyncSession, profile: Profile, team_key: str, level: str,
+                         granted_by=None, reason: str | None = None) -> TeamMember:
+    """Put someone in a team at a level. An existing active place changes
+    level (candidate → member, member → lead…)."""
+    existing = await db.scalar(select(TeamMember).where(
+        TeamMember.profile_id == profile.id, TeamMember.team_key == team_key,
+        TeamMember.status == "active"))
+    before = {"team": team_key, "level": existing.level} if existing else None
+    if existing and existing.level == level:
         return existing
     if existing:
-        existing.status = "active"
-        existing.removed_at = None
-        existing.removed_reason = None
-        existing.source = source
+        existing.level = level
         existing.granted_by = granted_by
         existing.granted_at = now()
-        holding = existing
+        place = existing
     else:
-        holding = MemberRole(
-            profile_id=profile.id, role_key=role_key, country=country, team=team,
-            source=source, granted_by=granted_by, granted_at=now(),
-        )
-        db.add(holding)
+        place = TeamMember(profile_id=profile.id, team_key=team_key, level=level,
+                           granted_by=granted_by, granted_at=now())
+        db.add(place)
     await db.flush()
-    await log_change(db, granted_by, "role_granted", str(profile.id),
-                     after={"role": role_key, "country": country, "team": team, "source": source},
-                     reason=reason)
-    return holding
+    await log_change(db, granted_by, "team_changed" if before else "team_added", str(profile.id),
+                     before=before, after={"team": team_key, "level": level}, reason=reason)
+    return place
 
 
-async def remove_role(db: AsyncSession, holding: MemberRole, actor_id, reason: str) -> None:
-    before = {"role": holding.role_key, "country": holding.country, "team": holding.team}
-    holding.status = "removed"
-    holding.removed_at = now()
-    holding.removed_reason = reason
-    await log_change(db, actor_id, "role_removed", str(holding.profile_id), before=before, reason=reason)
+async def remove_team_place(db: AsyncSession, place: TeamMember, actor_id, reason: str) -> None:
+    before = {"team": place.team_key, "level": place.level}
+    place.status = "removed"
+    place.removed_at = now()
+    place.removed_reason = reason
+    await log_change(db, actor_id, "team_removed", str(place.profile_id), before=before, reason=reason)
+
+
+async def recognise(db: AsyncSession, profile_id, achievement_key: str, count: int, note: str | None,
+                    actor_id) -> AchievementRecord:
+    record = AchievementRecord(profile_id=profile_id, achievement_key=achievement_key, count=count,
+                               note=note, recognised_by=actor_id, created_at=now())
+    db.add(record)
+    await db.flush()
+    await log_change(db, actor_id, "achievement_recognised", str(profile_id),
+                     after={"achievement": achievement_key, "count": count}, reason=note)
+    return record
 
 
 async def set_quest(db: AsyncSession, profile_id, quest_key: str, count: int = 1,
@@ -353,8 +345,8 @@ async def set_quest(db: AsyncSession, profile_id, quest_key: str, count: int = 1
 
 async def refresh_status(db: AsyncSession, profile: Profile, user: User | None = None,
                          actor_id=None) -> str | None:
-    """Move member_status forward when the quests allow it. On becoming a
-    member, grant Ambassador. Returns the new status when it changed."""
+    """Move member_status forward when the quests allow it. Returns the new
+    status when it changed."""
     quests = await quests_for(db, profile, user)
     new = next_status(profile.member_status, profile.join_path, quests)
     if new == profile.member_status:
@@ -363,8 +355,6 @@ async def refresh_status(db: AsyncSession, profile: Profile, user: User | None =
     profile.member_status = new
     if new == "member":
         profile.member_since = profile.member_since or now()
-        await grant_role(db, profile, "ambassador", source="auto", granted_by=actor_id,
-                         reason="Welcome quests done")
         app = await db.get(CommunityApplication, profile.id)
         if app and app.status not in ("refused", "withdrawn"):
             app.status = "met"
@@ -374,46 +364,8 @@ async def refresh_status(db: AsyncSession, profile: Profile, user: User | None =
     return new
 
 
-async def check_unlocks(db: AsyncSession, profile: Profile, user: User | None = None) -> list[str]:
-    """Grant every `auto` role whose requirements are all met. Returns the new
-    keys. Ambassador is handled by refresh_status. Phase 2 calls this after
-    each counting action; phase 1 runs it when the journey page loads."""
-    if profile.member_status != "member":
-        return []
-    prog = await progress(db, profile, user)
-    catalogue = await load_catalogue(db)
-    new = []
-    for role in catalogue:
-        if role["unlock"] != "auto" or role["key"] == "ambassador":
-            continue
-        state = prog["per_role"][role["key"]]
-        if state["ready"] and not state["held"]:
-            await grant_role(db, profile, role["key"], source="auto", reason="Requirements met")
-            new.append(role["key"])
-    return new
-
-
-async def claim_role(db: AsyncSession, profile: Profile, role_key: str,
-                     team: str | None = None, user: User | None = None) -> MemberRole:
-    """A member takes a `claim` role whose requirements are met."""
-    role = await db.get(CommunityRole, role_key)
-    if role is None or not role.active:
-        raise HTTPException(status_code=404, detail="role_not_found")
-    if role.unlock != "claim":
-        raise HTTPException(status_code=400, detail="role_not_claimable")
-    if profile.member_status != "member":
-        raise HTTPException(status_code=403, detail="community_access_pending")
-    if role.scope == "global" and team not in TEAMS:
-        raise HTTPException(status_code=400, detail="team_required")
-    prog = await progress(db, profile, user)
-    if not prog["per_role"][role_key]["ready"]:
-        raise HTTPException(status_code=400, detail="requirements_not_met")
-    return await grant_role(db, profile, role_key, source="claim", granted_by=profile.id, team=team,
-                            reason="Claimed")
-
-
 async def touch_activity(db: AsyncSession, profile_id) -> None:
-    """Record activity at most once a day (used to pause roles after 6 months)."""
+    """Record activity at most once a day (team powers pause after 6 months)."""
     cutoff = now() - timedelta(days=1)
     await db.execute(
         update(Profile)
@@ -423,88 +375,19 @@ async def touch_activity(db: AsyncSession, profile_id) -> None:
     )
 
 
-# ── Permissions ──────────────────────────────────────────────
+def require_power(check):
+    """FastAPI dependency: (profile, powers) when check(powers) is true, else 403.
 
-class Scope:
-    """Where a permission applies: everywhere, or in some countries/teams."""
-    def __init__(self):
-        self.everywhere = False
-        self.countries: set[str] = set()
-        self.teams: set[str] = set()
-
-    def __bool__(self):
-        return self.everywhere or bool(self.countries) or bool(self.teams)
-
-    def covers(self, country: str | None = None, teams: set[str] | None = None) -> bool:
-        if self.everywhere:
-            return True
-        if country and country in self.countries:
-            return True
-        return bool(teams and (teams & self.teams))
-
-    def as_dict(self) -> dict:
-        return {"everywhere": self.everywhere, "countries": sorted(self.countries), "teams": sorted(self.teams)}
-
-
-async def permission_scopes(db: AsyncSession, profile: Profile, user: User | None = None) -> dict[str, Scope]:
-    """{permission: Scope} for this member. Superusers (the community team
-    admins for now) hold every permission everywhere. Paused roles grant
-    nothing until the member is active again."""
-    if user is None:
-        user = await db.get(User, profile.id)
-    scopes: dict[str, Scope] = {}
-    if user is not None and user.is_superuser:
-        for key in PERMISSIONS:
-            s = Scope(); s.everywhere = True
-            scopes[key] = s
-        return scopes
-    if profile.member_status != "member" or is_paused(profile.last_active_at):
-        return scopes
-    rows = (await db.execute(
-        select(MemberRole.country, MemberRole.team, CommunityRole.scope, CommunityRolePermission.permission)
-        .join(CommunityRole, CommunityRole.key == MemberRole.role_key)
-        .join(CommunityRolePermission, CommunityRolePermission.role_key == MemberRole.role_key)
-        .where(MemberRole.profile_id == profile.id, MemberRole.status == "active",
-               CommunityRole.active.is_(True))
-    )).all()
-    for country, team, role_scope, perm in rows:
-        s = scopes.setdefault(perm, Scope())
-        if role_scope == "none":
-            s.everywhere = True
-        elif role_scope == "global":
-            if team:
-                s.teams.add(team)
-        elif country:
-            s.countries.add(country)
-    return {k: v for k, v in scopes.items() if v}
-
-
-async def has_permission(db: AsyncSession, profile: Profile, permission: str,
-                         country: str | None = None) -> bool:
-    scope = (await permission_scopes(db, profile)).get(permission)
-    if not scope:
-        return False
-    return True if country is None else scope.covers(country=country)
-
-
-def require_permission(permission: str):
-    """FastAPI dependency: the caller's Profile and the Scope of the
-    permission, or 403. Usage:
-
-        ctx = Depends(require_permission("view_members"))
-        profile, scope = ctx
+        ctx = Depends(require_power(lambda p: p.view_members))
     """
-    if permission not in PERMISSIONS:
-        raise ValueError(f"Unknown permission key: {permission}")
-
     async def dependency(user: User = Depends(current_active_user),
                          db: AsyncSession = Depends(get_db)):
         profile = await db.get(Profile, user.id)
         if profile is None:
             raise HTTPException(status_code=404, detail="Profile not found")
-        scope = (await permission_scopes(db, profile, user)).get(permission)
-        if not scope:
+        powers = await powers_for(db, profile, user)
+        if not check(powers):
             raise HTTPException(status_code=403, detail="missing_permission")
-        return profile, scope
+        return profile, powers
 
     return dependency

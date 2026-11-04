@@ -1,5 +1,5 @@
 # /community/welcome — shown once, when the last welcome quest makes the
-# person an Ambassador and the platform opens.
+# person a member and the platform opens.
 
 from urllib.parse import quote
 
@@ -41,8 +41,8 @@ async def get(req):
             H2(_("cj.welcome.open_now")),
             Ul(
                 Li(_("cj.welcome.open_platform")),
-                Li(_("cj.welcome.open_tree")),
-                Li(_("cj.welcome.open_members")),
+                Li(_("cj.welcome.open_teams")),
+                Li(_("cj.welcome.open_achievements")),
                 style="margin:0;padding-left:20px;color:var(--text);line-height:1.8;",
             ),
             cls="cj-card",

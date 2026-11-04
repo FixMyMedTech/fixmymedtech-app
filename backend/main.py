@@ -271,30 +271,23 @@ class FeedbackAdmin(ModelView, model=models.Feedback):
     name_plural = "Feedback"
     icon = "fa-solid fa-comment-dots"
 
-# Community journey catalogue (migration 029). Until the role editor exists
-# (phase 1b), the community team edits roles, requirements and permissions here.
-class CommunityRoleAdmin(ModelView, model=models.CommunityRole):
-    column_list = [models.CommunityRole.key, models.CommunityRole.path, models.CommunityRole.tier,
-                   models.CommunityRole.scope, models.CommunityRole.unlock, models.CommunityRole.active]
-    column_sortable_list = [models.CommunityRole.key, models.CommunityRole.path, models.CommunityRole.tier]
-    name = "Community role"
-    name_plural = "Community roles"
-    icon = "fa-solid fa-sitemap"
+# Community journey (migration 029). Teams' texts are also editable by each
+# team's lead in Community admin; achievement levels only here.
+class CommunityTeamAdmin(ModelView, model=models.CommunityTeam):
+    column_list = [models.CommunityTeam.key, models.CommunityTeam.sort, models.CommunityTeam.active,
+                   models.CommunityTeam.updated_at]
+    name = "Community team"
+    name_plural = "Community teams"
+    icon = "fa-solid fa-people-group"
 
-class CommunityRoleRequirementAdmin(ModelView, model=models.CommunityRoleRequirement):
-    column_list = [models.CommunityRoleRequirement.role_key, models.CommunityRoleRequirement.kind,
-                   models.CommunityRoleRequirement.ref, models.CommunityRoleRequirement.threshold]
-    column_sortable_list = [models.CommunityRoleRequirement.role_key]
-    name = "Role requirement"
-    name_plural = "Role requirements"
-    icon = "fa-solid fa-list-check"
-
-class CommunityRolePermissionAdmin(ModelView, model=models.CommunityRolePermission):
-    column_list = [models.CommunityRolePermission.role_key, models.CommunityRolePermission.permission]
-    column_sortable_list = [models.CommunityRolePermission.role_key]
-    name = "Role permission"
-    name_plural = "Role permissions"
-    icon = "fa-solid fa-key"
+class AchievementAdmin(ModelView, model=models.Achievement):
+    column_list = [models.Achievement.key, models.Achievement.team_key, models.Achievement.source,
+                   models.Achievement.metric, models.Achievement.levels, models.Achievement.sort,
+                   models.Achievement.active]
+    column_sortable_list = [models.Achievement.key, models.Achievement.sort]
+    name = "Achievement"
+    name_plural = "Achievements"
+    icon = "fa-solid fa-star"
 
 admin = Admin(
     app, engine=engine, title="FixMyMedTech Admin",
@@ -311,9 +304,8 @@ admin.add_view(DocumentAdmin)
 admin.add_view(FaultAdmin)
 admin.add_view(MaintenanceLogAdmin)
 admin.add_view(FeedbackAdmin)
-admin.add_view(CommunityRoleAdmin)
-admin.add_view(CommunityRoleRequirementAdmin)
-admin.add_view(CommunityRolePermissionAdmin)
+admin.add_view(CommunityTeamAdmin)
+admin.add_view(AchievementAdmin)
 
 
 @app.get("/health")

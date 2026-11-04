@@ -1,6 +1,16 @@
 # Community journey and skill tree: technical plan
 
-Status: phase 1 built (migration 029), see the [how-to guide](community-guide.md). Date: 2026-10-30. Screens: the "Community journey screens" design canvas.
+Status: phase 1 built, then rebuilt around teams and achievements (migration `029_community_journey.sql`), see the [how-to guide](community-guide.md). Date: 2026-10-30, updated 2026-11-04. Screens: the "Community journey screens" design canvas.
+
+## Change of direction (2026-11-04)
+
+After trying phase 1, Jason replaced the tree of 21 roles. **The [how-to guide](community-guide.md) describes what is built now; where this plan talks about roles, the guide wins.**
+
+- **Three teams** replace the roles: Communicator, Community Builder, Clinics Connector. Each person is a Candidate, Member or Lead of a team (`community_teams`, `team_members`). Community Builders make candidates for any team; a team's lead manages its members and edits its page; only superusers name leads.
+- **Achievements with 10 star levels** replace roles as the thing you earn (`achievements`, `achievement_records`). Mapper is counted from devices registered; Ambassador, Supporter, Event Organiser and Active Builder are recognised by members of their team.
+- **Powers come from team places**, not from a permission table: `powers_from` in `backend/utils/community.py`. The old `community_roles`, `community_role_requirements`, `community_role_permissions` and `member_roles` tables are gone; `community_role_changes` became `community_changes`.
+- **The skill tree is a hexagon map** (`/community/achievements`), and Getting started opens on an introduction page with the concept video.
+- Becoming a member no longer grants Ambassador: Ambassador is now an achievement.
 
 This plan says how to build the community journey in this codebase. The product rules (which roles exist, how they unlock, what they unlock) are in the product proposal, which will move to the docs vault as feature notes. This page covers the data, the code and the build order.
 

@@ -1,6 +1,6 @@
-# /community/admin/history — every community change, newest first: roles
-# granted or removed, status changes, applicant decisions. Needs the
-# view_role_history permission (Community team).
+# /community/admin/history — every community change, newest first: team
+# places added or removed, achievements recognised, team texts edited, status
+# changes and applicant decisions. Needs view_history (team leads, superusers).
 
 import httpx
 from fasthtml.common import *
@@ -10,7 +10,7 @@ import features.auth.helper as auth_helper
 import features.community.api as community_api
 from components import page_shell
 from features.community.ui import admin_tabs, fmt_dt
-from features.community.pages.admin_members import history_line
+from features.community.pages.admin_members import history_line, load_catalogue
 from i18n import t as make_t
 
 rt = APIRouter()
@@ -32,10 +32,7 @@ async def get(req, offset: int = 0):
         if e.response.status_code == 403:
             return RedirectResponse("/community", status_code=302)
         data = {"items": []}
-    try:
-        roles_by_key = {r["key"]: r for r in (await community_api.get_tree()).get("roles") or []}
-    except Exception:
-        roles_by_key = {}
+    teams, achievements = await load_catalogue()
     items = data.get("items") or []
 
     rows = [Tr(
@@ -43,7 +40,7 @@ async def get(req, offset: int = 0):
         Td(c.get("actor_name") or Span(_("cj.admin.system"), cls="cj-small")),
         Td(A(c["target_name"], href=f"/community/admin/members?sel={c['target']}") if c.get("target_name")
            else (c.get("target") or "—")),
-        Td(history_line(c, roles_by_key, lang, _)),
+        Td(history_line(c, teams, achievements, lang, _)),
         Td(c.get("reason") or ""),
     ) for c in items]
 

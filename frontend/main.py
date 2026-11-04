@@ -159,8 +159,8 @@ async def post(req):
 
 from features.community.pages import (
     join as community_join, start as community_start, journey as community_journey,
-    tree as community_tree, role as community_role, welcome as community_welcome,
-    admin_applicants, admin_members, admin_roles, admin_history,
+    achievements as community_achievements, welcome as community_welcome,
+    admin_applicants, admin_members, admin_teams, admin_history,
 )
 
 auth_login.rt.to_app(app)
@@ -197,12 +197,11 @@ documents_pages.rt.to_app(app)
 community_join.rt.to_app(app)
 community_start.rt.to_app(app)
 community_welcome.rt.to_app(app)
-community_tree.rt.to_app(app)
-community_role.rt.to_app(app)
+community_achievements.rt.to_app(app)
 community_journey.rt.to_app(app)
 admin_applicants.rt.to_app(app)
 admin_members.rt.to_app(app)
-admin_roles.rt.to_app(app)
+admin_teams.rt.to_app(app)
 admin_history.rt.to_app(app)
 
 serve()

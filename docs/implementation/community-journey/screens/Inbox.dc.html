@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tasks</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#026fa8}a:hover{color:#01437a}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;padding:8px 12px;background:#ffffff;border:1px solid #d5e0e9;border-radius:12px;text-decoration:none;color:#132b45}
+.t{display:flex;flex-direction:column;gap:2px}
+.t b{font-size:14px;font-weight:500}
+.t span{font-size:12px;font-weight:500;color:#4f6276}
+.pill{display:inline-flex;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #f4f8fb; color: #132b45; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;">
+  <header style="flex-shrink: 0; padding: 12px 16px 0; background: #ffffff; border-bottom: 1px solid #d5e0e9; display: flex; flex-direction: column; gap: 8px;">
+    <h1 style="margin: 0; font-size: 20px; font-weight: 700;">Tasks</h1>
+    <div role="tablist" aria-label="Task type" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));">
+      <button role="tab" aria-selected="true" style="min-height: 44px; border: 0; border-bottom: 2px solid #026fa8; background: none; font: inherit; font-size: 14px; font-weight: 500; color: #026fa8;">My jobs · 3</button>
+      <button role="tab" aria-selected="false" style="min-height: 44px; border: 0; border-bottom: 2px solid transparent; background: none; font: inherit; font-size: 14px; font-weight: 500; color: #4f6276;">Community · 2</button>
+    </div>
+  </header>
+
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow: hidden;">
+    <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #4f6276;">Faults and maintenance</span>
+    <a href="#" class="item"><span class="t"><b>Repair the infant incubator</b><span>Komfo Anokye · reported 2 days ago</span></span><span class="pill" style="background: #fee2e2; color: #b91c1c;">High</span></a>
+    <a href="#" class="item"><span class="t"><b>Diagnose the suction pump</b><span>Kumasi South · assigned to you</span></span><span class="pill" style="background: #fef3c7; color: #b45309;">Assigned</span></a>
+    <a href="#" class="item"><span class="t"><b>Maintenance: 3 oxygen concentrators</b><span>St. Michael's · due this week</span></span><span class="pill" style="background: #fef3c7; color: #b45309;">Due</span></a>
+
+    <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #4f6276; margin-top: 8px;">Preview of the Community tab</span>
+    <a href="#" class="item"><span class="t"><b>Verify St. Michael's Clinic</b><span>Verifier · 3 km away</span></span><span class="pill" style="background: #e9f0f5; color: #4f6276;">+10 pts</span></a>
+    <a href="#" class="item"><span class="t"><b>Host Esi Boateng's welcome meeting</b><span>Approval host · Thu 14:00</span></span><span class="pill" style="background: #fef3c7; color: #b45309;">Booked</span></a>
+
+    <p style="margin: 8px 0 0; font-size: 12px; font-weight: 500; line-height: 1.4; color: #4f6276;">Resolving a fault also counts toward your next role. You'll see it on My journey.</p>
+  </div>
+
+  <nav aria-label="Main" style="flex-shrink: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #ffffff; border-top: 1px solid #d5e0e9;">
+    <a href="#" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #4f6276; text-decoration: none;">Devices</a>
+    <a href="#" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #4f6276; text-decoration: none;">Faults</a>
+    <a href="Journey.dc.html" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #4f6276; text-decoration: none;">Community</a>
+    <a href="Profile.dc.html" style="min-height: 56px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #4f6276; text-decoration: none;">Profile</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

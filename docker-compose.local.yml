@@ -22,19 +22,26 @@ services:
       retries: 10
 
   backend:
-    platform: linux/arm64
+    # No fixed platform: Docker builds for the machine it runs on (Apple
+    # Silicon, Intel/AMD, Windows). Forcing arm64 made x86 machines emulate it.
     build:
       context: .
       dockerfile: backend/Dockerfile
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8888:8888"
+      # 8890 / 5003 by default so this stack runs next to the Supabase stack
+      # (docker-compose.yml, 8888 / 5001). Override with LOCAL_*_PORT in .env.
+      - "127.0.0.1:${LOCAL_BACKEND_PORT:-8890}:8888"
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/fixmymedtech
       DB_SCHEMA: fixmymedtech
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8888}
+      # This stack is always on localhost, so its public address follows its
+      # own port; FRONTEND_URL / API_BASE_URL in .env are for other stacks.
+      FRONTEND_URL: http://localhost:${LOCAL_BACKEND_PORT:-8890}
+      API_BASE_URL: http://localhost:${LOCAL_BACKEND_PORT:-8890}
+      LOGO_URL: ${LOGO_URL:-}
       MAIL_SERVER: ${MAIL_SERVER}
-      MAIL_PORT: ${MAIL_PORT}
+      MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
@@ -45,6 +52,7 @@ services:
       AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:-dev-local-admin-session-secret}
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
+      SUPERUSER_NAME: ${SUPERUSER_NAME:-}
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -61,10 +69,19 @@ services:
       PHOTO_MAX_DIMENSION: ${PHOTO_MAX_DIMENSION:-1600}
       PHOTO_JPEG_QUALITY: ${PHOTO_JPEG_QUALITY:-85}
       HEALTHSITES_API_KEY: ${HEALTHSITES_API_KEY}
+      DOCUMENT_MAX_MB: ${DOCUMENT_MAX_MB:-50}
       DISCORD_FEEDBACK_WEBHOOK_URL: ${DISCORD_FEEDBACK_WEBHOOK_URL:-}
       DISCORD_FEEDBACK_TAG_ID: ${DISCORD_FEEDBACK_TAG_ID:-}
       DISCORD_ISSUE_TAG_ID: ${DISCORD_ISSUE_TAG_ID:-}
       DISCORD_WELCOME_WEBHOOK_URL: ${DISCORD_WELCOME_WEBHOOK_URL:-}
+      # Background-removal model (~176 MB), kept in a volume so it is
+      # downloaded once instead of after every rebuild.
+      U2NET_HOME: /models
+      # Own cookie names, so logging in here doesn't log you out of another
+      # stack on localhost (cookies are per host, not per port).
+      ADMIN_SESSION_COOKIE: fmmt_local_admin
+    volumes:
+      - rembg-models:/models
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
       interval: 30s
@@ -77,23 +94,26 @@ services:
         condition: service_healthy
 
   frontend:
-    platform: linux/arm64
     build: ./frontend
     restart: unless-stopped
     environment:
       API_URL: ${API_URL:-http://backend:8888}
       SESSION_SECRET: ${SESSION_SECRET:-dev-local-session-secret}
+      SESSION_COOKIE: fmmt_local_session
     ports:
-      - "127.0.0.1:5001:5001"
+      - "127.0.0.1:${LOCAL_FRONTEND_PORT:-5003}:5001"
     depends_on:
       - backend
 
   minio:
-    image: minio/minio:latest
+    # MinIO no longer publishes images (removed from Docker Hub; quay.io needs
+    # a login). pgsty/minio is MinIO rebuilt from its open-source code by the
+    # Pigsty project: same binary, settings and data format. Pinned on purpose.
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     restart: unless-stopped
     ports:
-      - "127.0.0.1:9002:9000"
-      - "127.0.0.1:9003:9001"
+      - "127.0.0.1:${LOCAL_MINIO_PORT:-9002}:9000"
+      - "127.0.0.1:${LOCAL_MINIO_CONSOLE_PORT:-9003}:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
@@ -109,3 +129,4 @@ services:
 volumes:
   pg-data:
   minio-data:
+  rembg-models:

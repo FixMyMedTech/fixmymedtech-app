@@ -21,6 +21,8 @@ from i18n import t as make_t
 
 from components import page_shell, status_badge, fmt_date
 from features.groups.pages.groups_page import GEOLOC_JS, _hs_dialog
+from features.documents.components import DOCS_CSS, ifixit_picker
+from features.documents.pages import attach_selected
 rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 # NEW DEVICE
@@ -672,6 +674,15 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                 cls="form-group"),
             cls="card", style="margin-bottom:14px;", data_step="5"
         ),
+        # Optional: attach manuals from iFixit while registering. The search
+        # starts from the manufacturer and model typed above.
+        Div(
+            Style(DOCS_CSS),
+            H3(_("docs.find_heading"), style="font-size:1rem;margin-bottom:6px;color:var(--c-text-2);"),
+            P(_("docs.registration_hint"), style="font-size:.85rem;margin-bottom:6px;"),
+            ifixit_picker(_),
+            cls="card", style="margin-bottom:14px;", data_step="5"
+        ),
         Div(
             Button(step_back, id="step-back", type="button", cls="btn btn-secondary",
                    onclick="wStep(-1)", style="display:none;"),
@@ -872,6 +883,9 @@ async def post(req, device_id: str):
                     photo_data,
                     photo.content_type,
                 )
+        # Documents ticked in the iFixit picker. Best effort: the device is
+        # registered either way, and documents can be added on its page.
+        await attach_selected(token, device_id, form.getlist("ifixit_doc"))
         # Consumed: don't carry this clinic into the next registration.
         req.session.pop("last_healthsite", None)
         return RedirectResponse(f"/device/{device_id}", status_code=303)

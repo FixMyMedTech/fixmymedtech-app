@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from sqlalchemy import (
-    Column, String, Text, Integer, Numeric, Float, Date, DateTime, Boolean,
+    Column, String, Text, Integer, BigInteger, Numeric, Float, Date, DateTime, Boolean,
     ForeignKey, CheckConstraint, UniqueConstraint, MetaData, event
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -281,7 +281,6 @@ class Device(Base):
     healthsite               = relationship("Organization", back_populates="device_healthsites", foreign_keys=[healthsite_id])
     category                 = relationship("DeviceCategory", back_populates="devices")
     registered_by_profile    = relationship("Profile", foreign_keys=[registered_by])
-    documents                = relationship("Document", back_populates="device", cascade="all, delete-orphan")
     maintenance_logs         = relationship("MaintenanceLog", back_populates="device", cascade="all, delete-orphan")
     fault_reports            = relationship("FaultReport", back_populates="device", cascade="all, delete-orphan")
 
@@ -293,32 +292,70 @@ class Device(Base):
 # DOCUMENTS
 # ══════════════════════════════════════════════════════════════
 
+DOCUMENT_TYPES = ("user_manual", "service_manual", "quick_guide", "diagram", "general_guide")
+
+
 class Document(Base):
+    """A manual or guide in the shared library (migration 028).
+
+    source='ifixit' rows are links to the iFixit library (the file is never
+    copied); source='upload' rows are files in MinIO (storage_key). Devices
+    link to documents through device_documents, so one document can serve
+    many devices."""
     __tablename__ = "documents"
     __table_args__ = (
         CheckConstraint(
-            "type IN ('manual', 'quick_guide', 'video', 'diagram', 'checklist')",
+            "type IN ('user_manual', 'service_manual', 'quick_guide', 'diagram', 'general_guide')",
             name="documents_type_check"
+        ),
+        CheckConstraint("source IN ('ifixit', 'upload')", name="documents_source_check"),
+        CheckConstraint(
+            "contribution_status IS NULL OR contribution_status IN ('pending', 'approved', 'sent', 'rejected', 'failed')",
+            name="documents_contribution_status_check"
         ),
         {"schema": SCHEMA},
     )
 
     id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    device_id   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"))
     category_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.device_categories.id"))
     title       = Column(Text, nullable=False)
     type        = Column(Text, nullable=False)
     language    = Column(Text, default="en")
-    url         = Column(Text, nullable=False)
+    source      = Column(Text, nullable=False, default="upload")
+    url         = Column(Text)              # iFixit document page; NULL for uploads
+    storage_key = Column(Text)              # MinIO key; uploads only
     size_kb     = Column(Integer)
+    pages       = Column(Integer)
+    thumbnail_url = Column(Text)
+    manufacturer  = Column(Text)
+    model         = Column(Text)
+    ifixit_document_id = Column(BigInteger, unique=True)
+    ifixit_guid        = Column(Text)
+    ifixit_page        = Column(Text)       # iFixit device page title it belongs to
+    # Plain FK columns, no relationships: keeps Profile (and its User) out of
+    # anything that serializes a Document.
+    uploaded_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    contribution_status = Column(Text)      # uploads only; see migration 028
+    contribution_error  = Column(Text)
+    reviewed_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    reviewed_at = Column(DateTime(timezone=True))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
-    device      = relationship("Device", back_populates="documents")
     category    = relationship("DeviceCategory", back_populates="documents")
 
     def __repr__(self):
-        return f"<Document {self.title} ({self.type})>"
+        return f"<Document {self.title} ({self.type}, {self.source})>"
+
+
+class DeviceDocument(Base):
+    """Link between a device and a library document."""
+    __tablename__ = "device_documents"
+    __table_args__ = {"schema": SCHEMA}
+
+    device_id   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"), primary_key=True)
+    document_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.documents.id", ondelete="CASCADE"), primary_key=True)
+    added_by    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
 
 
 # ══════════════════════════════════════════════════════════════

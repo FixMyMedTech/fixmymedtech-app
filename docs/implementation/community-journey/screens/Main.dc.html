@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Skill tree</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#f4f8fb}
+a{color:#026fa8}a:hover{color:#01437a}
+.node{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;border:1px solid #d5e0e9;background:#ffffff;box-shadow:0 1px 2px rgba(19,43,69,0.05);text-decoration:none;color:#132b45;min-height:84px;box-sizing:border-box}
+.node.done{border-color:#15803d;background:#ffffff}
+.node.open{border:2px solid #026fa8;background:#e0f0f8}
+.node.locked{background:#e9f0f5;color:#4f6276;border-style:dashed;border-color:#728599}
+.nname{font-size:16px;font-weight:600;line-height:1.35}
+.nmeta{font-size:12px;font-weight:500;line-height:1.4;color:#4f6276}
+.badge{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500}
+.b-ok{background:#dcfce7;color:#15803d}
+.b-open{background:#ffffff;color:#026fa8;border:1px solid #026fa8}
+.b-lock{background:#ffffff;color:#4f6276;border:1px solid #d5e0e9}
+.b-warn{background:#fef3c7;color:#b45309}
+.vline{width:2px;height:24px;background:#728599;align-self:center}
+.vline.on{background:#15803d}
+.eyebrow{font-size:12px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:#007c88}
+.bar{height:6px;border-radius:9999px;background:#d5e0e9;overflow:hidden}
+.bar>div{height:6px;background:#026fa8}
+@media (max-width:760px){.tiers{grid-template-columns:repeat(1,minmax(0,1fr))!important;margin-top:0!important}.tiers>div{grid-column:auto!important}}
+</style>
+</helmet>
+<div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif; color: #132b45; background: #f4f8fb; min-height: 1060px;">
+  <header style="display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px; background: #ffffff; border-bottom: 1px solid #d5e0e9; flex-wrap: wrap;">
+    <div style="font-weight: 700; font-size: 16px;">FixMyMedTech</div>
+    <nav aria-label="Community" style="display: flex; gap: 4px; flex-wrap: wrap;">
+      <a href="Journey.dc.html" style="padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #4f6276;">My journey</a>
+      <a href="#" style="padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; background: #e0f0f8; color: #026fa8;">Skill tree</a>
+      <a href="#" style="padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #4f6276;">Community tasks</a>
+      <a href="#" style="padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #4f6276;">Members</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1180px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span class="eyebrow">Community</span>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; line-height: 1.25;">Skill tree</h1>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4f6276; max-width: 640px;">Everyone starts as an Ambassador. Each role has tasks; doing them unlocks the next roles, with new permissions and new tasks. You can follow several paths at once.</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;" aria-label="Legend">
+        <span class="badge b-ok">Done</span>
+        <span class="badge b-open">Open to you</span>
+        <span class="badge b-warn">In progress</span>
+        <span class="badge b-lock">Locked</span>
+      </div>
+    </div>
+
+    <section aria-label="Tier 0" style="display: flex; flex-direction: column; align-items: center;">
+      <a href="Role.dc.html" class="node done" style="width: 320px; align-items: center; text-align: center;">
+        <span class="nmeta">Tier 0 · everyone</span>
+        <span class="nname">Ambassador</span>
+        <span class="badge b-ok">Done · 5 of 5 welcome quests</span>
+      </a>
+      <div class="vline on"></div>
+      <div style="height: 2px; width: 82%; background: #728599;"></div>
+    </section>
+
+    <section class="tiers" aria-label="Paths" style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; margin-top: -24px;">
+      <div style="display: flex; flex-direction: column;">
+        <div class="vline on"></div>
+        <span class="eyebrow" style="text-align: center; margin-bottom: 8px;">Devices</span>
+        <a href="#" class="node done"><span class="nmeta">Tier 1</span><span class="nname">Mapper</span><span class="badge b-ok">Done</span></a>
+        <div class="vline"></div>
+        <a href="#" class="node open"><span class="nmeta">Tier 2</span><span class="nname">Repairer</span><span class="nmeta">3 of 5 faults resolved</span><div class="bar"><div style="width: 60%;"></div></div></a>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div class="vline"></div>
+        <span class="eyebrow" style="text-align: center; margin-bottom: 8px;">People</span>
+        <a href="#" class="node open"><span class="nmeta">Tier 1</span><span class="nname">Connector</span><span class="badge b-open">Open to you</span></a>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Tier 2</span><span class="nname">Mentor</span><span class="nmeta">Needs Connector</span></a>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div class="vline on"></div>
+        <span class="eyebrow" style="text-align: center; margin-bottom: 8px;">Trust</span>
+        <a href="#" class="node done"><span class="nmeta">Tier 1</span><span class="nname">Verifier</span><span class="badge b-ok">Done</span></a>
+        <div class="vline"></div>
+        <a href="Role.dc.html" class="node open"><span class="nmeta">Tier 2</span><span class="nname">Approval host</span><span class="nmeta">2 of 3 steps</span><div class="bar"><div style="width: 66%;"></div></div></a>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div class="vline"></div>
+        <span class="eyebrow" style="text-align: center; margin-bottom: 8px;">Knowledge</span>
+        <a href="#" class="node open"><span class="nmeta">Tier 1</span><span class="nname">Documentalist</span><span class="badge b-open">Open to you</span></a>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Tier 2</span><span class="nname">Curator</span><span class="nmeta">Needs Documentalist</span></a>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div class="vline"></div>
+        <span class="eyebrow" style="text-align: center; margin-bottom: 8px;">Global teams</span>
+        <a href="#" class="node open"><span class="nmeta">Tier 1 · pick a team</span><span class="nname">Team contributor</span><span class="nmeta">Software, Data, Hardware, Manufacturing, Partnerships, Communications</span></a>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Tier 2</span><span class="nname">Team core</span><span class="nmeta">Needs Team contributor</span></a>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div class="vline"></div>
+        <span class="eyebrow" style="text-align: center; margin-bottom: 8px;">Spare parts</span>
+        <a href="#" class="node open"><span class="nmeta">Tier 1</span><span class="nname">Part designer</span><span class="nmeta">Model a missing spare part</span></a>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Tier 1</span><span class="nname">Maker</span><span class="nmeta">Non-critical parts: 3D printing, laser cutting, CNC</span></a>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Tier 2</span><span class="nname">Design reviewer · Certified maker</span><span class="nmeta">Designs accepted; parts tested, with quality control certificates</span></a>
+      </div>
+    </section>
+
+    <section class="tiers" aria-label="Leads" style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px;">
+      <div style="grid-column: span 3; display: flex; flex-direction: column;">
+        <div style="height: 2px; width: 70%; align-self: center; background: #728599;"></div>
+        <div class="vline"></div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <a href="Lead.dc.html" class="node locked"><span class="nmeta">Tier 3 · local</span><span class="nname">City lead</span><span class="nmeta">Assigned by the community team</span></a>
+          <a href="#" class="node locked"><span class="nmeta">Tier 3 · local</span><span class="nname">Country lead</span><span class="nmeta">Assigned by the community team</span></a>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div style="height: 2px;"></div>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Leads to</span><span class="nname">Any lead role</span><span class="nmeta">Curators can lead a city or a team</span></a>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div style="height: 2px;"></div>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Tier 3 · global</span><span class="nname">Team lead</span><span class="nmeta">Assigned by the community team</span></a>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <div style="height: 2px;"></div>
+        <div class="vline"></div>
+        <a href="#" class="node locked"><span class="nmeta">Tier 3</span><span class="nname">Manufacturing hub lead</span><span class="nmeta">Assigned by the community team</span></a>
+      </div>
+    </section>
+
+    <section aria-label="Community team" style="display: flex; flex-direction: column; align-items: center;">
+      <div class="vline"></div>
+      <a href="#" class="node locked" style="width: 320px; align-items: center; text-align: center;"><span class="nmeta">Assigned by a community team admin</span><span class="nname">Community team</span><span class="nmeta">Review stories, give roles, moderate</span></a>
+    </section>
+
+    <section aria-label="Clinicians" style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 16px; border-radius: 12px; background: #ffffff; border: 1px solid #d5e0e9;">
+      <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 260px;">
+        <span class="eyebrow">For clinicians</span>
+        <span style="font-size: 14px; line-height: 1.6;">Clinicians start as <strong>Clinic champion</strong> once they join the Discord and do a first task. It opens Connector and Mapper, then the same tree.</span>
+      </div>
+      <a href="#" class="node open" style="width: 220px;"><span class="nmeta">Tier 1 · clinicians</span><span class="nname">Clinic champion</span></a>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

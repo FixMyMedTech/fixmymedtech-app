@@ -7,6 +7,7 @@ import features.auth.api as auth_api
 import features.devices.api as devices_api
 
 from components import *
+from features.documents.components import DOCS_CSS, doc_item
 from components import page_shell, status_badge, fmt_date, pub_shell, map_component
 from features.devices.static.guides import category_label, GUIDE_INDEX
 from i18n import t as make_t
@@ -92,19 +93,9 @@ async def get(req, device_id: str):
     import datetime
     overdue = nm and nm < datetime.datetime.now().isoformat()
 
-    doc_items = [
-        A(
-            Span("▶" if doc.get("type")=="video" else "📄" if doc.get("type")=="manual" else "📋",
-                 style="font-size:1.2rem;"),
-            Div(
-                Div(doc.get("title",""), style="font-weight:500;font-size:0.875rem;"),
-                Div(f"{doc.get('type','')} · {doc.get('language','').upper()}",
-                    style="font-size:0.75rem;color:var(--c-text-3);"),
-            ),
-            href=doc.get("url","#"), target="_blank",
-            style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);text-decoration:none;color:var(--c-text);margin-bottom:8px;"
-        ) for doc in docs
-    ]
+    # Public: everyone can open a device's documents, no remove buttons here.
+    doc_items = ([Style(DOCS_CSS), Div(*[doc_item(_, doc) for doc in docs], cls="doc-list")]
+                 if docs else [])
 
     fault_items = [
         A(

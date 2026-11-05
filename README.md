@@ -47,9 +47,9 @@ docker compose -f docker-compose.local.yml up --build -d
 
 | Service | URL |
 |---------|-----|
-| App (FastHTML) | <http://localhost:5001> |
-| API (FastAPI) + Swagger | <http://localhost:8888> · <http://localhost:8888/docs> |
-| Admin portal (SQLAdmin) | <http://localhost:8888/admin/> |
+| App | <http://localhost:8890> (frontend alone: <http://localhost:5003>) |
+| API (FastAPI) + Swagger | <http://localhost:8890> · <http://localhost:8890/docs> |
+| Admin portal (SQLAdmin) | <http://localhost:8890/admin/> |
 | MinIO console | <http://localhost:9003> (`minioadmin` / `minioadmin`) |
 
 Creating your first admin (optional — set `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD`
@@ -168,7 +168,7 @@ There are three compose stacks:
 
 | Compose file | PostgreSQL | Host ports (app / minio) | Used by |
 |--------------|------------|--------------------------|---------|
-| `docker-compose.local.yml` | local container | `8888` / `5001` / `9002–9003` | local development |
+| `docker-compose.local.yml` | local container | `8890` / `5003` / `9002–9003` | local development |
 | `docker-compose.dev.yml` | Supabase (dev) | `8889` / `5002` / `9002–9003` | dev server (`/opt/fixmymedtech-dev`) |
 | `docker-compose.yml` | Supabase (prod) | `8888` / `5001` / `9000–9001` | prod server (`/opt/fixmymedtech`) |
 

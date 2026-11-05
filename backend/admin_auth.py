@@ -27,7 +27,10 @@ class AdminAuth(AuthenticationBackend):
     """
 
     def __init__(self):
-        super().__init__(secret_key=os.getenv("AUTH_SESSION_SECRET", "dev-admin-session-secret"))
+        # Cookie name is configurable so two stacks on the same host (e.g.
+        # localhost:8888 and :8890) don't share, and overwrite, one login.
+        super().__init__(secret_key=os.getenv("AUTH_SESSION_SECRET", "dev-admin-session-secret"),
+                         session_cookie=os.getenv("ADMIN_SESSION_COOKIE") or "session")
 
     # ── Login form submission ─────────────────────────────────────────────
     async def login(self, request: Request) -> bool:

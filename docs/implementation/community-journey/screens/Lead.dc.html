@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>City lead dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#f4f8fb}
+a{color:#026fa8}a:hover{color:#01437a}
+.card{background:#ffffff;border:1px solid #d5e0e9;border-radius:12px;padding:16px 24px;box-shadow:0 1px 2px rgba(19,43,69,0.05);display:flex;flex-direction:column;gap:8px;min-width:0}
+.lbl{font-size:12px;font-weight:500;color:#4f6276}
+.num{font-size:32px;font-weight:700;line-height:1.1}
+th{text-align:left;font-size:12px;font-weight:500;color:#4f6276;background:#e9f0f5;padding:8px 12px}
+td{font-size:14px;padding:10px 12px;border-top:1px solid #d5e0e9}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none}
+</style>
+</helmet>
+<div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif; color: #132b45; background: #f4f8fb; min-height: 820px;">
+  <header style="display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px; background: #ffffff; border-bottom: 1px solid #d5e0e9; flex-wrap: wrap;">
+    <div style="font-weight: 700; font-size: 16px;">FixMyMedTech</div>
+    <nav aria-label="Community" style="display: flex; gap: 4px; flex-wrap: wrap;">
+      <a href="Journey.dc.html" style="padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #4f6276;">My journey</a>
+      <a href="Main.dc.html" style="padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #4f6276;">Skill tree</a>
+      <a href="#" style="padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; background: #e0f0f8; color: #026fa8;">Kumasi</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1180px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #007c88;">City lead</span>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700; line-height: 1.25;">Kumasi community</h1>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+      <div class="card"><span class="lbl">Members</span><span class="num">38</span><span class="lbl">+4 this month</span></div>
+      <div class="card"><span class="lbl">Clinics waiting for approval</span><span class="num">5</span><span class="lbl">Oldest: 12 days</span></div>
+      <div class="card"><span class="lbl">Open repair requests</span><span class="num">7</span><span class="lbl">2 with no one assigned</span></div>
+      <div class="card"><span class="lbl">Devices mapped</span><span class="num">612</span><span class="lbl">in 21 clinics</span></div>
+    </div>
+
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start;">
+      <section class="card" style="flex: 999 1 560px; padding: 0; overflow: hidden;">
+        <div style="padding: 16px 24px 8px;"><h2 style="margin: 0; font-size: 16px; font-weight: 600;">Waiting for you</h2></div>
+        <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead><tr><th scope="col">Request</th><th scope="col">Member</th><th scope="col">Why</th><th scope="col"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Action</span></th></tr></thead>
+          <tbody>
+            <tr><td>Clinic waiting 12 days for approval</td><td>Kofi Asante</td><td style="color: #4f6276;">Approval host · meeting not booked yet</td><td><a href="#" class="btn" style="background: #026fa8; color: #ffffff;">Follow up</a></td></tr>
+            <tr><td>Confirm quest: watched a meeting</td><td>Esi Boateng</td><td style="color: #4f6276;">For Approval host · meeting on 24 Oct</td><td><a href="#" class="btn" style="border: 1px solid #728599; color: #132b45;">Confirm</a></td></tr>
+            <tr><td>Role paused: no activity in 6 months</td><td>Yaw Owusu</td><td style="color: #4f6276;">Repairer · last active April</td><td><a href="#" class="btn" style="border: 1px solid #728599; color: #132b45;">Contact</a></td></tr>
+            <tr><td>Repair request with no one assigned</td><td>Komfo Anokye</td><td style="color: #4f6276;">Infant incubator · 2 Repairers nearby</td><td><a href="#" class="btn" style="border: 1px solid #728599; color: #132b45;">Assign</a></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <section class="card" style="flex: 1 1 280px;">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600;">Members by role</h2>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Ambassador</span><span style="color: #4f6276;">38</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Mapper</span><span style="color: #4f6276;">17</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Verifier</span><span style="color: #4f6276;">9</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Repairer</span><span style="color: #4f6276;">6</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Approval host</span><span style="color: #4f6276;">2</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Mentor</span><span style="color: #4f6276;">2</span></div>
+        <a href="#" class="btn" style="border: 1px solid #728599; color: #132b45; align-self: flex-start; margin-top: 8px;">Create a local task</a>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

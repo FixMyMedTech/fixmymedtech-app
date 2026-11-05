@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin: applicants</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#f4f8fb}
+a{color:#026fa8}a:hover{color:#01437a}
+.tab{padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none;color:#4f6276}
+.tab.on{background:#e0f0f8;color:#026fa8}
+.card{background:#ffffff;border:1px solid #d5e0e9;border-radius:12px;box-shadow:0 1px 2px rgba(19,43,69,0.05);min-width:0}
+th{text-align:left;font-size:12px;font-weight:500;color:#4f6276;background:#e9f0f5;padding:8px 12px;white-space:nowrap}
+td{font-size:14px;padding:10px 12px;border-top:1px solid #d5e0e9;vertical-align:top}
+.pill{display:inline-flex;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:12px;font-weight:500;color:#4f6276}
+.f input,.f select,.f textarea{min-height:36px;box-sizing:border-box;border:1px solid #728599;border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;color:#132b45;background:#ffffff}
+</style>
+</helmet>
+<div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif; color: #132b45; background: #f4f8fb; min-height: 760px;">
+  <header style="display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 56px; background: #ffffff; border-bottom: 1px solid #d5e0e9; flex-wrap: wrap;">
+    <div style="font-weight: 700; font-size: 16px;">FixMyMedTech</div>
+    <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #007c88;">Community admin</span>
+    <nav aria-label="Admin" style="display: flex; gap: 4px; flex-wrap: wrap;">
+      <a href="#" class="tab on">Applicants</a>
+      <a href="AdminMembers.dc.html" class="tab">Members</a>
+      <a href="AdminRoles.dc.html" class="tab">Roles</a>
+      <a href="#" class="tab">History</a>
+    </nav>
+  </header>
+  <main style="max-width: 1180px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700; line-height: 1.25;">Applicants</h1>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="#" class="pill" style="background: #e0f0f8; color: #026fa8; border: 1px solid #026fa8; min-height: 32px; align-items: center;">New · 6</a>
+        <a href="#" class="pill" style="border: 1px solid #728599; color: #132b45; min-height: 32px; align-items: center;">Meeting booked · 3</a>
+        <a href="#" class="pill" style="border: 1px solid #728599; color: #132b45; min-height: 32px; align-items: center;">Approved</a>
+        <a href="#" class="pill" style="border: 1px solid #728599; color: #132b45; min-height: 32px; align-items: center;">Rejected</a>
+      </div>
+    </div>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start;">
+      <section class="card" style="flex: 999 1 560px; overflow: hidden;">
+        <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead><tr><th scope="col">Name</th><th scope="col">I am a</th><th scope="col">Place</th><th scope="col">Invited by</th><th scope="col">Quests</th><th scope="col">Status</th><th scope="col">Waiting</th></tr></thead>
+          <tbody>
+            <tr style="background: #e0f0f8;"><td><a href="#" style="font-weight: 500;">Esi Boateng</a></td><td>Engineer</td><td>Kumasi, Ghana</td><td>Amina Mensah</td><td>4 of 5</td><td><span class="pill" style="background: #fef3c7; color: #b45309;">Meeting booked</span></td><td>2 days</td></tr>
+            <tr><td><a href="#" style="font-weight: 500;">Jean-Paul Mbarga</a></td><td>Student</td><td>Yaoundé, Cameroon</td><td style="color: #4f6276;">None</td><td>2 of 5</td><td><span class="pill" style="background: #fef3c7; color: #b45309;">Meeting booked</span></td><td>5 days</td></tr>
+            <tr><td><a href="#" style="font-weight: 500;">Dr. Fatou Diallo</a></td><td>Clinician</td><td>Thiès, Senegal</td><td>Kofi Asante</td><td>3 of 5</td><td><span class="pill" style="background: #fee2e2; color: #b91c1c;">New</span></td><td>8 days</td></tr>
+            <tr><td><a href="#" style="font-weight: 500;">Samuel Okoro</a></td><td>Engineer</td><td>Enugu, Nigeria</td><td style="color: #4f6276;">None</td><td>1 of 5</td><td><span class="pill" style="background: #fef3c7; color: #b45309;">Contacted</span></td><td>11 days</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+      <section class="card" aria-label="Esi Boateng's application" style="flex: 1 1 320px; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 700;">Esi Boateng</h2>
+          <span style="font-size: 12px; font-weight: 500; color: #4f6276;">Biomedical engineer · Komfo Anokye Teaching Hospital · trained in Ghana</span>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;">"Our incubators wait months for parts. I want to help fix that."</p>
+        <div class="f"><label for="a-host">Handled by</label><select id="a-host"><option>Kofi Asante (Approval host)</option></select></div>
+        <div class="f"><label for="a-meet">Welcome meeting</label><input id="a-meet" value="Thu 31 Oct, 14:00"></div>
+        <div class="f"><label for="a-notes">Notes (internal)</label><textarea id="a-notes" rows="2">Works on neonatal devices. Wants to map her hospital first.</textarea></div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="Consent.dc.html" class="btn" style="background: #026fa8; color: #ffffff;">Meeting held</a>
+          <a href="#" class="btn" style="border: 1px solid #728599; color: #132b45;">Refuse…</a>
+        </div>
+        <span style="font-size: 12px; font-weight: 500; line-height: 1.4; color: #4f6276;">Quests: profile ✓, consent ✓, video ✓, Discord ✓. Marking the meeting as held completes her last quest: she becomes an Ambassador in Kumasi, Ghana and the platform opens for her.</span>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -14,12 +14,13 @@ from sqlalchemy.orm import selectinload
 from config.db_config import get_db
 from utils.profile import get_current_profile
 from models.models import (
-    Device, DeviceCategory, Document, MaintenanceLog, FaultReport, Profile, OrgJoinRequest,
+    Device, DeviceCategory, MaintenanceLog, FaultReport, Profile, OrgJoinRequest,
 )
 from config.storage import upload_file, get_file
 from config.db_config import AsyncSessionLocal
 from config.discord import welcome_enabled
 from routers.discord_link import announce_new_device
+from routers.documents import device_documents
 from utils.background import spawn
 from utils.photo_processing import process_photo_to_white, compress_device_photo
 import asyncio
@@ -182,10 +183,7 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    docs_result = await db.execute(
-        select(Document).where(Document.device_id == device_id)
-    )
-    docs = docs_result.scalars().all()
+    docs = await device_documents(db, device_id)
 
     faults_result = await db.execute(
         select(FaultReport)
@@ -310,10 +308,7 @@ async def get_device(
     )
     faults = faults_result.scalars().all()
 
-    docs_result = await db.execute(
-        select(Document).where(Document.device_id == device_id)
-    )
-    docs = docs_result.scalars().all()
+    docs = await device_documents(db, device_id)
 
     # Built by hand and returned alongside the device rather than loaded onto
     # it: Profile links to User with lazy="selectin", so eager-loading the

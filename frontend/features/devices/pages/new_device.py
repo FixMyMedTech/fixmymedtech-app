@@ -23,6 +23,7 @@ from components import page_shell, status_badge, fmt_date
 from features.groups.pages.groups_page import GEOLOC_JS, _hs_dialog
 from features.documents.components import DOCS_CSS, ifixit_picker
 from features.documents.pages import attach_selected
+from posthog_client import posthog_client
 rt = APIRouter()
 # ══════════════════════════════════════════════════════════════
 # NEW DEVICE
@@ -885,7 +886,16 @@ async def post(req, device_id: str):
                 )
         # Documents ticked in the iFixit picker. Best effort: the device is
         # registered either way, and documents can be added on its page.
-        await attach_selected(token, device_id, form.getlist("ifixit_doc"))
+        attached_documents = await attach_selected(token, device_id, form.getlist("ifixit_doc"))
+        if posthog_client is not None:
+            posthog_client.capture(
+                event="device_registered",
+                properties={
+                    "category_id": payload.get("category_id", ""),
+                    "has_photo": bool(getattr(photo, "filename", "")),
+                    "attached_documents": attached_documents,
+                },
+            )
         # Consumed: don't carry this clinic into the next registration.
         req.session.pop("last_healthsite", None)
         return RedirectResponse(f"/device/{device_id}", status_code=303)

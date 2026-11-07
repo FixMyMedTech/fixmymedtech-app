@@ -10,6 +10,7 @@ import features.groups.api as groups_api
 from components import page_shell
 from components import alert as alert_box
 from i18n import t as make_t
+from posthog_client import posthog_client
 
 rt = APIRouter()
 
@@ -414,6 +415,11 @@ async def post(req, org_id: str, name: Optional[str] = None, type: Optional[str]
         data["contact_email"] = contact_email.strip()
     try:
         await groups_api.update_organization(token, org_id, data)
+        if posthog_client is not None:
+            posthog_client.capture(
+                event="organization_updated",
+                properties={"updated_field_count": len(data), "organization_type": data.get("type", "")},
+            )
     except Exception:
         pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)
@@ -426,6 +432,8 @@ async def remove_member(req, org_id: str, member_id: str):
         return redirect
     try:
         await groups_api.remove_organization_member(token, org_id, member_id)
+        if posthog_client is not None:
+            posthog_client.capture(event="organization_member_removed")
     except Exception:
         pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)
@@ -452,6 +460,11 @@ async def approve_join_request(req, org_id: str, request_id: str, role: str = ""
     if role in ROLE_VALUES:
         try:
             await groups_api.approve_join_request(token, org_id, request_id, role)
+            if posthog_client is not None:
+                posthog_client.capture(
+                    event="join_request_approved",
+                    properties={"member_role": role},
+                )
         except Exception:
             pass
     return RedirectResponse(f"/groups/{org_id}", status_code=303)

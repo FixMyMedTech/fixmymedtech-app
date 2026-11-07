@@ -1,5 +1,6 @@
 # components.py — reusable FastHTML UI components
 
+import json
 from contextvars import ContextVar
 
 from fasthtml.common import *
@@ -177,6 +178,7 @@ a { color: var(--c-primary); text-decoration: none; }
 .sb-foot .theme-btn { width: 100%; height: 34px; }
 .main {
   margin-left: var(--sidebar-w); flex: 1;
+  min-width: 0; /* a flex item defaults to min-width:auto, so a wide table or long URL would stretch the page past the phone screen */
   padding: calc(var(--topbar-h) + 22px) 28px 32px;
   transition: margin-left .2s ease;
 }
@@ -1050,6 +1052,22 @@ def fmt_date(iso: str) -> str:
         return iso[:10]
     
 
+def enum_label(_, kind: str, value) -> str:
+    """Translate a stored device enum slug ("operational", "donated") with the
+    labels the registration form uses (new_device.status_*, new_device.acquisition_*).
+    Unknown slugs fall back to the raw value."""
+    if not value:
+        return _("common.fallback")
+    return _(f"new_device.{kind}_{value}", str(value))
+
+
+def _script_json(value) -> str:
+    """json.dumps that is safe inside a <script> element (same as _js_json in
+    features/faults/pages/fault_list.py): <, > and & become \\u escapes."""
+    return (json.dumps(value, ensure_ascii=False)
+            .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
+
 def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False):
     """
     markers = [
@@ -1058,15 +1076,18 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False
     ]
     """
     markers = markers or []
+    lat, lng, zoom = float(lat), float(lng), int(zoom)
 
-    # Build JS marker code
+    # Titles are user data (device and healthsite names): pass them as escaped
+    # JSON and show them as text, since bindPopup() renders a string as HTML.
+    # An apostrophe in a name used to break the script and stop the map loading.
     marker_js = "\n".join([
-        f"L.marker([{m['lat']}, {m['lng']}]).addTo(map).bindPopup('{m.get('title', '')}');"
+        f"L.marker([{float(m['lat'])}, {float(m['lng'])}]).addTo(map).bindPopup(_mapText({_script_json(m.get('title', ''))}));"
         for m in markers
     ])
 
     if fit and markers:
-        coords = ", ".join(f"[{m['lat']}, {m['lng']}]" for m in markers)
+        coords = ", ".join(f"[{float(m['lat'])}, {float(m['lng'])}]" for m in markers)
         fit_js = f"map.fitBounds(L.latLngBounds([{coords}]));"
     else:
         fit_js = ""
@@ -1083,6 +1104,7 @@ def map_component(lat=0, lng=0, zoom=13, markers=None, height="500px", fit=False
         Script(src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"),
         Script(f"""
             var map = L.map('map').setView([{lat}, {lng}], {zoom});
+            function _mapText(t) {{ var s = document.createElement('span'); s.textContent = t; return s; }}
 
             L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
                 attribution: '© OpenStreetMap contributors'

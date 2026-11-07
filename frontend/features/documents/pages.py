@@ -17,7 +17,7 @@ import features.auth.helper as auth_helper
 import features.documents.api as docs_api
 
 from components import pub_shell
-from features.documents.components import (DOCS_CSS, TYPES, doc_list, ifixit_results,
+from features.documents.components import (DOCS_CSS, TYPES, count_label, doc_list, ifixit_results,
                                            type_label, TYPE_ICONS)
 from posthog_client import posthog_client
 
@@ -78,7 +78,7 @@ async def get(req, q: str = "", type: str = ""):
             Span(TYPE_ICONS.get(d.get("type"), "📄"), cls="doc-ico"),
             Div(A(d["title"], href=d["url"], target="_blank", rel="noopener", cls="doc-title"),
                 Div(" · ".join(x for x in (type_label(_, d.get("type")), extra,
-                                           f"{n} {_('docs.used_by')}" if n else "") if x),
+                                           count_label(_, n, "docs.used_by_one", "docs.used_by") if n else "") if x),
                     Span(_("docs.source_ifixit") if d.get("source") == "ifixit" else _("docs.source_upload"),
                          cls=f"doc-src {'ifixit' if d.get('source') == 'ifixit' else ''}"),
                     cls="doc-meta"),
@@ -91,7 +91,7 @@ async def get(req, q: str = "", type: str = ""):
             Div(A(p["title"], href=p["url"], target="_blank", rel="noopener"), cls="ifx-page-title"),
             Div(*[Div(Span(TYPE_ICONS.get(d["type"], "📄"), cls="doc-ico"),
                       Div(A(d["title"], href=d["url"], target="_blank", rel="noopener", cls="doc-title"),
-                          Div(" · ".join([type_label(_, d["type"])] + ([f"{d['pages']} {_('docs.pages')}"] if d.get("pages") else [])),
+                          Div(" · ".join([type_label(_, d["type"])] + ([count_label(_, d["pages"], "docs.page", "docs.pages")] if d.get("pages") else [])),
                               Span(_("docs.source_ifixit"), cls="doc-src ifixit"), cls="doc-meta"),
                           cls="doc-body"),
                       cls="doc-item") for d in p["documents"]], cls="doc-list"),

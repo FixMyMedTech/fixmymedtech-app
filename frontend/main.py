@@ -11,9 +11,6 @@ from fasthtml.common import *
 load_dotenv()
 
 from components import set_current_user, brand_head
-from posthog.integrations.asgi import PosthogASGIMiddleware
-from posthog_client import posthog_client
-from posthog_logs import posthog_log
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
@@ -45,9 +42,6 @@ app, route = fast_app(secret_key=SECRET,
                         *brand_head(),
                     )
     )
-
-if posthog_client is not None:
-    app.add_middleware(PosthogASGIMiddleware, client=posthog_client)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -92,7 +86,7 @@ class UserContextMiddleware(BaseHTTPMiddleware):
 
         data = {"name": "", "username": "", "email": "", "avatar": ""}
         if token:
-            if request.session.get("user_name") and request.session.get("user_id"):
+            if request.session.get("user_name"):
                 data = {
                     "name": request.session.get("user_name", ""),
                     "username": request.session.get("user_username", ""),
@@ -103,24 +97,12 @@ class UserContextMiddleware(BaseHTTPMiddleware):
                 try:
                     import features.profile.api as profile_api
                     me = await profile_api.get_me(token)
-                    profile_id = str(me.get("id") or "")
-                    email = request.session.get("user_email", "") or me.get("email") or ""
+                    email = request.session.get("user_email", "") or ""
                     name = me.get("full_name") or me.get("username") or email
                     request.session["user_name"] = name
                     request.session["user_username"] = me.get("username") or name
                     request.session["user_email"] = email
                     request.session["user_avatar"] = me.get("avatar_key") or ""
-                    if profile_id:
-                        request.session["user_id"] = profile_id
-                        if posthog_client is not None:
-                            posthog_client.set(
-                                distinct_id=profile_id,
-                                properties={
-                                    key: value
-                                    for key, value in {"email": email, "name": name}.items()
-                                    if value
-                                },
-                            )
                     data = {
                         "name": name,
                         "username": request.session["user_username"],
@@ -140,10 +122,6 @@ class UserContextMiddleware(BaseHTTPMiddleware):
             request.state.session_expired = True
             data = {"name": "", "username": "", "email": "", "avatar": ""}
             rejected.clear()
-
-        user_id = request.session.get("user_id")
-        if posthog_client is not None and user_id:
-            posthog_client.identify_context(str(user_id))
 
         set_current_user(data)
         response = await call_next(request)
@@ -204,10 +182,5 @@ maintenance_log_detail.rt.to_app(app)
 guides.rt.to_app(app)
 feedback_pages.rt.to_app(app)
 documents_pages.rt.to_app(app)
-
-posthog_log.info(
-    "application_started",
-    extra={"event": "application_started", "runtime": "asgi"},
-)
 
 serve()

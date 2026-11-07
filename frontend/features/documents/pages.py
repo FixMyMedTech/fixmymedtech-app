@@ -19,7 +19,6 @@ import features.documents.api as docs_api
 from components import pub_shell
 from features.documents.components import (DOCS_CSS, TYPES, doc_list, ifixit_results,
                                            type_label, TYPE_ICONS)
-from posthog_client import posthog_client
 
 rt = APIRouter()
 
@@ -165,11 +164,6 @@ async def post(req, device_id: str):
         return redirect
     form = await req.form()
     ok = await attach_selected(token, device_id, form.getlist("ifixit_doc"))
-    if ok and posthog_client is not None:
-        posthog_client.capture(
-            event="documents_attached",
-            properties={"document_count": ok},
-        )
     return _back(device_id, docs="attached" if ok else "none_selected")
 
 
@@ -189,11 +183,6 @@ async def post(req, device_id: str):
                               form.get("language") or "en")
     except Exception as e:
         return _back(device_id, docs="error", docs_detail=_error_text(e))
-    if posthog_client is not None:
-        posthog_client.capture(
-            event="document_uploaded",
-            properties={"document_type": form.get("type") or "", "has_title": bool(form.get("title"))},
-        )
     return _back(device_id, docs="uploaded")
 
 
@@ -206,6 +195,4 @@ async def post(req, device_id: str, document_id: str):
         await docs_api.detach(token, device_id, document_id)
     except Exception:
         return _back(device_id, docs="error")
-    if posthog_client is not None:
-        posthog_client.capture(event="document_removed")
     return _back(device_id, docs="removed")

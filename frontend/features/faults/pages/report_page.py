@@ -16,7 +16,6 @@ from components import *
 from components import page_shell, status_badge, fmt_date
 import features.auth.api as auth_api
 from i18n import t as make_t
-from posthog_client import posthog_client
 rt = APIRouter()
 
 def _severity_text(text: str) -> str:
@@ -220,11 +219,6 @@ async def post(req, device_id: str, description: str,
         pass
 
     if fault_id:
-        if posthog_client is not None:
-            posthog_client.capture(
-                event="fault_reported",
-                properties={"severity": severity},
-            )
         try:
             form = await req.form()
             photo = form.get("photo")

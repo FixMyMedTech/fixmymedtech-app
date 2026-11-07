@@ -10,8 +10,6 @@ import features.auth.api as auth_api
 from components import *
 from components import page_shell
 from i18n import t as make_t
-from posthog_client import posthog_client
-from posthog_logs import posthog_log
 rt = APIRouter()
 
 # ══════════════════════════════════════════════════════════════
@@ -118,27 +116,8 @@ async def post(req, device_id: str, description: str = "",
 
     try:
         await maintenance_api.create_maintenance_log(token, data)
-        posthog_log.info(
-            "maintenance_log_created",
-            extra={
-                "event": "maintenance_log_created",
-                "maintenance_type": data["type"],
-                "has_assignee": bool(assigned_to),
-            },
-        )
-        if posthog_client is not None:
-            posthog_client.capture(
-                event="maintenance_log_created",
-                properties={"maintenance_type": data["type"], "has_assignee": bool(assigned_to)},
-            )
-    except Exception as exc:
-        posthog_log.error(
-            "maintenance_log_create_failed",
-            extra={
-                "event": "maintenance_log_create_failed",
-                "error_type": exc.__class__.__name__,
-            },
-        )
+    except Exception:
+        pass
 
     return page_shell(
         Div(

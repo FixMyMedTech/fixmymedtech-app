@@ -284,6 +284,144 @@
       
   
   
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../register-device/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Register a device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../report-fault/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report a fault and get it repaired
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../attach-manual/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attach a manual and search the library
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -297,10 +435,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -318,8 +456,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -570,6 +708,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community-journey/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community journey (plan)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -791,7 +957,9 @@
 <p>All application tables live in a single PostgreSQL schema, <code>fixmymedtech</code>, and
 are created/updated by the ordered SQL files in
 <code>infrastructure/migrations/</code>, applied automatically at backend startup
-(tracked in <code>fixmymedtech.schema_migrations</code>).</p>
+(tracked in <code>fixmymedtech.schema_migrations</code>). <code>000_initial_schema.sql</code> is the
+base bootstrap — it creates every base table (idempotently), so even a brand-new
+empty database (e.g. a fresh Supabase project) migrates cleanly on first boot.</p>
 <p><strong>Conventions</strong></p>
 <ul>
 <li>Every row uses a <code>UUID</code> primary key (default <code>gen_random_uuid()</code>), so IDs
@@ -920,6 +1088,7 @@ are created/updated by the ordered SQL files in
         text status
         timestamptz resolved_at
         text resolution_notes
+        text photo_key
     }</code></pre>
 <hr />
 <h2 id="users">users<a class="headerlink" href="#users" title="Permanent link">&para;</a></h2>
@@ -1670,6 +1839,13 @@ a public QR link).</p>
 <td>Yes</td>
 <td>—</td>
 <td></td>
+</tr>
+<tr>
+<td><code>photo_key</code></td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>—</td>
+<td>MinIO key of the attached photo, e.g. <code>faults/&lt;uuid&gt;/photo_&lt;hex&gt;.jpg</code>; stored as-is (no background processing)</td>
 </tr>
 </tbody>
 </table>

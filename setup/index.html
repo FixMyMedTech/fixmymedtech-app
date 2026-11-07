@@ -25,7 +25,7 @@
     
     
       
-        <title>FixMyMedTech — Setup Guide - FixMyMedTech Documentation</title>
+        <title>FixMyMedTech — Running Without Docker - FixMyMedTech Documentation</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fixmymedtech-setup-guide" class="md-skip">
+        <a href="#fixmymedtech-running-without-docker" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              FixMyMedTech — Setup Guide
+              FixMyMedTech — Running Without Docker
             
           </span>
         </div>
@@ -301,7 +301,7 @@
   <span class="md-ellipsis">
     
   
-    Developers guide
+    User guide
   
 
     
@@ -314,6 +314,144 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../register-device/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Register a device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../report-fault/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report a fault and get it repaired
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../attach-manual/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attach a manual and search the library
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -394,6 +532,34 @@
     
   
     Collaboration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community-journey/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community journey (plan)
   
 
     
@@ -495,10 +661,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-supabase-setup" class="md-nav__link">
+  <a href="#1-start-the-infrastructure" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Supabase setup
+        1. Start the infrastructure
       
     </span>
   </a>
@@ -506,10 +672,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-backend-setup" class="md-nav__link">
+  <a href="#2-backend-fastapi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Backend setup
+        2. Backend (FastAPI)
       
     </span>
   </a>
@@ -517,10 +683,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-frontend-setup" class="md-nav__link">
+  <a href="#3-frontend-fasthtml" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Frontend setup
+        3. Frontend (FastHTML)
       
     </span>
   </a>
@@ -528,30 +694,24 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-production-deploy-your-server" class="md-nav__link">
+  <a href="#4-seed-test-data-optional" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Production deploy (your server)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="4. Production deploy (your server)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#backend-with-systemd-or-supervisor" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backend (with systemd or supervisor)
+        4. Seed test data (optional)
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#5-documentation-mkdocs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Documentation (MkDocs)
+      
+    </span>
+  </a>
   
 </li>
       
@@ -560,17 +720,6 @@
     <span class="md-ellipsis">
       
         Key flows
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#offline-behaviour-pwa-nice-to-have" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Offline behaviour (PWA) - Nice to have
       
     </span>
   </a>
@@ -597,44 +746,77 @@
   
 
 
-<h1 id="fixmymedtech-setup-guide">FixMyMedTech — Setup Guide<a class="headerlink" href="#fixmymedtech-setup-guide" title="Permanent link">&para;</a></h1>
+<h1 id="fixmymedtech-running-without-docker">FixMyMedTech — Running Without Docker<a class="headerlink" href="#fixmymedtech-running-without-docker" title="Permanent link">&para;</a></h1>
+<p>The recommended way to develop is the Docker stack described in
+<a href="../getting_started/">Getting Started</a>. This page covers running the backend and
+frontend directly on your machine, which gives faster reloads while you edit
+Python code.</p>
 <hr />
-<h2 id="1-supabase-setup">1. Supabase setup<a class="headerlink" href="#1-supabase-setup" title="Permanent link">&para;</a></h2>
-<ol>
-<li>Create a project at https://supabase.com</li>
-<li>The schema is applied automatically — backend startup runs the migrations in
-   <code>infrastructure/migrations/</code> (tracked in <code>fixmymedtech.schema_migrations</code>).</li>
-<li>Go to <strong>Project Settings → API</strong> → copy:</li>
-<li>Project URL</li>
-<li><code>anon</code> public key</li>
-<li><code>service_role</code> secret key</li>
-</ol>
-<hr />
-<h2 id="2-backend-setup">2. Backend setup<a class="headerlink" href="#2-backend-setup" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>backend
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Fill in DATABASE_URL (and DB_SCHEMA)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>uvicorn<span class="w"> </span>main:app<span class="w"> </span>--reload
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># API runs at http://localhost:8000</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># Docs at http://localhost:8000/docs</span>
+<h2 id="1-start-the-infrastructure">1. Start the infrastructure<a class="headerlink" href="#1-start-the-infrastructure" title="Permanent link">&para;</a></h2>
+<p>The backend needs PostgreSQL and MinIO. The easiest option is to start only
+those two containers from the local stack:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.local.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>db<span class="w"> </span>minio
 </span></code></pre></div>
+<p>This exposes PostgreSQL on <code>localhost:5432</code> (user/password <code>postgres</code>,
+database <code>fixmymedtech</code>) and MinIO on <code>localhost:9002</code> (console on
+<code>localhost:9003</code>, <code>minioadmin</code> / <code>minioadmin</code>).</p>
+<p>A fresh PostgreSQL volume is initialised from <code>infrastructure/db/init.sql</code>.
+You can also point <code>DATABASE_URL</code> at a Supabase project instead. In that case
+the schema is created by the migrations on the first backend start.</p>
 <hr />
-<h2 id="3-frontend-setup">3. Frontend setup<a class="headerlink" href="#3-frontend-setup" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>frontend
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Set PUBLIC_API_URL=http://localhost:8000</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>npm<span class="w"> </span>install
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>npm<span class="w"> </span>run<span class="w"> </span>dev
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Runs at http://localhost:5173</span>
+<h2 id="2-backend-fastapi">2. Backend (FastAPI)<a class="headerlink" href="#2-backend-fastapi" title="Permanent link">&para;</a></h2>
+<p>Requires Python 3.12.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>backend
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql+asyncpg://postgres:postgres@localhost:5432/fixmymedtech
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DB_SCHEMA</span><span class="o">=</span>fixmymedtech
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MINIO_ENDPOINT</span><span class="o">=</span>localhost:9002
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MIGRATIONS_DIR</span><span class="o">=</span>../infrastructure/migrations
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>uvicorn<span class="w"> </span>main:app<span class="w"> </span>--reload<span class="w"> </span>--port<span class="w"> </span><span class="m">8888</span>
 </span></code></pre></div>
+<ul>
+<li>API: <a href="http://localhost:8888/api/...">http://localhost:8888/api/...</a></li>
+<li>Swagger: <a href="http://localhost:8888/docs">http://localhost:8888/docs</a></li>
+<li>Admin portal: <a href="http://localhost:8888/admin/">http://localhost:8888/admin/</a></li>
+</ul>
+<p>Pending migrations are applied on startup. <code>MIGRATIONS_DIR</code> must point to
+<code>infrastructure/migrations</code> relative to where you run the backend. The default
+is <code>infrastructure/migrations</code>, which matches the Docker image layout.</p>
+<p>Create a superuser with <code>python utils/create_superuser.py</code>, or set
+<code>SUPERUSER_EMAIL</code> / <code>SUPERUSER_PASSWORD</code> before starting.</p>
 <hr />
-<h2 id="4-production-deploy-your-server">4. Production deploy (your server)<a class="headerlink" href="#4-production-deploy-your-server" title="Permanent link">&para;</a></h2>
-<h3 id="backend-with-systemd-or-supervisor">Backend (with systemd or supervisor)<a class="headerlink" href="#backend-with-systemd-or-supervisor" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uvicorn<span class="w"> </span>main:app<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">2</span>
+<h2 id="3-frontend-fasthtml">3. Frontend (FastHTML)<a class="headerlink" href="#3-frontend-fasthtml" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>frontend
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">API_URL</span><span class="o">=</span>http://localhost:8888
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SESSION_SECRET</span><span class="o">=</span>any-random-string
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>python<span class="w"> </span>main.py
 </span></code></pre></div>
+<p>The app runs at <a href="http://localhost:5001">http://localhost:5001</a> with live reload.</p>
+<blockquote>
+<p>Outside Docker, open the frontend directly on port 5001. The backend's UI
+proxy forwards to the hostname <code>frontend:5001</code>, which only resolves inside
+the compose network, so <code>http://localhost:8888/</code> will not show the app.</p>
+</blockquote>
+<hr />
+<h2 id="4-seed-test-data-optional">4. Seed test data (optional)<a class="headerlink" href="#4-seed-test-data-optional" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>scripts/seed_test_data.py
+</span></code></pre></div>
+<p>This creates demo organizations and users (all with password <code>Pass123!</code>) in
+the database at <code>DATABASE_URL</code>, which defaults to
+<code>postgresql+asyncpg://postgres:postgres@localhost:5432/fixmymedtech</code>.</p>
+<hr />
+<h2 id="5-documentation-mkdocs">5. Documentation (MkDocs)<a class="headerlink" href="#5-documentation-mkdocs" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>docs
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>mkdocs<span class="w"> </span>serve
+</span></code></pre></div>
+<p>The docs are served at <a href="http://localhost:8000">http://localhost:8000</a>.</p>
 <hr />
 <h2 id="key-flows">Key flows<a class="headerlink" href="#key-flows" title="Permanent link">&para;</a></h2>
 <table>
@@ -648,29 +830,21 @@
 <tbody>
 <tr>
 <td>Nurse / technician (field)</td>
-<td>Scan QR → see device info, manuals, report fault</td>
-<td><code>/d/{id}</code> — no login needed</td>
+<td>Scan QR → device info, manuals, report a fault</td>
+<td><code>/d/{id}</code> (no login)</td>
 </tr>
 <tr>
-<td>Hospital admin</td>
-<td>Dashboard, manage devices, see faults</td>
-<td><code>/dashboard</code>, <code>/devices</code></td>
+<td>Organization admin</td>
+<td>Dashboard, devices, assign faults, manage members</td>
+<td><code>/dashboard</code>, <code>/devices</code>, <code>/faults</code>, <code>/groups</code></td>
 </tr>
 <tr>
-<td>Biomedical engineer</td>
-<td>Update device status, log maintenance</td>
-<td><code>/devices/{id}</code></td>
+<td>Technician / engineer</td>
+<td>Diagnose and repair assigned faults, log maintenance</td>
+<td><code>/tasks</code>, <code>/device/{id}</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="offline-behaviour-pwa-nice-to-have">Offline behaviour (PWA) - Nice to have<a class="headerlink" href="#offline-behaviour-pwa-nice-to-have" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Device pages (<code>/d/{id}</code>) are cached by the Service Worker after first visit</li>
-<li>Manuals/PDFs cached for 30 days</li>
-<li>API responses cached for 7 days</li>
-<li>Fault reports require internet connection to submit</li>
-</ul>
 
 
 

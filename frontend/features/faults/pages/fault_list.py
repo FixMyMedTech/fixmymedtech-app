@@ -17,7 +17,6 @@ import features.auth.api as auth_api
 import features.faults.api as faults_api
 
 from components import page_shell, status_badge, fmt_date
-from posthog_client import posthog_client
 rt = APIRouter()
 
 
@@ -369,8 +368,6 @@ async def post_assign(req, fault_id: str, assigned_to: str = "", status: str = "
     if assigned_to:
         try:
             await faults_api.assign_fault(token, fault_id, assigned_to)
-            if posthog_client is not None:
-                posthog_client.capture(event="fault_assigned")
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 auth_helper.clear_session(req)

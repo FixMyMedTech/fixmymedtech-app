@@ -12,7 +12,6 @@ from i18n import t as make_t
 # __ API imports __
 import features.auth.helper as auth_helper
 import features.feedback.api as feedback_api
-from posthog_client import posthog_client
 
 from components import pub_shell, alert
 
@@ -162,11 +161,6 @@ async def post(req):
         return pub_shell(_form(_, lang, bool(token), values, _("feedback.error_send")),
                          title=_("title.feedback"), lang=lang)
 
-    if posthog_client is not None:
-        posthog_client.capture(
-            event="feedback_submitted",
-            properties={"feedback_type": values["type"], "has_screenshot": screenshot is not None},
-        )
     return _done(_, lang, values["page"])
 
 

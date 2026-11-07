@@ -59,6 +59,8 @@ services:
     environment:
       API_URL: ${API_URL:-http://backend:8888}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set}
+      POSTHOG_PROJECT_TOKEN: ${POSTHOG_PROJECT_TOKEN:-}
+      POSTHOG_HOST: ${POSTHOG_HOST:-}
     ports:
       - "127.0.0.1:5001:5001"
     depends_on:

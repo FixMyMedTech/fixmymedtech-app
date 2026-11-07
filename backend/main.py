@@ -69,6 +69,12 @@ app.add_middleware(
     same_site="lax",
 )
 
+# PostHog error tracking: unhandled exceptions in any request are reported.
+from config.posthog import posthog_client
+if posthog_client is not None:
+    from posthog.integrations.asgi import PosthogASGIMiddleware
+    app.add_middleware(PosthogASGIMiddleware, client=posthog_client)
+
 # Register OAuth providers (Google/GitHub) if configured
 from config.oauth import register_oauth
 register_oauth(app)

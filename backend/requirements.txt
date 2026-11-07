@@ -16,3 +16,4 @@ fastapi-mail
 boto3
 rembg
 onnxruntime
+posthog>=7.69.0

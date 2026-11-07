@@ -11,7 +11,7 @@ import features.auth.helper as auth_helper
 import features.auth.api as auth_api
 import features.devices.api as devices_api
 
-from components import page_shell, status_badge, fmt_date, map_component
+from components import page_shell, status_badge, fmt_date, map_component, enum_label
 from features.devices.static.guides import category_label
 from features.documents.components import DOCS_CSS, doc_list
 from i18n import t as make_t
@@ -239,7 +239,7 @@ async def get(req, device_id: str):
             Div(
                 Div(_("device_detail.public_qr"), style="font-size:0.75rem;font-weight:500;color:var(--c-primary);"),
                 A(qr_url, href=qr_url, target="_blank",
-                style="font-size:0.8rem;color:var(--c-primary-md);font-family:monospace;"),
+                style="font-size:0.8rem;color:var(--c-primary-md);font-family:monospace;overflow-wrap:anywhere;"),
                 style="min-width:0;flex:1;",
             ),
             Button("▣ " + _("device_detail.show_qr"), type="button",
@@ -409,8 +409,8 @@ async def get(req, device_id: str):
                     *[Div(Dt(k, style="color:var(--c-text-3);font-weight:500;"), Dd(v),
                         style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);font-size:0.875rem;")
                     for k, v in [
-                        (_("device_detail.status"),   d.get("status",_("common.fallback"))),
-                        (_("device_detail.acquisition"),   f"{d.get('acquisition_type',_('common.fallback'))} · {fmt_date(d.get('acquisition_date',''))}"),
+                        (_("device_detail.status"),   enum_label(_, "status", d.get("status"))),
+                        (_("device_detail.acquisition"),   f"{enum_label(_, 'acquisition', d.get('acquisition_type'))} · {fmt_date(d.get('acquisition_date',''))}"),
                         (_("device_detail.last_maint"), fmt_date(d.get("last_maintenance",""))),
                         (_("device_detail.next_maint"), fmt_date(d.get("next_maintenance",""))),
                     ]]
@@ -486,7 +486,7 @@ async def get(req, device_id: str):
                         Tr(Td(_("device_detail.no_maint"), colspan="5",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
-                style="border:none;border-radius:0;"
+                cls="table-wrap", style="border:none;border-radius:0;"
             ),
             cls="card", style="margin-bottom:16px;"
         ),
@@ -505,7 +505,7 @@ async def get(req, device_id: str):
                         Tr(Td(_("device_detail.no_faults"), colspan="6",
                             style="color:var(--c-text-3);padding:20px;text-align:center;")))
                 ),
-                style="border:none;border-radius:0;"
+                cls="table-wrap", style="border:none;border-radius:0;"
             ),
             cls="card"
         ),

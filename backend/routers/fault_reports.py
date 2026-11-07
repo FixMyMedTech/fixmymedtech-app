@@ -26,7 +26,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File as FileParam
 from fastapi.responses import Response as FastAPIResponse
 from pydantic import BaseModel
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -509,6 +509,21 @@ async def resolve_fault(
     fault.resolved_by = profile.id
     fault.resolved_at = _now()
     fault.status = "resolved"
+
+    # A high/critical report put the device in 'fault' (see the public report
+    # endpoint). Put it back in service once no other serious fault is open.
+    device = await db.get(Device, fault.device_id)
+    if device is not None and device.status == "fault":
+        still_down = await db.scalar(
+            select(func.count()).select_from(FaultReport).where(
+                FaultReport.device_id == fault.device_id,
+                FaultReport.id != fault.id,
+                FaultReport.status != "resolved",
+                FaultReport.severity.in_(("high", "critical")),
+            )
+        )
+        if not still_down:
+            device.status = "operational"
 
     await db.commit()
     return _payload(await _load_fault(db, fault_id))

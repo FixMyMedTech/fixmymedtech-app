@@ -33,10 +33,15 @@ def type_label(_, t: str) -> str:
     return _(f"docs.type_{t}") if t in TYPES else _("docs.type_general_guide")
 
 
+def count_label(_, n: int, one_key: str, many_key: str) -> str:
+    """"1 page" / "3 pages": pick the singular or plural string."""
+    return f"{n} {_(one_key if n == 1 else many_key)}"
+
+
 def _meta(_, d: dict) -> list:
     bits = [type_label(_, d.get("type"))]
     if d.get("pages"):
-        bits.append(f"{d['pages']} {_('docs.pages')}")
+        bits.append(count_label(_, d["pages"], "docs.page", "docs.pages"))
     if d.get("language") and d["language"] != "other":
         bits.append(d["language"].upper())
     return bits

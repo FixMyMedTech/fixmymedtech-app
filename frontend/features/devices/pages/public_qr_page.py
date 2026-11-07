@@ -8,7 +8,7 @@ import features.devices.api as devices_api
 
 from components import *
 from features.documents.components import DOCS_CSS, doc_item
-from components import page_shell, status_badge, fmt_date, pub_shell, map_component
+from components import page_shell, status_badge, fmt_date, pub_shell, map_component, enum_label
 from features.devices.static.guides import category_label, GUIDE_INDEX
 from i18n import t as make_t
 
@@ -171,7 +171,7 @@ async def get(req, device_id: str):
         (_("public_qr.next_maint"),   fmt_date(nm)),
     ]
     if signed_in:
-        info_rows.insert(0, (_("public_qr.status"), d.get("status", _("common.fallback"))))
+        info_rows.insert(0, (_("public_qr.status"), enum_label(_, "status", d.get("status"))))
 
     # Location block + map: signed-in only.
     location_section = ""

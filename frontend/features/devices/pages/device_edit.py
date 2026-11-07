@@ -11,7 +11,7 @@ import features.faults.api as faults_api
 import features.maintenance.api as maintenance_api
 import features.groups.api as org_api
 
-from components import page_shell, alert as alert_box, assignee_options, fmt_date, status_badge, map_component
+from components import page_shell, alert as alert_box, assignee_options, fmt_date, status_badge, map_component, enum_label
 from i18n import t as make_t
 from features.devices.static.guides import category_label
 from features.documents.components import DOCS_CSS, doc_list, ifixit_picker, upload_form
@@ -243,10 +243,10 @@ def _info_card(device: dict, categories: list, lang: str, _):
 
 def _maintenance_card(device: dict, _):
     card_id = "maintenance"
-    acq = f"{device.get('acquisition_type', _('common.fallback'))} · {fmt_date(device.get('acquisition_date', ''))}"
+    acq = f"{enum_label(_, 'acquisition', device.get('acquisition_type'))} · {fmt_date(device.get('acquisition_date', ''))}"
     display = Div(
         Dl(
-            _detail_row(_("device_detail.status"), device.get("status", _("common.fallback"))),
+            _detail_row(_("device_detail.status"), enum_label(_, "status", device.get("status"))),
             _detail_row(_("device_detail.acquisition"), acq),
             _detail_row(_("device_detail.last_maint"), fmt_date(device.get("last_maintenance", ""))),
             _detail_row(_("device_detail.next_maint"), fmt_date(device.get("next_maintenance", ""))),

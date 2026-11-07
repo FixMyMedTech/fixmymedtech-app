@@ -9,6 +9,10 @@ copyright: Maintained by <a href="https://www.careagain.org/">Care Again</a>.
 
 nav:
   - Overview: index.md
+  - User guide:
+    - Register a device: register-device.md
+    - Report a fault and get it repaired: report-fault.md
+    - Attach a manual and search the library: attach-manual.md
   - Developers guide:
   # - Set Up: setup.md
     - Getting Started: getting_started.md
@@ -79,5 +83,7 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
   - def_list
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true

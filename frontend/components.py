@@ -39,6 +39,51 @@ def brand_head():
     )
 
 
+# ── PostHog browser analytics (pageviews, autocapture, replay) ──
+_POSTHOG_SNIPPET = """!function(t,e){var o,n,p,r;e.__SV||(window.posthog&&window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing debug getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);"""
+
+
+def posthog_head():
+    """posthog-js loader + identify, when POSTHOG_PROJECT_TOKEN/HOST are set.
+
+    The browser is identified with the same profile id the server-side
+    posthog-python events use, so both land on one person.
+    """
+    import os
+    token = os.getenv("POSTHOG_PROJECT_TOKEN", "")
+    host = os.getenv("POSTHOG_HOST", "")
+    if not token or not host:
+        return ()
+    config = {
+        "api_host": host.rstrip("/"),
+        "defaults": "2025-05-24",
+        "person_profiles": "identified_only",
+        # Error tracking: uncaught errors and unhandled promise rejections.
+        "capture_exceptions": True,
+    }
+    user = current_user_ctx()
+    user_id = user.get("id") or ""
+    props = {k: user[k] for k in ("email", "name") if user.get(k)}
+    if user_id:
+        after = f"posthog.identify({_js_json(user_id)}, {_js_json(props)});"
+    else:
+        # Signed out (or session expired): drop the previous user's identity.
+        after = "if (posthog.get_property('$user_state') === 'identified') posthog.reset();"
+    return (Script(
+        _POSTHOG_SNIPPET
+        + f"posthog.init({_js_json(token)}, {_js_json(config)});"
+        + after
+    ),)
+
+
+def _js_json(value) -> str:
+    """JSON safe to embed inside a <script> block."""
+    return (json.dumps(value)
+            .replace("<", "\\u003c").replace(">", "\\u003e")
+            .replace("&", "\\u0026")
+            .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
+
+
 # ── Design tokens ────────────────────────────────────────────
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -990,6 +1035,7 @@ def shell(content, title: str = "FixMyMedTech", lang: str = "en",
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
             *brand_head(),
+            *posthog_head(),
             Style(CSS),
         ),
         Body(
@@ -1022,6 +1068,7 @@ def auth_shell(content, title: str = "FixMyMedTech", lang: str = "en"):
             Meta(name="viewport", content="width=device-width, initial-scale=1"),
             Title(title),
             *brand_head(),
+            *posthog_head(),
             Style(CSS),
         ),
         Body(

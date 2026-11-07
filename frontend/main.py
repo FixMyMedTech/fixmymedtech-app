@@ -145,6 +145,8 @@ class UserContextMiddleware(BaseHTTPMiddleware):
         if posthog_client is not None and user_id:
             posthog_client.identify_context(str(user_id))
 
+        if token and data.get("name"):
+            data["id"] = str(request.session.get("user_id") or "")
         set_current_user(data)
         response = await call_next(request)
 

@@ -1,92 +1,70 @@
--- 029_onboarding_flow.sql
+-- 030_onboarding_flow.sql
 -- Engineer and clinic onboarding (spec "Engineer and clinic onboarding flow",
--- agreed 2026-11-12).
+-- agreed 2026-11-12). Builds on 029_community_journey.sql.
 --
 -- An engineer can register devices for a clinic only when two things are
--- true: they finished their three welcome quests, and that clinic named them
--- a responsible engineer. The clinic's own admins can always register.
+-- true: they finished their three welcome quests (profiles.member_status is
+-- 'member', see 029), and that clinic named them a responsible engineer. The
+-- clinic's own admins can always register, once the clinic is active.
 --
---   profiles.onboarding_status  applicant (doing the welcome quests) →
---                            active once they are done; staff for clinic
---                            staff added by an organization admin (no
---                            quests). Deliberately neutral: the user-facing
---                            name for "quests done" lives in i18n.py.
---   profiles.active_since    when the quests were all done.
 --   profiles.account_kind    engineer | clinic. Clinic accounts have no
---                            quests; they set up their clinic instead.
---   profiles.city / bio      part of the "complete your profile" quest.
---   onboarding_quests        quests the app can't read elsewhere (the
---                            community talk, confirmed by a host). Same shape
---                            as member_quests in draft PR #29.
+--                            quests (member_status 'staff'); they set up
+--                            their clinic instead.
+--   member_quests            (029) gains the 'community_talk' quest, which a
+--                            host confirms after the call.
 --   organizations.invited_by          the engineer who invited the clinic;
 --                                     kept whatever the clinic answers.
 --   organizations.push_to_healthsites a clinic created here that is not on
 --                                     healthsites.io yet, to push later.
---   organizations.clinic_status       active | talk_pending. A clinic that
---                                     signed up without an invitation stays
---                                     talk_pending until the talk host
---                                     unlocks it; engineers can't register
---                                     devices for it before that.
+--   organizations.clinic_status       active | talk_pending. A clinic created
+--                                     without an invitation stays
+--                                     talk_pending until a talk host unlocks
+--                                     it; nobody registers devices for it
+--                                     before that, its admins included.
 --   responsible_engineers    clinic ↔ engineer, confirmed or "not now".
 --   onboarding_invitations   an engineer inviting a clinic, or a clinic
 --                            inviting an engineer, by email with a token.
 --
--- Backfill: every profile that exists before this migration is active, its
--- quests done, every existing organization is active, and every existing
+-- Backfill: every existing organization is active, and every existing
 -- technician is a confirmed responsible engineer of their organization, so
 -- nobody already on the platform loses a right they had.
+--
+-- A local database that ran the first draft of this file (029_onboarding_flow)
+-- keeps its unused profiles.onboarding_status column and onboarding_quests
+-- table; the talks recorded there are copied over below.
 --
 -- Idempotent: safe to re-run.
 
 -- ── Profiles ────────────────────────────────────────────────
 
 ALTER TABLE fixmymedtech.profiles
-  ADD COLUMN IF NOT EXISTS onboarding_status TEXT,
-  ADD COLUMN IF NOT EXISTS active_since  TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS account_kind  TEXT NOT NULL DEFAULT 'engineer',
-  ADD COLUMN IF NOT EXISTS city          TEXT,
-  ADD COLUMN IF NOT EXISTS bio           TEXT;
-
--- Everyone already here is an existing account: active, quests done.
-UPDATE fixmymedtech.profiles
-   SET onboarding_status = 'active',
-       active_since  = COALESCE(active_since, created_at, NOW());
-
-ALTER TABLE fixmymedtech.profiles
-  ALTER COLUMN onboarding_status SET DEFAULT 'applicant',
-  ALTER COLUMN onboarding_status SET NOT NULL;
-
-DO $$ BEGIN
-  ALTER TABLE fixmymedtech.profiles ADD CONSTRAINT profiles_onboarding_status_check
-    CHECK (onboarding_status IN ('applicant', 'active', 'staff'));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  ADD COLUMN IF NOT EXISTS account_kind TEXT NOT NULL DEFAULT 'engineer';
 
 DO $$ BEGIN
   ALTER TABLE fixmymedtech.profiles ADD CONSTRAINT profiles_account_kind_check
     CHECK (account_kind IN ('engineer', 'clinic'));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-  ALTER TABLE fixmymedtech.profiles ADD CONSTRAINT profiles_bio_length
-    CHECK (bio IS NULL OR length(bio) <= 500);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 -- ── Quests ──────────────────────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS fixmymedtech.onboarding_quests (
-  profile_id    UUID NOT NULL REFERENCES fixmymedtech.profiles(id) ON DELETE CASCADE,
-  quest_key     TEXT NOT NULL,
-  count         INT  NOT NULL DEFAULT 1,
-  confirmed_by  UUID REFERENCES fixmymedtech.profiles(id) ON DELETE SET NULL,
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (profile_id, quest_key)
-);
-
--- Record the talk as attended for existing accounts (history only: their
--- onboarding_status already unlocks everything).
-INSERT INTO fixmymedtech.onboarding_quests (profile_id, quest_key)
-  SELECT id, 'community_talk' FROM fixmymedtech.profiles
+-- Existing members: record the talk as attended (history only, their
+-- member_status already unlocks everything).
+INSERT INTO fixmymedtech.member_quests (profile_id, quest_key)
+  SELECT id, 'community_talk' FROM fixmymedtech.profiles WHERE member_status = 'member'
   ON CONFLICT DO NOTHING;
+
+-- The 029 draft called the welcome call 'meeting_held'.
+INSERT INTO fixmymedtech.member_quests (profile_id, quest_key, count, confirmed_by, updated_at)
+  SELECT profile_id, 'community_talk', count, confirmed_by, updated_at
+    FROM fixmymedtech.member_quests WHERE quest_key = 'meeting_held'
+  ON CONFLICT DO NOTHING;
+
+DO $$ BEGIN
+  INSERT INTO fixmymedtech.member_quests (profile_id, quest_key, count, confirmed_by, updated_at)
+    SELECT profile_id, quest_key, count, confirmed_by, updated_at
+      FROM fixmymedtech.onboarding_quests
+    ON CONFLICT DO NOTHING;
+EXCEPTION WHEN undefined_table THEN NULL; END $$;
 
 -- ── Organizations ───────────────────────────────────────────
 

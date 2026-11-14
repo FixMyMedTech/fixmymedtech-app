@@ -135,7 +135,7 @@ async def _upsert_user(db: AsyncSession, email: str, name: str):
         db.add(profile)
         await db.flush()
 
-    # No default organization (migration 029): a new account is an engineer
+    # No default organization (migration 030): a new account is an engineer
     # applicant, like an email signup.
     await db.commit()
 

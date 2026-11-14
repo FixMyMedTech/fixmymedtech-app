@@ -627,9 +627,11 @@ async def invite_organization_member(
             id=user.id,
             username=await _unique_username(db, _username_base(email)),
             full_name=user.full_name,
-            # Staff added by an organization admin: not gated by the
-            # engineer quests, and not a responsible engineer either.
-            onboarding_status="staff",
+            # Staff added by an organization admin: no welcome quests to get
+            # in (status 'staff'), and not a responsible engineer either. Doing
+            # the quests later makes them a member like everyone else.
+            member_status="staff",
+            join_path="clinic_staff",
         ))
         created_user = True
 

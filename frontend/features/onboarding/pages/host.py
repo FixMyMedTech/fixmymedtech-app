@@ -1,9 +1,11 @@
-# pages/host.py — /host, the talk host's page (a superuser for now).
+# pages/host.py — /host, the talk host's page.
 #
 # Visitors: engineers doing the welcome quests; after a community talk the
-# host confirms attendance, which completes the third quest.
+# host confirms attendance, which completes the third quest. Shown to
+# Community Builders (and superusers).
 # Clinics waiting for their clinic talk: the host unlocks them afterwards so
-# their responsible engineers can register devices.
+# the clinic can register devices. Shown to Clinics Connectors (and
+# superusers). Each section appears only for those who can act on it.
 
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
@@ -26,8 +28,13 @@ async def get(req, ok: str = ""):
     _ = make_t(lang)
     try:
         applicants = await ob_api.host_applicants(token)
+    except Exception:
+        applicants = None   # not a talk host
+    try:
         clinics = await ob_api.host_clinics(token)
     except Exception:
+        clinics = None      # not a Clinics Connector
+    if applicants is None and clinics is None:
         return RedirectResponse("/home", status_code=302)
 
     def q(done):
@@ -44,7 +51,7 @@ async def get(req, ok: str = ""):
                     method="post", action=f"/host/applicants/{a['id']}/talk")
                if not a["quests"].get("community_talk") else ""),
         )
-        for a in applicants
+        for a in applicants or []
     ]
     clinic_rows = [
         Tr(
@@ -54,7 +61,7 @@ async def get(req, ok: str = ""):
             Td(Form(Button(_("ob.host_unlock"), type="submit", cls="btn btn-primary btn-sm"),
                     method="post", action=f"/host/clinics/{c['id']}/unlock")),
         )
-        for c in clinics
+        for c in clinics or []
     ]
     empty = lambda n, key: Tbody(Tr(Td(_(key), colspan=str(n),
                                        style="text-align:center;padding:20px;color:var(--c-text-3);")))
@@ -67,12 +74,12 @@ async def get(req, ok: str = ""):
             Div(Table(Thead(Tr(Th(_("ob.col_engineer")), Th(_("ob.quest_profile")), Th(_("ob.quest_photo")),
                                Th(_("ob.quest_talk")), Th(""))),
                       Tbody(*app_rows) if app_rows else empty(5, "ob.host_no_visitors")), cls="table-wrap"),
-            cls="card", style="max-width:1100px;"),
+            cls="card", style="max-width:1100px;margin-bottom:16px;") if applicants is not None else "",
         Div(H3(_("ob.host_clinics"), cls="card-title"),
             P(_("ob.host_clinics_body"), cls="ob-muted", style="margin-bottom:12px;"),
             Div(Table(Thead(Tr(Th(_("ob.col_clinic")), Th(_("ob.col_contact")), Th(_("ob.col_signed_up")), Th(""))),
                       Tbody(*clinic_rows) if clinic_rows else empty(4, "ob.host_no_clinics")), cls="table-wrap"),
-            cls="card", style="max-width:1100px;margin-top:16px;"),
+            cls="card", style="max-width:1100px;") if clinics is not None else "",
     )
     return page_shell(content, current="/host", title=_("nav.talk_host"), lang=lang)
 

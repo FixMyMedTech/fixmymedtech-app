@@ -217,6 +217,10 @@ class FacilityCandidate(BaseModel):
     lng: Optional[float] = None
 
 
+def _is_superuser(profile: Profile) -> bool:
+    return bool(profile.user and profile.user.is_superuser)
+
+
 class ImportBody(BaseModel):
     facility: FacilityCandidate
     role: Optional[str] = None
@@ -241,6 +245,9 @@ async def create_healthsite(
         address=(body.address or "").strip(),
         type=body.type,
         source="app",
+        # A clinic created here waits for its clinic talk before anyone
+        # registers devices for it (decision 2026-11-13). utils/onboarding.py
+        clinic_status="active" if _is_superuser(profile) else "talk_pending",
     )
     db.add(org)
     await db.flush()
@@ -387,6 +394,7 @@ async def import_healthsite(
         osm_id=fac.osm_id,
         osm_type=fac.osm_type,
         source="healthsites.io",
+        clinic_status="active" if _is_superuser(profile) else "talk_pending",
     )
     db.add(org)
     creator_role = (body.role or "admin").strip().lower()

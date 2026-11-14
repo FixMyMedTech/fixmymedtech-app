@@ -1,22 +1,18 @@
-# utils/onboarding.py — engineer quests and who may register devices where
+# utils/onboarding.py — who may register devices where, and who hosts talks
 #
-# Spec: "Engineer and clinic onboarding flow" (2026-11-12), migration 029.
+# Spec: "Engineer and clinic onboarding flow" (2026-11-12), migration 030.
 #
-# An engineer starts as an applicant with three welcome quests:
-#   complete_profile  name, country, city and a short bio filled in (read
-#                     from the profile, nothing stored)
-#   profile_photo     an avatar exists (read from the profile)
-#   community_talk    attended a community talk; a host confirms it after the
-#                     call (onboarding_quests row, confirmed_by = the host)
-# When all three are done the profile becomes active, permanently: removing
-# the photo later does not lock anyone out again.
+# The welcome quests themselves live in utils/community.py (three quests:
+# complete profile, add a photo, attend a community talk). When they are done
+# profiles.member_status becomes 'member', permanently: removing the photo
+# later does not lock anyone out again. The app calls that "Contributor".
 #
 # Device registration for a clinic is allowed for
 #   (a) the clinic's own admins, and
-#   (b) its confirmed responsible engineers who are members, once the clinic
-#       is active (a clinic that signed up without an invitation waits for its
-#       clinic talk to be confirmed by the talk host).
-# Superusers are treated as members everywhere.
+#   (b) its confirmed responsible engineers whose quests are done,
+# and in both cases only once the clinic is active: a clinic created without
+# an invitation waits for its clinic talk to be confirmed by a talk host
+# (decision 2026-11-13). Superusers count as members everywhere.
 
 from datetime import datetime, timezone
 
@@ -24,89 +20,98 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.models import (
-    OnboardingQuest, Organization, OrgUser, Profile, ResponsibleEngineer, User,
+    Organization, OrgUser, Profile, ResponsibleEngineer, TeamMember, User,
 )
+from utils import community as cm
 
+# The same three quests as cm.WELCOME_QUESTS, under the names the onboarding
+# pages use (quest_state below).
 QUESTS = ("complete_profile", "profile_photo", "community_talk")
-TALK_QUEST = "community_talk"
+TALK_QUEST = cm.TALK_QUEST
+# The team whose members unlock clinics after the clinic talk.
+CLINIC_TEAM = "clinics_connector"
 
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def can_host_talks(user: User | None) -> bool:
-    """Who may confirm a community talk or unlock a clinic after its clinic
-    talk. A superuser for now; a Clinics Connector role can join this later."""
-    return bool(user and user.is_superuser)
+async def can_host_talks(db: AsyncSession, user: User | None, profile: Profile | None = None) -> bool:
+    """Who may confirm a community talk: superusers and Community Builders
+    (the same people who welcome applicants, utils/community.py)."""
+    if user is None:
+        return False
+    if user.is_superuser:
+        return True
+    profile = profile or await db.get(Profile, user.id)
+    if profile is None:
+        return False
+    return (await cm.powers_for(db, profile, user)).confirm_quests
 
 
-def profile_complete(p: Profile) -> bool:
-    return not missing_profile_fields(p)
+async def can_unlock_clinics(db: AsyncSession, user: User | None, profile: Profile | None = None) -> bool:
+    """Who may unlock a clinic after its clinic talk: superusers and members
+    or leads of the Clinics Connector team (decision 2026-11-12)."""
+    if user is None:
+        return False
+    if user.is_superuser:
+        return True
+    profile = profile or await db.get(Profile, user.id)
+    if profile is None or profile.member_status != "member" or cm.is_paused(profile.last_active_at):
+        return False
+    level = await db.scalar(select(TeamMember.level).where(
+        TeamMember.profile_id == profile.id, TeamMember.team_key == CLINIC_TEAM,
+        TeamMember.status == "active"))
+    return level in ("member", "lead")
 
 
-PROFILE_FIELDS = ("full_name", "country", "city", "bio")
+async def is_host(db: AsyncSession, user: User | None, profile: Profile | None = None) -> bool:
+    """Shows the /host page: either power."""
+    return (await can_host_talks(db, user, profile)) or (await can_unlock_clinics(db, user, profile))
 
 
 def missing_profile_fields(p: Profile) -> list[str]:
-    return [f for f in PROFILE_FIELDS if not (getattr(p, f) or "").strip()]
+    return cm.missing_profile_fields(p)
+
+
+def profile_complete(p: Profile) -> bool:
+    return cm.profile_is_complete(p)
 
 
 def is_unlocked(profile: Profile, user: User | None = None) -> bool:
-    """Welcome quests done: onboarding_status 'active' (clinic accounts are
-    created active, they have no quests). 'staff' accounts (clinic staff added
-    by an organization admin) are not gated but do not count as unlocked."""
+    """Welcome quests done: member_status 'member'. Staff (clinic accounts and
+    clinic staff) pass the platform gate but do not count as unlocked
+    engineers."""
     if user is not None and user.is_superuser:
         return True
-    return profile.onboarding_status == "active"
+    return profile.member_status == "member"
 
 
 async def quest_state(db: AsyncSession, profile: Profile) -> dict:
     """{quest_key: {"done": bool, ...}} for the three welcome quests."""
-    talk = await db.scalar(
-        select(OnboardingQuest).where(
-            OnboardingQuest.profile_id == profile.id,
-            OnboardingQuest.quest_key == TALK_QUEST,
-        )
-    )
+    quests = await cm.quests_for(db, profile)
     return {
         "complete_profile": {
-            "done": profile_complete(profile),
-            "missing": missing_profile_fields(profile),
+            "done": bool(quests.get("profile_complete")),
+            "missing": cm.missing_profile_fields(profile),
         },
-        "profile_photo": {"done": bool(profile.avatar_key)},
-        "community_talk": {
-            "done": talk is not None,
-            "confirmed_at": talk.updated_at.isoformat() if talk and talk.updated_at else None,
-        },
+        "profile_photo": {"done": bool(quests.get("profile_photo"))},
+        "community_talk": {"done": bool(quests.get(TALK_QUEST))},
     }
 
 
 async def refresh_onboarding_status(db: AsyncSession, profile: Profile) -> bool:
-    """Promote an applicant engineer whose three quests are done. Returns True
-    when it happened (the caller commits)."""
-    if profile.onboarding_status != "applicant" or profile.account_kind != "engineer":
+    """Promote an applicant whose three quests are done. Returns True when it
+    happened (the caller commits)."""
+    if profile.member_status != "applicant" or profile.account_kind != "engineer":
         return False
-    state = await quest_state(db, profile)
-    if all(q["done"] for q in state.values()):
-        profile.onboarding_status = "active"
-        profile.active_since = now_utc()
-        return True
-    return False
+    return (await cm.refresh_status(db, profile)) == "member"
 
 
 async def confirm_talk(db: AsyncSession, profile: Profile, host_id) -> bool:
     """Record the community talk as attended. Idempotent."""
-    row = await db.scalar(
-        select(OnboardingQuest).where(
-            OnboardingQuest.profile_id == profile.id,
-            OnboardingQuest.quest_key == TALK_QUEST,
-        )
-    )
-    if row is None:
-        db.add(OnboardingQuest(profile_id=profile.id, quest_key=TALK_QUEST,
-                           confirmed_by=host_id, updated_at=now_utc()))
-        await db.flush()
+    await cm.set_quest(db, profile.id, TALK_QUEST, confirmed_by=host_id)
+    await cm.log_change(db, host_id, "quest_confirmed", str(profile.id), after={"quest": TALK_QUEST})
     return await refresh_onboarding_status(db, profile)
 
 
@@ -128,9 +133,15 @@ async def registration_check(db: AsyncSession, profile: Profile, org_id,
                              user: User | None = None) -> tuple[bool, str]:
     """May this profile register a device for this clinic? (allowed, reason)
 
-    reason is 'admin' or 'responsible' when allowed, otherwise one of
-    LOCK_REASONS."""
+    reason is 'admin', 'responsible' or 'superuser' when allowed, otherwise
+    one of LOCK_REASONS. A clinic waiting for its talk is locked for everyone,
+    its admins included (decision 2026-11-13)."""
+    if user is not None and user.is_superuser:
+        return True, "superuser"
+    status = await db.scalar(select(Organization.clinic_status).where(Organization.id == org_id))
     if await _org_role(db, profile.id, org_id) == "admin":
+        if status == "talk_pending":
+            return False, "clinic_talk_pending"
         return True, "admin"
     row = await db.scalar(
         select(ResponsibleEngineer).where(
@@ -144,7 +155,6 @@ async def registration_check(db: AsyncSession, profile: Profile, org_id,
         return False, "not_now"
     if not is_unlocked(profile, user):
         return False, "quests_pending"
-    status = await db.scalar(select(Organization.clinic_status).where(Organization.id == org_id))
     if status == "talk_pending":
         return False, "clinic_talk_pending"
     return True, "responsible"
@@ -156,15 +166,19 @@ async def registrable_clinics(db: AsyncSession, profile: Profile,
     named but still locked (with the reason), for the Register-device page."""
     unlocked, locked = [], []
     admin_rows = (await db.execute(
-        select(Organization.id, Organization.name)
+        select(Organization.id, Organization.name, Organization.clinic_status)
         .join(OrgUser, OrgUser.organization_id == Organization.id)
         .where(OrgUser.profile_id == profile.id, OrgUser.role == "admin")
         .order_by(Organization.name)
     )).all()
+    superuser = bool(user is not None and user.is_superuser)
     seen = set()
-    for oid, name in admin_rows:
+    for oid, name, clinic_status in admin_rows:
         seen.add(oid)
-        unlocked.append({"id": str(oid), "name": name, "via": "admin"})
+        if clinic_status == "talk_pending" and not superuser:
+            locked.append({"id": str(oid), "name": name, "reason": "clinic_talk_pending"})
+        else:
+            unlocked.append({"id": str(oid), "name": name, "via": "admin"})
 
     rows = (await db.execute(
         select(ResponsibleEngineer, Organization.name, Organization.clinic_status)
@@ -215,7 +229,7 @@ async def engineer_status(db: AsyncSession, row: ResponsibleEngineer,
     waiting_talk (the clinic's own talk) or not_now."""
     if row.status != "confirmed":
         return "not_now"
-    if engineer.onboarding_status != "active":
+    if engineer.member_status != "member":
         superuser = await db.scalar(select(User.is_superuser).where(User.id == engineer.id))
         if not superuser:
             return "waiting_quests"

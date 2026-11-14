@@ -42,7 +42,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_config import get_db
 from config.users import current_active_user, get_user_manager, UserManager, get_jwt_strategy
 from models.models import (
-    OnboardingQuest, OnboardingInvitation, Organization, OrgUser, Profile,
+    OnboardingInvitation, Organization, OrgUser, Profile,
     ResponsibleEngineer, User, Device,
 )
 from utils import onboarding as ob
@@ -94,9 +94,14 @@ async def _require_clinic_admin(db: AsyncSession, profile: Profile, org_id) -> O
     return org
 
 
-def _require_host(profile: Profile) -> None:
-    if not ob.can_host_talks(profile.user):
+async def _require_talk_host(db: AsyncSession, profile: Profile) -> None:
+    if not await ob.can_host_talks(db, profile.user, profile):
         raise HTTPException(status_code=403, detail="Only a talk host can do this")
+
+
+async def _require_clinic_unlocker(db: AsyncSession, profile: Profile) -> None:
+    if not await ob.can_unlock_clinics(db, profile.user, profile):
+        raise HTTPException(status_code=403, detail="Only a Clinics Connector can unlock a clinic")
 
 
 def _org_payload(o: Organization) -> dict:
@@ -131,11 +136,13 @@ async def onboarding_me(
     unlocked = ob.is_unlocked(profile, profile.user)
     done = sum(1 for q in quests.values() if q["done"])
     return {
-        "onboarding_status": profile.onboarding_status,
+        "member_status": profile.member_status,
         "account_kind": profile.account_kind,
         "is_unlocked": unlocked,
         "is_superuser": superuser,
-        "is_talk_host": ob.can_host_talks(profile.user),
+        "is_talk_host": await ob.is_host(db, profile.user, profile),
+        "can_host_talks": await ob.can_host_talks(db, profile.user, profile),
+        "can_unlock_clinics": await ob.can_unlock_clinics(db, profile.user, profile),
         "quests": [{"key": k, **quests[k]} for k in ob.QUESTS],
         "quests_done": done,
         "quests_total": len(ob.QUESTS),
@@ -344,9 +351,8 @@ async def accept_invitation(
         username=await generate_username(body.full_name, db),
         full_name=body.full_name.strip(),
         account_kind=kind,
-        # Clinic accounts have no quests; engineers start as applicants.
-        onboarding_status="active" if kind == "clinic" else "applicant",
-        active_since=ob.now_utc() if kind == "clinic" else None,
+        # Clinic accounts have no quests (staff); engineers start as applicants.
+        member_status="staff" if kind == "clinic" else "applicant",
     )
     db.add(profile)
     await db.flush()
@@ -611,7 +617,7 @@ async def clinic_engineers(
             "source": row.source,
             "kind": row.kind,
             "is_inviter": org.invited_by == eng.id,
-            "quests_done": sum(1 for q in quests.values() if q["done"]) if eng.onboarding_status != "active" else len(ob.QUESTS),
+            "quests_done": sum(1 for q in quests.values() if q["done"]) if eng.member_status != "member" else len(ob.QUESTS),
             "quests_total": len(ob.QUESTS),
         })
     invitations = (await db.execute(
@@ -800,18 +806,18 @@ async def get_registrable_clinics(
     return await ob.registrable_clinics(db, profile, profile.user)
 
 
-# ── Talk host (superuser for now) ───────────────────────────────────────────
+# ── Talk host (Community Builders confirm talks, Clinics Connectors unlock clinics) ───────────────────────────────────────────
 
 @router.get("/host/applicants")
 async def host_applicants(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    _require_host(profile)
+    await _require_talk_host(db, profile)
     rows = (await db.execute(
         select(Profile, User.email)
         .join(User, User.id == Profile.id)
-        .where(Profile.onboarding_status == "applicant", Profile.account_kind == "engineer")
+        .where(Profile.member_status == "applicant", Profile.account_kind == "engineer")
         .order_by(Profile.created_at.desc())
     )).all()
     out = []
@@ -831,13 +837,13 @@ async def host_confirm_talk(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    _require_host(profile)
+    await _require_talk_host(db, profile)
     target = await _profile(db, _uuid_or_400(profile_id, "profile id"))
     if target is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     became_active = await ob.confirm_talk(db, target, profile.id)
     await db.commit()
-    return {"confirmed": True, "onboarding_status": target.onboarding_status, "became_active": became_active}
+    return {"confirmed": True, "member_status": target.member_status, "became_active": became_active}
 
 
 @router.get("/host/clinics")
@@ -845,7 +851,7 @@ async def host_clinics(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    _require_host(profile)
+    await _require_clinic_unlocker(db, profile)
     orgs = (await db.execute(
         select(Organization).where(Organization.clinic_status == "talk_pending")
         .order_by(Organization.created_at.desc())
@@ -874,8 +880,8 @@ async def host_unlock_clinic(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    """The clinic talk took place: engineers may now register for the clinic."""
-    _require_host(profile)
+    """The clinic talk took place: the clinic may now register devices."""
+    await _require_clinic_unlocker(db, profile)
     org = await db.get(Organization, _uuid_or_400(org_id, "clinic id"))
     if org is None:
         raise HTTPException(status_code=404, detail="Clinic not found")

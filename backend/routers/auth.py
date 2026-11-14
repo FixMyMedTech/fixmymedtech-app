@@ -137,13 +137,14 @@ async def signup(
         full_name=body.full_name,
         country=(body.country or "").strip() or None,
         account_kind=kind,
-        onboarding_status="active" if kind == "clinic" else "applicant",
+        # Clinic accounts have no quests (staff); engineers start as applicants.
+        member_status="staff" if kind == "clinic" else "applicant",
     )
     db.add(profile)
     await db.flush()
 
     # 3. Link an existing Organization when one is given. Signup no longer
-    # creates a hidden personal "hospital" organization (migration 029): an
+    # creates a hidden personal "hospital" organization (migration 030): an
     # engineer works for clinics as a responsible engineer, and a clinic
     # account sets up its clinic in the next step.
     if body.organization_id:

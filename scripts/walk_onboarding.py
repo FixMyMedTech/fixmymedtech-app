@@ -9,7 +9,8 @@ engineer stays locked; an uninvited clinic waits for its clinic talk.
 Needs the seeded talk host (scripts/seed_test_data.py) and httpx:
     python scripts/walk_onboarding.py            # app at http://localhost:8890
     BASE_URL=http://localhost:8891 python scripts/walk_onboarding.py
-Invitation tokens are read from the local database with docker compose.
+Invitation tokens are read from the local database with docker compose, or
+with psql when WALK_PSQL is set (e.g. WALK_PSQL="psql -h /tmp -U postgres").
 Creates throwaway accounts named after the current time.
 """
 import base64, os, subprocess, sys, time, uuid
@@ -29,9 +30,12 @@ def check(name, cond, extra=""):
 
 
 def sql(q):
-    out = subprocess.run(["docker", "compose", "-f", "docker-compose.local.yml", "exec", "-T", "db",
-                          "psql", "-U", "postgres", "-d", "fixmymedtech", "-At", "-c", q],
-                         capture_output=True, text=True, cwd=REPO)
+    if os.getenv("WALK_PSQL"):
+        cmd = os.environ["WALK_PSQL"].split() + ["-d", "fixmymedtech", "-At", "-c", q]
+    else:
+        cmd = ["docker", "compose", "-f", "docker-compose.local.yml", "exec", "-T", "db",
+               "psql", "-U", "postgres", "-d", "fixmymedtech", "-At", "-c", q]
+    out = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO)
     return out.stdout.strip()
 
 
@@ -58,29 +62,33 @@ eng = client()
 r = eng.post("/signup", data={"full_name": "Kofi Engineer", "email": eng_email, "password": PW, "password2": PW})
 check("engineer signup signs in and goes to Getting started", r.headers.get("location") == "/getting-started", r.status_code)
 r = eng.get("/getting-started")
-check("Getting started shows the welcome steps progress", r.status_code == 200 and "of 3 done" in r.text, r.status_code)
+check("a Visitor's Getting started is the quest list", r.headers.get("location") == "/community/start/quests", r.headers.get("location"))
+r = eng.get("/community/start/quests")
+check("the quest list shows three welcome quests", r.status_code == 200 and "0 of 3" in r.text, r.status_code)
 check("no hidden personal org created at signup",
       sql(f"select count(*) from fixmymedtech.org_users ou join fixmymedtech.users u on u.id=ou.profile_id where u.email='{eng_email}'") == "0")
 r = eng.get("/home")
-check("Visitor is gated from /home to Getting started", r.headers.get("location") == "/getting-started", r.status_code)
+check("Visitor is gated from /home to the community start page", r.headers.get("location") == "/community/start", r.status_code)
 r = eng.get("/new_device")
-check("Visitor gated from Register device", r.headers.get("location") == "/getting-started")
+check("Visitor gated from Register device", r.headers.get("location") == "/community/start")
+r = eng.get("/library")
+check("Visitor can open the manual library", r.status_code == 200, r.status_code)
 r = eng.post("/invite-clinic", data={"email": "x@fmt-demo.org", "message": ""})
 check("Visitor cannot invite a clinic (gated)", r.status_code in (302, 303))
 eng_tok = api_token(eng_email)
 r = api("POST", "/api/onboarding/clinic-invitations", eng_tok, json={"email": "x@fmt-demo.org"})
-check("API refuses clinic invite before quests", r.status_code == 403 and r.json().get("detail") == "quests_pending", r.text)
+check("API refuses clinic invite before quests", r.status_code == 403, r.text)
 
 # ── 2. Quests: profile + photo (auto), talk (host) ─────────────
 r = eng.post("/profile", data={"username": f"kofi{RUN}", "full_name": "Kofi Engineer", "country": "Ghana",
-                               "city": "Accra", "bio": "Biomedical engineer at a district hospital."},
+                               "city": "Accra", "why_bme": "Biomedical engineer at a district hospital."},
              files={"avatar": ("me.png", PNG, "image/png")})
 check("profile saved", r.status_code == 200, r.status_code)
 me = api("GET", "/api/onboarding/me", eng_tok).json()
 q = {x["key"]: x["done"] for x in me["quests"]}
 check("profile quest done", q["complete_profile"])
 check("photo quest done automatically", q["profile_photo"], me)
-check("talk quest not done yet, still applicant", not q["community_talk"] and me["onboarding_status"] == "applicant")
+check("talk quest not done yet, still applicant", not q["community_talk"] and me["member_status"] == "applicant")
 host = client(); login(host, "host@fmt-demo.org")
 r = host.get("/host")
 check("host page lists the Visitor", r.status_code == 200 and "Kofi Engineer" in r.text, r.status_code)
@@ -90,7 +98,11 @@ check("host confirms the talk", r.headers.get("location") == "/host?ok=1", r.hea
 r = eng.get("/getting-started")
 check("engineer is now a Contributor (quests done)", "Welcome steps done" in r.text)
 r = eng.get("/home")
-check("gate lifted after quests", r.status_code == 200, r.status_code)
+if r.headers.get("location") == "/community/welcome":
+    # Shown once when the quests are done.
+    check("welcome page shown once", eng.get("/community/welcome").status_code == 200)
+    r = eng.get("/home")
+check("gate lifted after quests", r.status_code == 200, (r.status_code, r.headers.get("location")))
 
 # ── 3. Invite a clinic ─────────────────────────────────────────
 clinic_email = f"clinic{RUN}@fmt-demo.org"
@@ -167,9 +179,10 @@ e2_tok = api_token(eng2_email)
 reg2 = api("GET", "/api/onboarding/registrable-clinics", e2_tok).json()
 check("locked engineer: named but quests pending", any(c["id"] == org and c["reason"] == "quests_pending" for c in reg2["locked"]), reg2)
 r = api("POST", "/api/devices/", e2_tok, json={"id": str(uuid.uuid4()), "name": "X", "organization_id": org})
-check("locked engineer cannot register (API)", r.status_code == 403 and "quests_pending" in r.text, r.text)
+check("locked engineer cannot register (API)", r.status_code == 403
+      and ("quests_pending" in r.text or "community_access_pending" in r.text), r.text)
 r = e2.get(f"/device/{dev1}")
-check("locked engineer gets no private device page", r.status_code in (302, 303) and r.headers.get("location") in ("/getting-started", f"/d/{dev1}"), r.headers.get("location"))
+check("locked engineer gets no private device page", r.status_code in (302, 303) and r.headers.get("location") in ("/community/start", f"/d/{dev1}"), r.headers.get("location"))
 r = api("GET", f"/api/devices/{dev1}", e2_tok)
 check("private device API refuses locked engineer", r.status_code == 403, r.status_code)
 r = cl.get(f"/groups/{org}/engineers")
@@ -197,13 +210,24 @@ reg = api("GET", "/api/onboarding/registrable-clinics", eng_tok).json()
 check("engineer locked: clinic talk pending", any(c["id"] == uorg and c["reason"] == "clinic_talk_pending" for c in reg["locked"]), reg)
 r = api("POST", "/api/devices/", eng_tok, json={"id": str(uuid.uuid4()), "name": "X", "organization_id": uorg})
 check("registration refused before clinic talk", r.status_code == 403, r.text)
+# Decision 2026-11-13: the clinic's own admin waits for the talk too.
 r = api("POST", "/api/devices/", api_token(u_email), json={"id": str(uuid.uuid4()), "name": "Clinic's own device", "organization_id": uorg})
-check("clinic's own admin can register before the talk", r.status_code == 200, r.text)
+check("clinic's own admin cannot register before the talk", r.status_code == 403 and "clinic_talk_pending" in r.text, r.text)
 r = host.get("/host")
 check("host sees the clinic waiting for its talk", f"Kumasi New Clinic {RUN}" in r.text)
 r = host.post(f"/host/clinics/{uorg}/unlock")
 r = api("POST", "/api/devices/", eng_tok, json={"id": str(uuid.uuid4()), "name": "Ultrasound", "organization_id": uorg})
 check("after unlock the engineer can register", r.status_code == 200, r.text)
+r = api("POST", "/api/devices/", api_token(u_email), json={"id": str(uuid.uuid4()), "name": "Clinic's own device", "organization_id": uorg})
+check("after unlock the clinic's admin can register", r.status_code == 200, r.text)
+
+# ── 8b. The /groups loophole: any account creating a clinic waits too ──
+r = api("POST", "/api/healthsites/", eng_tok, json={"name": f"Self-made Clinic {RUN}", "type": "clinic", "country": "GH"})
+sorg = r.json().get("id") if r.status_code == 200 else None
+check("a clinic created from /groups starts talk_pending", sorg and
+      sql(f"select clinic_status from fixmymedtech.organizations where id='{sorg}'") == "talk_pending", r.text)
+r = api("POST", "/api/devices/", eng_tok, json={"id": str(uuid.uuid4()), "name": "X", "organization_id": sorg})
+check("its creator (admin) cannot register before the talk", r.status_code == 403 and "clinic_talk_pending" in r.text, r.text)
 
 # ── 9. Old rule removed: pending join request no longer allows ──
 other = "00000000-0000-0000-0000-000000000003"

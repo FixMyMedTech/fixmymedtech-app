@@ -1,9 +1,11 @@
 # pages/getting_started.py — /getting-started
 #
-# An engineer's three welcome quests, progress, and what unlocks next. Once
-# they are done: invite a clinic, and the clinics that named this engineer.
-# Re-reads /api/auth/me so the session (sidebar, page gate) follows a talk
-# confirmed by a host in the meantime.
+# What an engineer does once the three welcome quests are done (the "next
+# step" card of the brief): invite a clinic, register a device, and the
+# clinics that named this engineer. The quests themselves are on
+# /community/start/quests (features/community), so an applicant is sent
+# there. Re-reads /api/auth/me so the session (sidebar, page gate) follows a
+# talk confirmed by a host in the meantime.
 
 import asyncio
 
@@ -69,6 +71,8 @@ async def get(req):
     user = await auth_helper.refresh_onboarding(req, token)
     if user.get("account_kind") == "clinic":
         return RedirectResponse("/clinic/setup", status_code=302)
+    if user.get("member_status") in ("applicant", "refused"):
+        return RedirectResponse("/community/start/quests", status_code=302)
 
     quests = me.get("quests") or []
     done, total = me.get("quests_done", 0), me.get("quests_total", 3)

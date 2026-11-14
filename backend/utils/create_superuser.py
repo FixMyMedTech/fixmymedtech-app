@@ -84,8 +84,8 @@ async def ensure_superuser(email: str, password: str, full_name: str) -> str:
         await conn.execute(
             sa.text(
                 # A superuser has no welcome steps to do (migration 029).
-                "INSERT INTO fixmymedtech.profiles (id, username, full_name, onboarding_status) "
-                "VALUES (:id, :username, :name, 'active')"
+                "INSERT INTO fixmymedtech.profiles (id, username, full_name, member_status) "
+                "VALUES (:id, :username, :name, 'member')"
             ),
             {"id": uid, "username": username, "name": full_name},
         )

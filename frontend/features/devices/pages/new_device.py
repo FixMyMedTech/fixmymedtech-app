@@ -638,7 +638,7 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                     Div(Label(_("new_device.healthsite_label"), cls="label", for_="healthsite_id"),
                         Select(*hs_options, id="healthsite_id", name="healthsite_id", cls="input"),
                         # No healthsites.io import here any more: only clinics
-                        # where the user is unlocked can be chosen (migration 029).
+                        # where the user is unlocked can be chosen (migration 030).
                         cls="form-group"),
                     Div(Label(_("new_device.location_label"), cls="label"),
                         Input(name="location", cls="input", placeholder=_("new_device.location_placeholder")),

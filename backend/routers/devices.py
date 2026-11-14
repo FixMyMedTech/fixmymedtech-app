@@ -366,7 +366,7 @@ async def create_device(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    # Registering for a clinic (migration 029): its own admins, or its
+    # Registering for a clinic (migration 030): its own admins, or its
     # confirmed responsible engineers whose welcome quests are done, once the
     # clinic is active. A pending join request no longer allows it.
     org_id = body.organization_id

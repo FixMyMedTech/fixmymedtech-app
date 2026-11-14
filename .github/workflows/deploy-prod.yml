@@ -69,6 +69,9 @@ jobs:
             DISCORD_WELCOME_WEBHOOK_URL=${{ secrets.PROD_DISCORD_WELCOME_WEBHOOK_URL }}
             POSTHOG_PROJECT_TOKEN=${{ secrets.PROD_POSTHOG_PROJECT_TOKEN }}
             POSTHOG_HOST=${{ secrets.PROD_POSTHOG_HOST }}
+            COMMUNITY_INTRO_VIDEO_URL=${{ vars.COMMUNITY_INTRO_VIDEO_URL }}
+            STAFF_INTRO_VIDEO_URL=${{ vars.STAFF_INTRO_VIDEO_URL }}
+            DISCORD_INVITE_URL=${{ vars.DISCORD_INVITE_URL }}
             EOF
 
       - name: Copy code to server

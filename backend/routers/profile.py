@@ -38,7 +38,7 @@ class ProfileUpdate(BaseModel):
     username: Optional[str] = None
     country: Optional[str] = None
     city: Optional[str] = None
-    bio: Optional[str] = None
+    why_bme: Optional[str] = None
 
 
 # ── Me ─────────────────────────────────────────────────────────────────────────
@@ -57,24 +57,34 @@ async def me(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     from routers.discord_link import discord_login_available
+    from utils import community as cm
     from utils import onboarding as ob
+    powers = await cm.powers_for(db, profile, user)
+    places = await cm.team_places(db, profile.id)
     return {
         "id": profile.id,
         "username": profile.username,
         "full_name": profile.full_name,
         "country": profile.country,
         "city": profile.city,
-        "bio": profile.bio,
+        "why_bme": profile.why_bme,
         "avatar_key": profile.avatar_key,
         "email": user.email,
         "is_verified": user.is_verified,
         "is_superuser": bool(user.is_superuser),
-        # Onboarding (migration 029): cached in the frontend session to gate
-        # pages while the welcome quests are not done.
-        "onboarding_status": profile.onboarding_status,
+        # Onboarding (migration 030): cached in the frontend session.
         "account_kind": profile.account_kind,
         "is_unlocked": ob.is_unlocked(profile, user),
-        "is_talk_host": ob.can_host_talks(user),
+        "is_talk_host": await ob.is_host(db, user, profile),
+        # Community journey (migration 029): cached in the frontend session
+        # to gate pages and build the sidebar.
+        "member_status": profile.member_status,
+        "join_path": profile.join_path,
+        "community": {
+            "teams": {m.team_key: m.level for m in places},
+            "permissions": powers.as_list(),
+            "paused": cm.is_paused(profile.last_active_at),
+        },
         "discord": {
             "available": discord_login_available(),
             "linked": bool(user.discord_user_id),
@@ -120,11 +130,11 @@ async def update_me(
         profile.country = body.country.strip() or None
     if body.city is not None:
         profile.city = body.city.strip() or None
-    if body.bio is not None:
-        bio = body.bio.strip()
-        if len(bio) > 500:
+    if body.why_bme is not None:
+        story = body.why_bme.strip()
+        if len(story) > 500:
             raise HTTPException(status_code=400, detail="bio_too_long")
-        profile.bio = bio or None
+        profile.why_bme = story or None
     from utils import onboarding as ob
     await ob.refresh_onboarding_status(db, profile)
     try:
@@ -138,9 +148,9 @@ async def update_me(
         "full_name": profile.full_name,
         "country": profile.country,
         "city": profile.city,
-        "bio": profile.bio,
+        "why_bme": profile.why_bme,
         "avatar_key": profile.avatar_key,
-        "onboarding_status": profile.onboarding_status,
+        "member_status": profile.member_status,
     }
 
 

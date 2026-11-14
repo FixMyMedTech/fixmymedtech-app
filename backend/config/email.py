@@ -128,7 +128,7 @@ async def send_welcome_email(email: str, full_name: str) -> None:
     await send_message("Welcome to FixMyMedTech", [email], html)
 
 
-# ── Onboarding (migration 029) ──────────────────────────────────────────────
+# ── Onboarding (migration 030) ──────────────────────────────────────────────
 # One template, email_onboarding.html; Jinja autoescape is off for these
 # templates, so every user-written value is escaped here.
 

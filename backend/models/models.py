@@ -534,6 +534,12 @@ class FaultReport(Base):
     # Step 5 — the assignee's repair and final price
     final_price         = Column(Numeric(12, 2))
     resolved_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    # Call an engineer (migration 032)
+    call_status         = Column(Text)        # searching | agreed | closed
+    urgency             = Column(Text)        # now | this_week
+    call_started_at     = Column(DateTime(timezone=True))
+    call_started_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    call_widened_at     = Column(DateTime(timezone=True))
 
     # Relationships
     device                  = relationship("Device", back_populates="fault_reports")
@@ -741,3 +747,53 @@ class MaintenanceReminder(Base):
     kind       = Column(Text, nullable=False)   # due_soon | overdue
     recipients = Column(Integer, nullable=False, default=0)
     sent_at    = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Call an engineer (migration 032). Plain FK columns, no relationships, so
+# serializing these never reaches a Profile (and its User). ────────────────
+
+class FaultCallNotice(Base):
+    __tablename__ = "fault_call_notices"
+    __table_args__ = {"schema": SCHEMA}
+
+    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fault_id    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.fault_reports.id", ondelete="CASCADE"), nullable=False)
+    engineer_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    tier        = Column(Text, nullable=False)   # responsible | registrant | city
+    notified_at = Column(DateTime(timezone=True), server_default=func.now())
+    passed_at   = Column(DateTime(timezone=True))
+
+
+class FaultOffer(Base):
+    __tablename__ = "fault_offers"
+    __table_args__ = {"schema": SCHEMA}
+
+    id           = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fault_id     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.fault_reports.id", ondelete="CASCADE"), nullable=False)
+    engineer_id  = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    visit_fee    = Column(Numeric(12, 2), nullable=False)
+    currency     = Column(Text, nullable=False, default="XAF")
+    arrival_at   = Column(DateTime(timezone=True), nullable=False)
+    note         = Column(Text)
+    status       = Column(Text, nullable=False, default="pending")
+    counter_fee  = Column(Numeric(12, 2))
+    counter_note = Column(Text)
+    countered_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    countered_at = Column(DateTime(timezone=True))
+    agreed_fee   = Column(Numeric(12, 2))
+    decided_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    decided_at   = Column(DateTime(timezone=True))
+    created_at   = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class FaultRating(Base):
+    __tablename__ = "fault_ratings"
+    __table_args__ = {"schema": SCHEMA}
+
+    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fault_id    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.fault_reports.id", ondelete="CASCADE"), nullable=False, unique=True)
+    engineer_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    rated_by    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    rating      = Column(Integer, nullable=False)
+    comment     = Column(Text)
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())

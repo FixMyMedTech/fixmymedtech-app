@@ -346,6 +346,27 @@ async def get(req, device_id: str, fault_id: str, err: str = "", ok: str = ""):
     )
 
     _crumb = ("font-size:0.875rem;color:var(--c-text-3);text-decoration:none;")
+    # Call an engineer (wave 4): link to the ride, or start one on an
+    # unassigned fault for the clinic's people.
+    my_orgs = {str(o.get("id")) for o in (me.get("organizations") or [])}
+    dev_orgs = {str(x) for x in (device.get("organization_id"), device.get("healthsite_id"),
+                                 device.get("organization_maintenance_id")) if x}
+    call_banner = ""
+    if fault.get("call_status"):
+        call_banner = Div(
+            Span(_("call.banner_" + fault["call_status"])),
+            A(_("call.see_call"), href=f"/calls/{fault_id}", cls="btn btn-secondary btn-sm"),
+            cls="card", style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;",
+        )
+    elif status == "open" and not fault.get("assigned_to") and (my_orgs & dev_orgs or me.get("is_superuser")):
+        call_banner = Form(
+            Span(_("call.banner_none")),
+            Input(type="hidden", name="urgency", value="now"),
+            Button(_("call.call_btn"), type="submit", cls="btn btn-primary btn-sm"),
+            method="post", action=f"/calls/{fault_id}/start",
+            cls="card", style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;",
+        )
+
     content = Div(
         Div(
             A(_("nav.faults"), href="/faults", style=_crumb),
@@ -363,6 +384,7 @@ async def get(req, device_id: str, fault_id: str, err: str = "", ok: str = ""):
               cls="btn btn-secondary btn-sm", style="flex-shrink:0;margin-top:4px;"),
             cls="page-header", style="margin-bottom:14px;"
         ),
+        call_banner,
         Div(details_col, side_col, cls="fault-detail-grid"),
         Style("""
         .fault-detail-grid { display:grid; grid-template-columns:1fr; gap:16px; }

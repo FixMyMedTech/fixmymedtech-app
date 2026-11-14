@@ -241,3 +241,54 @@ async def send_service_reminder_email(email: str, name: str, device: str, ward: 
         button="Open the device",
         footer="You get this because you look after this clinic's devices on FixMyMedTech.",
     )
+
+
+# ── Call an engineer (wave 4, utils/calls.py) ───────────────────────────────
+
+_URGENCY_EN = {"now": "The device has stopped.", "this_week": "It needs a visit this week."}
+
+
+async def send_call_email(email: str, name: str, device: str, ward: str,
+                          urgency: str, link: str) -> None:
+    """A clinic near you is looking for an engineer."""
+    what = f"{device} ({ward})" if ward else device
+    await _send_onboarding(
+        email,
+        subject=f"A clinic needs an engineer: {device}",
+        heading="A clinic is calling an engineer",
+        paragraphs=[f"Hi {name}," if name else "Hi,",
+                    f"{what} has a problem. {_URGENCY_EN.get(urgency, '')}",
+                    "If you can go, send a visit offer: your visit fee and when you can be there."],
+        link=link,
+        button="See the request",
+        footer="You get this because you look after this clinic or work nearby on FixMyMedTech.",
+    )
+
+
+async def send_offer_email(email: str, name: str, engineer: str, device: str,
+                           fee: str, arrival: str, link: str) -> None:
+    """An engineer sent the clinic a visit offer."""
+    await _send_onboarding(
+        email,
+        subject=f"{engineer} can come for {device}",
+        heading="You have a visit offer",
+        paragraphs=[f"Hi {name}," if name else "Hi,",
+                    f"{engineer} offers to come for {device}: {fee}, {arrival}.",
+                    "Accept it, or ask once for a lower fee."],
+        link=link,
+        button="See the offers",
+    )
+
+
+async def send_offer_update_email(email: str, name: str, device: str, heading: str,
+                                  line: str, link: str) -> None:
+    """Something changed on the engineer's offer: countered, accepted, or the
+    clinic says the repair did not hold."""
+    await _send_onboarding(
+        email,
+        subject=f"{heading}: {device}",
+        heading=heading,
+        paragraphs=[f"Hi {name}," if name else "Hi,", line],
+        link=link,
+        button="Open the request",
+    )

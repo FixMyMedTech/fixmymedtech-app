@@ -32,6 +32,7 @@ from features.faults.pages import fault_list, report_page, fault_detail, public_
 from features.maintenance.pages import public_log, maintenance_log, maintenance_log_detail
 from features.onboarding.pages import (getting_started, invite_clinic, invitation, clinic_setup,
                                        clinic_engineers, clinic_privacy, host as onboarding_host)
+from features.calls import pages as calls_pages
 from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
@@ -217,6 +218,7 @@ groups_page.rt.to_app(app)
 # Engineers tab.
 clinic_engineers.rt.to_app(app)
 clinic_privacy.rt.to_app(app)
+calls_pages.rt.to_app(app)
 organization_detail.rt.to_app(app)
 organization_manage.rt.to_app(app)
 device_detail.rt.to_app(app)

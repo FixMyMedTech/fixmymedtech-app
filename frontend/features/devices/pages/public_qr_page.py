@@ -242,8 +242,13 @@ async def get(req, device_id: str):
                 Strong(_("public_qr.found_problem"), style="font-size:0.875rem;"),
                 P(_("public_qr.report_cta"), style="font-size:0.8rem;margin:2px 0 0;"),
             ),
-            A(_("public_qr.report_btn"), href=f"/d/{device_id}/report",
-              cls="btn btn-danger btn-sm"),
+            Div(
+                A(_("public_qr.report_btn"), href=f"/d/{device_id}/report",
+                  cls="btn btn-danger btn-sm"),
+                A(_("call.call_btn"), href=f"/d/{device_id}/call",
+                  cls="btn btn-secondary btn-sm"),
+                style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;",
+            ),
             cls="report-cta"
         ),
         # Device info

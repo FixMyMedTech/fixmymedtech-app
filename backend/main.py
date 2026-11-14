@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine, AsyncSessionLocal
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents, community, onboarding
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents, community, onboarding, calls
 from fastapi import Depends
 from utils.profile import require_platform_access
 from routers.admin_email import router as admin_email_router
@@ -50,6 +50,9 @@ async def lifespan(app: FastAPI):
     from utils.background import spawn as _spawn
     if reminders_enabled():
         _spawn(reminder_loop(AsyncSessionLocal))
+    # Call an engineer: widen unanswered calls to engineers in the city.
+    from utils.calls import call_loop
+    _spawn(call_loop(AsyncSessionLocal))
     yield
 
 app = FastAPI(
@@ -107,6 +110,7 @@ app.include_router(documents.device_router, prefix="/api/devices",           tag
 # Not gated: an engineer doing the welcome quests opens invitations, and a
 # clinic account sets up its clinic here.
 app.include_router(onboarding.router,       prefix="/api/onboarding",        tags=["onboarding"])
+app.include_router(calls.router,            prefix="/api/calls",             tags=["calls"], dependencies=platform)
 
 # ── SQLAdmin (browsable admin UI at /admin) ─────────────────
 from sqladmin import Admin, ModelView

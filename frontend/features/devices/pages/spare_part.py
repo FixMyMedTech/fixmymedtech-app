@@ -93,15 +93,22 @@ async def get(req, device_id: str, part: str = ""):
         return redirect
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
+    # An engineer answering a request may not be one of the clinic's own:
+    # the public device data (type, brand, model, clinic region) is enough.
     try:
         data = await devices_api.get_device(token, device_id)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
             return RedirectResponse("/login?expired=1", status_code=302)
-        return RedirectResponse(f"/d/{device_id}", status_code=302)
+        data = None
     except Exception:
-        return RedirectResponse(f"/d/{device_id}", status_code=302)
+        data = None
+    if data is None:
+        try:
+            data = await devices_api.get_device_public(device_id)
+        except Exception:
+            return RedirectResponse(f"/d/{device_id}", status_code=302)
 
     d = data.get("device", {})
     cat = d.get("category") or {}

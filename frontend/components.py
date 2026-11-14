@@ -851,6 +851,7 @@ def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
 # Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
 # and stay crisp in both themes.
 LUCIDE_ICONS = {
+    "board":     '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
     "inbox": '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>'
              '<path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
     "journey": '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
@@ -960,6 +961,8 @@ def sidebar(current: str = "", lang: str = "en"):
             ("/library",   "library",   _("nav.library")),
             ("/community", "journey",   _("nav.community")),
             ("/community/achievements", "hexagon", _("nav.community_achievements")),
+            *([("/community/tasks", "board", _("nav.task_board"))] if status == "member" else []),
+            *([("/lead", "check", _("nav.lead"))] if any(p.startswith("recognise:") for p in perms) else []),
         ]
         if perms & set(DASHBOARD_PERMISSIONS):
             links.append(("/community/admin", "shield", _("nav.community_admin")))

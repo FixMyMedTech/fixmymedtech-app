@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine, AsyncSessionLocal
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents, community, onboarding, calls
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents, community, onboarding, calls, community_work
 from fastapi import Depends
 from utils.profile import require_platform_access
 from routers.admin_email import router as admin_email_router
@@ -104,6 +104,7 @@ app.include_router(organizations.router,    prefix="/api/organizations",     tag
 app.include_router(admin_email_router,      prefix="/admin-panel",           tags=["admin"])
 app.include_router(healthsites.router,      prefix="/api/healthsites",       tags=["healthsites"], dependencies=platform)
 app.include_router(community.router,        prefix="/api/community",         tags=["community"])
+app.include_router(community_work.router,   prefix="/api/community",         tags=["community"])
 app.include_router(feedback.router,         prefix="/api/feedback",          tags=["feedback"])
 app.include_router(documents.router,        prefix="/api/documents",         tags=["documents"])
 app.include_router(documents.device_router, prefix="/api/devices",           tags=["documents"], dependencies=platform)

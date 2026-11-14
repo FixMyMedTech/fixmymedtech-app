@@ -234,7 +234,9 @@ APPLICANT_PATHS = ("/community/start", "/community/welcome", "/community/achieve
                    # Brief guardrail 1: a visitor already has the manual library.
                    "/library", "/documents",
                    # Invitation links and the onboarding entry point.
-                   "/invite", "/getting-started", "/clinic")
+                   "/invite", "/getting-started", "/clinic",
+                   # Wave 5: anyone signed in may ask for a missing manual.
+                   "/community/tasks/find-manual")
 
 
 def applicant_allowed(path: str) -> bool:

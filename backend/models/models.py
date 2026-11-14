@@ -797,3 +797,49 @@ class FaultRating(Base):
     rating      = Column(Integer, nullable=False)
     comment     = Column(Text)
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Wave 5 (migration 033): claims and the community task board. Plain FK
+# columns, no relationships. ─────────────────────────────────────────────
+
+class AchievementClaim(Base):
+    __tablename__ = "achievement_claims"
+    __table_args__ = {"schema": SCHEMA}
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    achievement_key = Column(Text, ForeignKey(f"{SCHEMA}.achievements.key"), nullable=False)
+    count           = Column(Integer, nullable=False, default=1)
+    note            = Column(Text, nullable=False)
+    proof_key       = Column(Text)
+    status          = Column(Text, nullable=False, default="pending")   # pending | more_info | confirmed | declined
+    confirmed_by    = Column(ARRAY(UUID(as_uuid=True)), nullable=False, default=list)
+    reviewed_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    reviewed_at     = Column(DateTime(timezone=True))
+    review_note     = Column(Text)
+    record_id       = Column(UUID(as_uuid=True))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CommunityTask(Base):
+    __tablename__ = "community_tasks"
+    __table_args__ = {"schema": SCHEMA}
+
+    id               = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    kind             = Column(Text, nullable=False, default="other")   # find_manual | verify_clinic | fill_brand_list | other
+    title            = Column(Text, nullable=False)
+    details          = Column(Text)
+    points           = Column(Integer, nullable=False, default=10)
+    status           = Column(Text, nullable=False, default="open")    # open | taken | review | done | cancelled
+    ref_manufacturer = Column(Text)
+    ref_model        = Column(Text)
+    ref_device_id    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="SET NULL"))
+    ref_org_id       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="SET NULL"))
+    created_by       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    taken_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    taken_at         = Column(DateTime(timezone=True))
+    done_note        = Column(Text)
+    done_at          = Column(DateTime(timezone=True))
+    checked_by       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    checked_at       = Column(DateTime(timezone=True))
+    created_at       = Column(DateTime(timezone=True), server_default=func.now())

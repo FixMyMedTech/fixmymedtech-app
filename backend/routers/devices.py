@@ -242,6 +242,7 @@ async def list_devices(
         select(Device)
         .options(
             selectinload(Device.category),
+            selectinload(Device.organization),
             selectinload(Device.organization_maintenance),
             selectinload(Device.healthsite),
         )

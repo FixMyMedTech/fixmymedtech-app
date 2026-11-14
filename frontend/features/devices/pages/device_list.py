@@ -17,6 +17,7 @@ import features.faults.api as faults_api
 
 from components import page_shell, status_badge, fmt_date
 from features.devices.static.guides import category_label
+from features.devices.cmms_ui import CMMS_CSS, clinic_groups
 rt = APIRouter()
 
 
@@ -116,7 +117,7 @@ function delAsk(id) {
 # ══════════════════════════════════════════════════════════════
 
 @rt("/devices")
-async def get(req, status: str = "", healthsite_id: str = ""):
+async def get(req, status: str = "", healthsite_id: str = "", view: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
@@ -124,7 +125,13 @@ async def get(req, status: str = "", healthsite_id: str = ""):
     _ = make_t(lang)
 
     try:
-        devices = await devices_api.get_devices(token, status or None, healthsite_id or None)
+        # "needs" (wave 3): faults, devices in maintenance and overdue services.
+        api_status = None if status == "needs" else (status or None)
+        devices = await devices_api.get_devices(token, api_status, healthsite_id or None)
+        if status == "needs":
+            today_iso = __import__("datetime").date.today().isoformat()
+            devices = [d for d in devices if d.get("status") in ("fault", "maintenance")
+                       or (d.get("status") == "operational" and str(d.get("next_maintenance") or "9999") < today_iso)]
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
@@ -152,6 +159,7 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
     status_filters = [
         ("", _("device_list.filter_all")),
+        ("needs", _("wave3.needs_attention")),
         ("operational", _("device_list.filter_operational")),
         ("maintenance", _("device_list.filter_maintenance")),
         ("fault", _("device_list.filter_fault")),
@@ -186,11 +194,18 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         _can_edit_device."""
         return auth_helper.can_edit_device(me, d)
 
+    view_q = "&view=clinics" if view == "clinics" else ""
     pills = [
-        A(label, href=f"/devices?status={val}&healthsite_id={healthsite_id}" if healthsite_id else f"/devices?status={val}",
+        A(label, href=(f"/devices?status={val}&healthsite_id={healthsite_id}" if healthsite_id else f"/devices?status={val}") + view_q,
         cls=f"pill {'active' if status == val else ''}")
         for val, label in status_filters
     ]
+    base_q = f"status={status}" + (f"&healthsite_id={healthsite_id}" if healthsite_id else "")
+    view_toggle = Div(
+        A(_("wave3.view_list"), href=f"/devices?{base_q}", cls=f"pill {'' if view == 'clinics' else 'active'}"),
+        A(_("wave3.view_clinics"), href=f"/devices?{base_q}&view=clinics", cls=f"pill {'active' if view == 'clinics' else ''}"),
+        cls="pills", style="display:flex;gap:6px;", role="group", aria_label=_("wave3.view_label"),
+    )
 
     device_healthsites = {}
     for device in all_devices:
@@ -343,9 +358,9 @@ async def get(req, status: str = "", healthsite_id: str = ""):
             cls="page-header"
         ),
         Div(*pills, healthsite_filter, cls="toolbar"),
-        search_bar,
-        table,
-        empty_msg,
+        Div(view_toggle, style="margin:-4px 0 12px;"),
+        *( [Style(CMMS_CSS), clinic_groups(_, devices, __import__("datetime").date.today().isoformat())]
+           if view == "clinics" else [search_bar, table, empty_msg] ),
         delete_dialog,
         page_script,
     )

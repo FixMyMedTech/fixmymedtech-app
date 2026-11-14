@@ -643,6 +643,30 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
             "in_progress": (_("badge.in_progress"), "badge-blue"),
             "closed":      (_("badge.closed"),      "badge-green"),
         },
+        # Onboarding (design system: ok = done, warn = someone is on it,
+        # neutral = not in play).
+        "quest": {
+            "done": (_("ob.badge_done"),  "badge-green"),
+            "todo": (_("ob.badge_todo"),  "badge-gray"),
+        },
+        "engineer": {
+            "can_register":   (_("ob.badge_can_register"),   "badge-green"),
+            "waiting_quests": (_("ob.badge_waiting_quests"), "badge-amber"),
+            "waiting_talk":   (_("ob.badge_waiting_talk"),   "badge-amber"),
+            "not_now":        (_("ob.badge_not_now"),        "badge-gray"),
+        },
+        "invitation": {
+            "sent":            (_("ob.badge_sent"),            "badge-amber"),
+            "account_created": (_("ob.badge_account_created"), "badge-amber"),
+            "clinic_ready":    (_("ob.badge_clinic_ready"),    "badge-amber"),
+            "confirmed":       (_("ob.badge_confirmed"),       "badge-green"),
+            "not_now":         (_("ob.badge_not_now"),         "badge-gray"),
+            "cancelled":       (_("ob.badge_cancelled"),       "badge-gray"),
+        },
+        "clinic": {
+            "active":       (_("ob.badge_clinic_active"),       "badge-green"),
+            "talk_pending": (_("ob.badge_clinic_talk_pending"), "badge-amber"),
+        },
     }
     label, cls = m.get(type, m["device"]).get(status, (status, "badge-gray"))
     return Span(label, cls=f"badge {cls}")
@@ -719,6 +743,12 @@ LUCIDE_ICONS = {
                '<circle cx="4" cy="4" r="2"/>',
     "logout": '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>'
               '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+    # Onboarding: Getting started, Invite a clinic, Talk host.
+    "flag": '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+    "mail": '<rect width="20" height="16" x="2" y="4" rx="2"/>'
+            '<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>',
+    "mic": '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>'
+           '<rect x="9" y="2" width="6" height="13" rx="3"/>',
 }
 
 
@@ -738,8 +768,27 @@ def lucide(name: str, cls: str = ""):
 
 def sidebar(current: str = "", lang: str = "en"):
     _ = make_t(lang)
+    user = current_user_ctx()
+    if user.get("onboarding_status") == "applicant" and user.get("account_kind") == "engineer":
+        # Welcome quests not done yet: the quest list and the profile only.
+        links = [
+            ("/getting-started", "flag",    _("nav.getting_started")),
+            ("/library",         "library", _("nav.library")),
+            ("/profile",         "profile", _("nav.profile")),
+            ("/logout",          "logout",  _("nav.logout")),
+        ]
+        return _sidebar(links, current, lang)
+    onboarding = []
+    if user.get("account_kind") == "engineer":
+        onboarding = [
+            ("/getting-started", "flag", _("nav.getting_started")),
+            ("/invite-clinic",   "mail", _("nav.invite_clinic")),
+        ]
+    if user.get("is_talk_host"):
+        onboarding.append(("/host", "mic", _("nav.talk_host")))
     links = [
         ("/home",      "home",      _("nav.home")),
+        *onboarding,
         ("/dashboard", "dashboard", _("nav.dashboard")),
         ("/devices",   "devices",   _("nav.devices")),
         ("/faults",    "faults",    _("nav.faults")),
@@ -750,6 +799,10 @@ def sidebar(current: str = "", lang: str = "en"):
         ("/profile",   "profile",   _("nav.profile")),
         ("/logout",    "logout",    _("nav.logout")),
     ]
+    return _sidebar(links, current, lang)
+
+
+def _sidebar(links, current: str, lang: str):
     return Aside(
         Div(
             A(

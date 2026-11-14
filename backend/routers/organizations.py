@@ -81,7 +81,7 @@ async def get_my_organizations(
     )
     orgs = result.scalars().all()
     if not orgs:
-        raise HTTPException(status_code=403, detail="No organizations found")
+        return []
     device_org_ids = set((await db.execute(
         select(Device.organization_id).where(or_(
             Device.organization_id.in_([o.id for o in orgs]),
@@ -627,6 +627,9 @@ async def invite_organization_member(
             id=user.id,
             username=await _unique_username(db, _username_base(email)),
             full_name=user.full_name,
+            # Staff added by an organization admin: not gated by the
+            # engineer quests, and not a responsible engineer either.
+            onboarding_status="staff",
         ))
         created_user = True
 

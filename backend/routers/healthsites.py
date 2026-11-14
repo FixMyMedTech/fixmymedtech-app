@@ -263,6 +263,15 @@ async def search_healthsites(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
+    facilities = await find_facilities(db, body.lat, body.lng, body.radius_km)
+    return {"facilities": facilities[:MAX_IMPORT_RESULTS]}
+
+
+async def find_facilities(db: AsyncSession, lat: float, lng: float, radius_km: float) -> list:
+    """healthsites.io facilities within radius_km of a point, nearest first,
+    each with distance_km and already_imported / existing_org_id. Also used by
+    clinic onboarding (routers/onboarding.py)."""
+    body = SearchBody.model_construct(lat=lat, lng=lng, radius_km=radius_km)
     api_key = os.getenv("HEALTHSITES_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail="No healthsites.io API key configured on the server")
@@ -344,7 +353,7 @@ async def search_healthsites(
                 if not f.get("address") and geo["city"]:
                     f["address"] = geo["city"]
 
-    return {"facilities": results[:MAX_IMPORT_RESULTS]}
+    return results
 
 
 # ── import a selected facility (source='healthsites.io') ─────

@@ -82,6 +82,15 @@ USERS = [
     ("tech@lilongwe.org",      "Pass123!", "Tionge Phiri",         "technician",        4),
 ]
 
+# Onboarding test accounts (migration 029), no organization:
+# (email, password, full_name, is_superuser, onboarding_status)
+ONBOARDING_USERS = [
+    # Talk host: confirms community talks and unlocks clinics at /host.
+    ("host@fmt-demo.org",    "Pass123!", "Talk Host",       True,  "active"),
+    # An engineer who just signed up: a Visitor with three welcome steps to do.
+    ("visitor@fmt-demo.org",    "Pass123!", "Amina Visitor",   False, "applicant"),
+]
+
 
 def _bcrypt_hash(password: str) -> str:
     """BCrypt hash matching FastAPI-Users (pwdlib) format $2b$."""
@@ -136,11 +145,12 @@ async def seed():
                 )
                 print(f"  ✓ {email:<30} → {user_id}")
 
-            # Insert into profiles
+            # Insert into profiles. Seeded staff are existing accounts: their
+            # welcome steps count as done (onboarding_status 'active').
             await db.execute(
                 text(f"""
-                    INSERT INTO {SCHEMA}.profiles (id, username, full_name)
-                    VALUES (:id, :username, :full_name)
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, onboarding_status, active_since)
+                    VALUES (:id, :username, :full_name, 'active', NOW())
                     ON CONFLICT (id) DO UPDATE SET
                         full_name=EXCLUDED.full_name
                 """),
@@ -160,13 +170,55 @@ async def seed():
                 """),
                 {"profile_id": str(user_id), "org_id": org_id, "role": role},
             )
+            # Technicians register devices as confirmed responsible engineers.
+            if role == "technician":
+                await db.execute(
+                    text(f"""
+                        INSERT INTO {SCHEMA}.responsible_engineers
+                            (organization_id, engineer_id, status, source, kind, confirmed_at)
+                        VALUES (:org_id, :profile_id, 'confirmed', 'backfill', 'internal', NOW())
+                        ON CONFLICT (organization_id, engineer_id) DO NOTHING
+                    """),
+                    {"profile_id": str(user_id), "org_id": org_id},
+                )
 
         await db.commit()
         print(f"✓ {len(USERS)} users seeded")
 
+        # ── 3. Onboarding test accounts ──────────────────────
+        for email, password, full_name, superuser, status in ONBOARDING_USERS:
+            row = (await db.execute(
+                text(f"SELECT id FROM {SCHEMA}.users WHERE email = :email"), {"email": email},
+            )).mappings().first()
+            if row:
+                print(f"  ~ {email:<30} already exists")
+                continue
+            user_id = uuid.uuid4()
+            await db.execute(
+                text(f"""
+                    INSERT INTO {SCHEMA}.users
+                        (id, email, hashed_password, is_active, is_superuser, is_verified, full_name)
+                    VALUES (:id, :email, :pwd, TRUE, :su, TRUE, :full_name)
+                """),
+                {"id": str(user_id), "email": email, "pwd": _bcrypt_hash(password),
+                 "su": superuser, "full_name": full_name},
+            )
+            await db.execute(
+                text(f"""
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, onboarding_status, account_kind)
+                    VALUES (:id, :username, :full_name, :status, 'engineer')
+                """),
+                {"id": str(user_id), "username": email.split("@")[0] + "_" + user_id.hex[:4],
+                 "full_name": full_name, "status": status},
+            )
+            print(f"  ✓ {email:<30} ({status}{', superuser' if superuser else ''})")
+        await db.commit()
+
     await engine.dispose()
     print("\nDone. You can now log in with any of these credentials.")
     print("Example: admin@mulago.org / Pass123!")
+    print("Talk host (confirms talks, unlocks clinics at /host): host@fmt-demo.org / Pass123!")
+    print("Engineer still doing the welcome steps: visitor@fmt-demo.org / Pass123!")
 
 
 if __name__ == "__main__":

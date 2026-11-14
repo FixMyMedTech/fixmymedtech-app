@@ -87,6 +87,13 @@ class Organization(Base):
     osm_id          = Column(Text)
     osm_type        = Column(Text)
     source          = Column(Text, default="app", nullable=False)
+    # Onboarding (migration 029). Plain FK columns, no relationships, so
+    # serializing an Organization never reaches a Profile (and its User).
+    invited_by          = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    push_to_healthsites = Column(Boolean, nullable=False, default=False)
+    clinic_status       = Column(Text, nullable=False, default="active")   # active | talk_pending
+    talk_confirmed_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    talk_confirmed_at   = Column(DateTime(timezone=True))
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -113,6 +120,13 @@ class Profile(Base):
     full_name       = Column(Text)
     avatar_key      = Column(Text)
     country         = Column(Text)
+    # Onboarding (migration 029): applicant → active once the welcome quests
+    # are done. Clinic accounts have no quests.
+    onboarding_status   = Column(Text, nullable=False, default="applicant")
+    active_since    = Column(DateTime(timezone=True))
+    account_kind    = Column(Text, nullable=False, default="engineer")   # engineer | clinic
+    city            = Column(Text)
+    bio             = Column(Text)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
@@ -208,6 +222,73 @@ class OrgJoinRequest(Base):
 
     def __repr__(self):
         return f"<OrgJoinRequest {self.profile_id} → {self.organization_id} ({self.status})>"
+
+
+# ══════════════════════════════════════════════════════════════
+# ONBOARDING (migration 029)
+# ══════════════════════════════════════════════════════════════
+
+class OnboardingQuest(Base):
+    """A welcome quest the app can't read elsewhere (the community talk,
+    confirmed by a host). Profile and photo quests are read from the profile."""
+    __tablename__ = "onboarding_quests"
+    __table_args__ = {"schema": SCHEMA}
+
+    profile_id   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), primary_key=True)
+    quest_key    = Column(Text, primary_key=True)
+    count        = Column(Integer, nullable=False, default=1)
+    confirmed_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    updated_at   = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ResponsibleEngineer(Base):
+    """An engineer a clinic named to register devices in its name.
+
+    Only status='confirmed' counts, and only once the engineer is active
+    (quests done) and the clinic is active."""
+    __tablename__ = "responsible_engineers"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "engineer_id", name="uq_responsible_engineers"),
+        CheckConstraint("status IN ('confirmed', 'not_now')", name="responsible_engineers_status_check"),
+        CheckConstraint("source IN ('inviter', 'added', 'backfill')", name="responsible_engineers_source_check"),
+        CheckConstraint("kind IS NULL OR kind IN ('internal', 'external')", name="responsible_engineers_kind_check"),
+        {"schema": SCHEMA},
+    )
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="CASCADE"), nullable=False)
+    engineer_id     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    status          = Column(Text, nullable=False, default="confirmed")
+    source          = Column(Text, nullable=False, default="added")
+    kind            = Column(Text)
+    added_by        = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    confirmed_by    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    confirmed_at    = Column(DateTime(timezone=True))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class OnboardingInvitation(Base):
+    """An engineer inviting a clinic (kind='clinic'), or a clinic inviting an
+    engineer (kind='engineer'), by email. The token is the invitation link."""
+    __tablename__ = "onboarding_invitations"
+    __table_args__ = (
+        CheckConstraint("kind IN ('clinic', 'engineer')", name="onboarding_invitations_kind_check"),
+        CheckConstraint("status IN ('sent', 'accepted', 'cancelled')", name="onboarding_invitations_status_check"),
+        {"schema": SCHEMA},
+    )
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    kind            = Column(Text, nullable=False)
+    email           = Column(Text, nullable=False)
+    message         = Column(Text)
+    token           = Column(Text, nullable=False, unique=True)
+    invited_by      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="SET NULL"))
+    engineer_kind   = Column(Text)
+    status          = Column(Text, nullable=False, default="sent")
+    accepted_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    accepted_at     = Column(DateTime(timezone=True))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
 
 
 # ══════════════════════════════════════════════════════════════

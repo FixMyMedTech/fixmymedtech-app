@@ -14,6 +14,8 @@ import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api
 import features.groups.api as org_api
+import features.onboarding.api as onboarding_api
+from features.onboarding.ui import ONBOARDING_CSS
 
 from components import *
 
@@ -80,28 +82,51 @@ def _default_org_id(orgs, selected: str = ""):
     return ""
 
 
-async def _orgs_with_pending(token, orgs):
-    """Membership orgs plus any org the user has a pending join request for.
-
-    A pending requester may register a device in that clinic but cannot list the
-    org's devices yet, so the org is offered but marked as awaiting approval.
-    """
+async def _registrable(token):
+    """Clinics this user may register devices for (its own admin clinics, and
+    clinics where it is an unlocked responsible engineer), plus the locked
+    ones with the reason. Since migration 029 a pending join request no longer
+    allows registering."""
     try:
-        pending = await org_api.get_my_join_requests(token)
+        data = await onboarding_api.registrable_clinics(token)
     except Exception:
-        return orgs
-    member_ids = {o["id"] for o in orgs}
-    merged = list(orgs)
-    for r in pending:
-        if r.get("organization_id") in member_ids:
-            continue
-        merged.append({
-            "id": r.get("organization_id"),
-            "name": r.get("organization_name"),
-            "role": r.get("role"),
-            "pending": True,
-        })
-    return merged
+        data = {"unlocked": [], "locked": [], "is_unlocked": False}
+    orgs = [{"id": c["id"], "name": c["name"],
+             "role": "admin" if c.get("via") == "admin" else "responsible"}
+            for c in data.get("unlocked", [])]
+    return orgs, data
+
+
+def _locked_page(lang, data):
+    """Nothing to register for yet: say why, and what to do next."""
+    _ = make_t(lang)
+    reasons = {
+        "quests_pending":      _("ob.lock_quests_pending"),
+        "not_now":             _("ob.lock_not_now"),
+        "clinic_talk_pending": _("ob.lock_clinic_talk_pending"),
+        "not_named":           _("ob.lock_not_named"),
+    }
+    locked = data.get("locked", [])
+    items = [Li(Strong(c.get("name", "")), Span(" · ", reasons.get(c.get("reason"), ""), cls="ob-muted"))
+             for c in locked]
+    if not data.get("is_unlocked"):
+        cta = A(_("ob.see_quests"), href="/getting-started", cls="btn btn-primary")
+        lead = _("ob.lock_lead_quests")
+    else:
+        cta = A(_("ob.invite_clinic_cta"), href="/invite-clinic", cls="btn btn-primary")
+        lead = _("ob.lock_lead_no_clinic")
+    content = Div(
+        Style(ONBOARDING_CSS),
+        H1(_("ob.lock_heading")),
+        Div(
+            P(lead),
+            Ul(*items, cls="ob-list", style="margin-bottom:14px;") if items else "",
+            P(_("ob.lock_rule"), cls="ob-muted"),
+            cta,
+            cls="card ob-locked", style="max-width:720px;",
+        ),
+    )
+    return page_shell(content, current="/new_device", title=_("title.new_device"), lang=lang)
 
 
 @rt("/new_device")
@@ -113,9 +138,11 @@ async def get(req):
     _ = make_t(lang)
 
     try:
-        org = await org_api.get_my_organizations(token)
+        orgs, reg = await _registrable(token)
+        if not orgs:
+            return _locked_page(lang, reg)
 
-# A rejected UID comes back as ?flash=…&uid=…, rendered under the manual
+        # A rejected UID comes back as ?flash=…&uid=…, rendered under the manual
         # entry field with the same alert the login page uses on a bad submit.
         flash = req.query_params.get("flash", "")
         bad_uid = req.query_params.get("uid", "")
@@ -252,14 +279,9 @@ async def get(req, device_id: str, selected: str = ""):
     except Exception:
         pass
 
-    try:
-        orgs = await org_api.get_my_organizations(token)
-        orgs = await _orgs_with_pending(token, orgs)
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 401:
-            auth_helper.clear_session(req)
-            return RedirectResponse("/login?expired=1", status_code=302)
-        raise
+    orgs, reg = await _registrable(token)
+    if not orgs:
+        return _locked_page(lang, reg)
 
     form = _device_form(lang, device_id, orgs, selected=selected)
     return _build_page(req, lang, device_id, form, orgs,
@@ -615,10 +637,8 @@ def _device_form(lang, device_id: str, orgs, selected: str = ""):
                 Div(
                     Div(Label(_("new_device.healthsite_label"), cls="label", for_="healthsite_id"),
                         Select(*hs_options, id="healthsite_id", name="healthsite_id", cls="input"),
-                        Button("🔍 " + _("new_device.search_healthsite_btn"), type="button",
-                                                        cls="btn btn-secondary btn-sm",
-                                                        onclick="document.getElementById('hsDialog').showModal()",
-                                                        style="white-space:nowrap;flex-shrink:0;gap:10px;margin-top:8px;"),
+                        # No healthsites.io import here any more: only clinics
+                        # where the user is unlocked can be chosen (migration 029).
                         cls="form-group"),
                     Div(Label(_("new_device.location_label"), cls="label"),
                         Input(name="location", cls="input", placeholder=_("new_device.location_placeholder")),
@@ -751,16 +771,7 @@ async def post(req, device_id: str, lat: str = "", lng: str = "", radius_km: str
     if not lat_f or not lng_f:
         return RedirectResponse(f"/device/{device_id}/new", status_code=302)
 
-    try:
-        orgs = await org_api.get_my_organizations(token)
-        orgs = await _orgs_with_pending(token, orgs)
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 401:
-            auth_helper.clear_session(req)
-            return RedirectResponse("/login?expired=1", status_code=302)
-        orgs = []
-    except Exception:
-        orgs = []
+    orgs, _reg = await _registrable(token)
 
     form = _device_form(lang, device_id, orgs,
                         selected=req.session.get("last_healthsite", "") or "")

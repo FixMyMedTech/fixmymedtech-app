@@ -15,7 +15,7 @@ import logging
 
 from models import models
 from config.db_config import engine
-from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents
+from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents, onboarding
 from routers.admin_email import router as admin_email_router
 from migrations import run_migrations
 from utils.create_superuser import bootstrap_superuser_from_env
@@ -93,6 +93,7 @@ app.include_router(healthsites.router,      prefix="/api/healthsites",       tag
 app.include_router(feedback.router,         prefix="/api/feedback",          tags=["feedback"])
 app.include_router(documents.router,        prefix="/api/documents",         tags=["documents"])
 app.include_router(documents.device_router, prefix="/api/devices",           tags=["documents"])
+app.include_router(onboarding.router,       prefix="/api/onboarding",        tags=["onboarding"])
 
 # ── SQLAdmin (browsable admin UI at /admin) ─────────────────
 from sqladmin import Admin, ModelView
@@ -185,6 +186,8 @@ class UserAdmin(ModelView, model=models.User):
                     id=model.id,
                     username=model.email.split("@")[0].replace(".", "_"),
                     full_name=model.full_name or model.email,
+                    # Created by an administrator: no welcome quests.
+                    onboarding_status="active",
                 ))
                 await session.flush()
 

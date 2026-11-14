@@ -53,6 +53,9 @@ class SignupRequest(BaseModel):
     organization_name: Optional[str] = None
     country: Optional[str] = None
     role: str = "admin"
+    # engineer (default): starts as an applicant with the welcome quests.
+    # clinic: sets up its clinic next (no quests).
+    account_kind: str = "engineer"
 
 
 # ── Login ──────────────────────────────────────────────────────────────────────
@@ -126,16 +129,23 @@ async def signup(
         raise HTTPException(status_code=400, detail=f"Signup failed: {exc}")
 
     # 2. Create Profile (1:1 with user)
+    kind = body.account_kind if body.account_kind in ("engineer", "clinic") else "engineer"
     username = await generate_username(body.full_name, db)
     profile = Profile(
         id=user.id,
         username=username,
         full_name=body.full_name,
+        country=(body.country or "").strip() or None,
+        account_kind=kind,
+        onboarding_status="active" if kind == "clinic" else "applicant",
     )
     db.add(profile)
     await db.flush()
 
-    # 3. Create or link Organization
+    # 3. Link an existing Organization when one is given. Signup no longer
+    # creates a hidden personal "hospital" organization (migration 029): an
+    # engineer works for clinics as a responsible engineer, and a clinic
+    # account sets up its clinic in the next step.
     if body.organization_id:
         try:
             org_uuid = uuid.UUID(body.organization_id)
@@ -146,25 +156,14 @@ async def signup(
         )
         if not res.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Selected organization does not exist")
-        org_id = str(org_uuid)
-    else:
-        org = Organization(
-            name=body.full_name,
-            country=body.country or "",
-            type="hospital",
-        )
-        db.add(org)
-        await db.flush()
-        org_id = str(org.id)
-
-    db.add(OrgUser(
-        profile_id=user.id,
-        organization_id=org_id,
-        role=body.role,
-    ))
+        db.add(OrgUser(
+            profile_id=user.id,
+            organization_id=str(org_uuid),
+            role=body.role,
+        ))
 
     await db.commit()
-    return {"message": "Account created."}
+    return {"message": "Account created.", "account_kind": kind}
 
 
 # ── Logout (stateless — client discards token) ─────────────────────────────────

@@ -126,3 +126,92 @@ async def send_welcome_email(email: str, full_name: str) -> None:
         f"<p>If you need help, reply to this email.</p>"
     )
     await send_message("Welcome to FixMyMedTech", [email], html)
+
+
+# ── Onboarding (migration 029) ──────────────────────────────────────────────
+# One template, email_onboarding.html; Jinja autoescape is off for these
+# templates, so every user-written value is escaped here.
+
+def _esc(value) -> str:
+    from html import escape
+    return escape(str(value or ""))
+
+
+async def _send_onboarding(email: str, subject: str, heading: str, paragraphs: list,
+                           link: str = "", button: str = "", message: str = "",
+                           benefits: list | None = None, footer: str = "") -> None:
+    html = _render(
+        "email_onboarding.html",
+        subject=_esc(subject),
+        heading=_esc(heading),
+        paragraphs=[_esc(p) for p in paragraphs],
+        message=_esc(message),
+        benefits=[_esc(b) for b in (benefits or [])],
+        link=link,
+        button=_esc(button),
+        footer=_esc(footer),
+    )
+    await send_message(subject, [email], html)
+
+
+async def send_clinic_invitation_email(email: str, inviter: str, message: str, link: str) -> None:
+    """An engineer invites a clinic. Explains the vision and what the clinic gets."""
+    await _send_onboarding(
+        email,
+        subject=f"{inviter} invites your clinic to FixMyMedTech",
+        heading="Keep your medical equipment working",
+        paragraphs=[
+            f"{inviter}, a biomedical engineer in the FixMyMedTech community, invites your clinic to join.",
+            "FixMyMedTech is a free platform where clinics and biomedical engineers keep medical devices "
+            "working: every device gets a QR tag, staff report a fault in seconds, and your engineers "
+            "track repairs and maintenance in one place.",
+        ],
+        message=message,
+        benefits=[
+            "A QR tag on each device: anyone can report a fault from a phone.",
+            "A clear list of your equipment, its status and its maintenance history.",
+            "Engineers you trust, named by you, register and look after your devices.",
+        ],
+        link=link,
+        button="Set up your clinic",
+        footer="If you didn't expect this email, you can safely ignore it.",
+    )
+
+
+async def send_engineer_invitation_email(email: str, clinic: str, inviter: str, link: str) -> None:
+    """A clinic invites an engineer to become one of its responsible engineers."""
+    await _send_onboarding(
+        email,
+        subject=f"{clinic} invites you to look after its devices on FixMyMedTech",
+        heading=f"{clinic} invites you",
+        paragraphs=[
+            f"{inviter} named you a responsible engineer for {clinic} on FixMyMedTech.",
+            "Create your account and finish three short welcome steps (your profile, a picture and a "
+            "community talk). You can then register devices for the clinic.",
+        ],
+        link=link,
+        button="Create your account",
+        footer="If you didn't expect this email, you can safely ignore it.",
+    )
+
+
+async def send_engineer_confirmed_email(email: str, name: str, clinic: str,
+                                        ready: bool, link: str) -> None:
+    """A clinic confirmed an engineer as one of its responsible engineers."""
+    if ready:
+        paragraphs = [f"Hi {name},", f"{clinic} confirmed that you can register devices in its name."]
+    else:
+        paragraphs = [
+            f"Hi {name},",
+            f"{clinic} confirmed you as one of its responsible engineers.",
+            "You can register devices for it as soon as your welcome steps are done"
+            " (and, for a new clinic, once its clinic talk has taken place).",
+        ]
+    await _send_onboarding(
+        email,
+        subject=f"{clinic} confirmed you on FixMyMedTech",
+        heading="You're confirmed",
+        paragraphs=paragraphs,
+        link=link,
+        button="Open FixMyMedTech",
+    )

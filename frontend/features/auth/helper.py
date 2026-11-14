@@ -35,6 +35,63 @@ def token_expired(token: str) -> bool:
     return exp is not None and exp <= time.time()
 
 
+# ── Onboarding (migration 029) ──────────────────────────────
+
+def cache_onboarding(req, me: dict) -> None:
+    """Keep the onboarding fields of /api/auth/me in the session; the sidebar
+    and the page gate read them on every request."""
+    status = me.get("onboarding_status") or ""
+    if status == "applicant" and me.get("is_unlocked"):
+        status = "active"  # e.g. a superuser: never held back by the welcome steps
+    req.session["user_onboarding_status"] = status
+    req.session["user_account_kind"] = me.get("account_kind") or ""
+    req.session["user_is_talk_host"] = "1" if me.get("is_talk_host") else ""
+    has_clinic = any(o.get("role") == "admin" for o in me.get("organizations") or [])
+    req.session["user_clinic_ready"] = "1" if has_clinic else ""
+
+
+# Paths an engineer doing the welcome quests (or a clinic account still
+# setting up) can always open: public pages, auth, profile, the onboarding
+# pages themselves.
+ONBOARDING_OPEN_PREFIXES = (
+    "/getting-started", "/profile", "/logout", "/lang", "/static", "/d/",
+    "/invite/", "/library", "/documents/", "/feedback", "/favicon.ico",
+    "/apple-touch-icon.png", "/login", "/signup", "/join", "/forgot-password",
+    "/reset-password", "/oauth-callback", "/clinic/",
+)
+
+
+def onboarding_redirect(req) -> str | None:
+    """Where to send this signed-in request instead, or None."""
+    path = req.url.path
+    if path == "/" or path.startswith(ONBOARDING_OPEN_PREFIXES):
+        return None
+    status = req.session.get("user_onboarding_status", "")
+    kind = req.session.get("user_account_kind", "")
+    if kind == "engineer" and status == "applicant":
+        return "/getting-started"
+    if kind == "clinic" and not req.session.get("user_clinic_ready"):
+        return "/clinic/setup"
+    return None
+
+
+async def refresh_onboarding(req, token: str) -> dict:
+    """Re-read /api/auth/me and update the session (after a step changes the
+    onboarding status or the clinic). Returns me, or {} on failure."""
+    try:
+        me = await auth_api.get_me(token)
+    except Exception:
+        return {}
+    cache_onboarding(req, me)
+    # The sidebar of THIS response reads the per-request user context.
+    from components import current_user_ctx
+    ctx = current_user_ctx()
+    ctx["onboarding_status"] = req.session.get("user_onboarding_status", "")
+    ctx["account_kind"] = me.get("account_kind") or ""
+    ctx["is_talk_host"] = bool(me.get("is_talk_host"))
+    return me
+
+
 def login_redirect(req):
     """Send a signed-out visitor to /login: with the "session expired" notice
     when their session just ended, and back to the page they wanted (GET only)."""

@@ -61,6 +61,8 @@ def _signup_form(t, errors=None, values=None):
                style="width:100%;justify-content:center;margin-top:8px;"),
         P(t("signup.login_link"), A(t("signup.login_link_action"), href="/login"),
           cls="auth-link", style="margin-top:12px;"),
+        P(t("ob.signup_clinic_link"), A(t("ob.signup_clinic_link_action"), href="/clinic/signup"),
+          cls="auth-link"),
         cls="auth-card"
     )
 
@@ -94,6 +96,12 @@ def _signup_form(t, errors=None, values=None):
     return Div(fields, bg, cls="auth-wrap")
 
 
+@rt("/join")
+async def get(req):
+    # The community's public entry point: the same engineer signup.
+    return RedirectResponse("/signup", status_code=302)
+
+
 @rt("/signup")
 async def get(req):
     lang = req.session.get("lang", "en")
@@ -122,6 +130,14 @@ async def post(req, full_name: str, email: str, password: str, password2: str):
             await auth_api.signup(
                 email=email, password=password, full_name=full_name,
             )
+            # Sign the new engineer in and send them to their welcome quests.
+            try:
+                res = await auth_api.login(email, password)
+                req.session["token"] = res["access_token"]
+                req.session["user_email"] = res["user"]["email"]
+                return RedirectResponse("/getting-started", status_code=303)
+            except Exception:
+                pass
             return auth_shell(
                 Div(
                     Div(

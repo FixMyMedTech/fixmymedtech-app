@@ -37,6 +37,8 @@ class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     username: Optional[str] = None
     country: Optional[str] = None
+    city: Optional[str] = None
+    bio: Optional[str] = None
 
 
 # ── Me ─────────────────────────────────────────────────────────────────────────
@@ -55,14 +57,24 @@ async def me(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     from routers.discord_link import discord_login_available
+    from utils import onboarding as ob
     return {
         "id": profile.id,
         "username": profile.username,
         "full_name": profile.full_name,
         "country": profile.country,
+        "city": profile.city,
+        "bio": profile.bio,
         "avatar_key": profile.avatar_key,
         "email": user.email,
         "is_verified": user.is_verified,
+        "is_superuser": bool(user.is_superuser),
+        # Onboarding (migration 029): cached in the frontend session to gate
+        # pages while the welcome quests are not done.
+        "onboarding_status": profile.onboarding_status,
+        "account_kind": profile.account_kind,
+        "is_unlocked": ob.is_unlocked(profile, user),
+        "is_talk_host": ob.can_host_talks(user),
         "discord": {
             "available": discord_login_available(),
             "linked": bool(user.discord_user_id),
@@ -106,6 +118,15 @@ async def update_me(
         profile.username = candidate
     if body.country is not None:
         profile.country = body.country.strip() or None
+    if body.city is not None:
+        profile.city = body.city.strip() or None
+    if body.bio is not None:
+        bio = body.bio.strip()
+        if len(bio) > 500:
+            raise HTTPException(status_code=400, detail="bio_too_long")
+        profile.bio = bio or None
+    from utils import onboarding as ob
+    await ob.refresh_onboarding_status(db, profile)
     try:
         await db.commit()
     except Exception as e:
@@ -116,7 +137,10 @@ async def update_me(
         "username": profile.username,
         "full_name": profile.full_name,
         "country": profile.country,
+        "city": profile.city,
+        "bio": profile.bio,
         "avatar_key": profile.avatar_key,
+        "onboarding_status": profile.onboarding_status,
     }
 
 
@@ -188,6 +212,9 @@ async def upload_avatar(
     )
     old_key = profile.avatar_key
     profile.avatar_key = key
+    # The picture quest is done the moment an avatar exists.
+    from utils import onboarding as ob
+    await ob.refresh_onboarding_status(db, profile)
     await db.commit()
     if old_key and old_key != key:
         delete_file(old_key)

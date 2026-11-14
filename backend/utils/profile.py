@@ -29,9 +29,8 @@ async def get_current_profile(
 
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    if not profile.org_memberships:
-        raise HTTPException(status_code=403, detail="User has no organization assigned")
-
+    # No organization is fine: since migration 029 an engineer signs up
+    # without one and works for clinics as a responsible engineer.
     return profile
 
 

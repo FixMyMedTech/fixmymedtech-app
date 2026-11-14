@@ -108,9 +108,11 @@ async def get(req, device_id: str):
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
             return RedirectResponse("/login?expired=1", status_code=302)
-        return RedirectResponse(f"/device/{device_id}", status_code=302)
+        # Not one of the clinic's people or its responsible engineers (or no
+        # such device): the public QR page is what everyone else sees.
+        return RedirectResponse(f"/d/{device_id}", status_code=302)
     except Exception:
-        return RedirectResponse(f"/device/{device_id}", status_code=302)
+        return RedirectResponse(f"/d/{device_id}", status_code=302)
 
     d = data.get("device", {})
     cat = d.get("category") or {}

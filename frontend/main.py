@@ -30,6 +30,8 @@ from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page, organization_detail, organization_manage
 from features.faults.pages import fault_list, report_page, fault_detail, public_fault
 from features.maintenance.pages import public_log, maintenance_log, maintenance_log_detail
+from features.onboarding.pages import (getting_started, invite_clinic, invitation, clinic_setup,
+                                       clinic_engineers, host as onboarding_host)
 from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
@@ -110,6 +112,7 @@ class UserContextMiddleware(BaseHTTPMiddleware):
                     request.session["user_username"] = me.get("username") or name
                     request.session["user_email"] = email
                     request.session["user_avatar"] = me.get("avatar_key") or ""
+                    auth_helper.cache_onboarding(request, me)
                     if profile_id:
                         request.session["user_id"] = profile_id
                         if posthog_client is not None:
@@ -147,7 +150,19 @@ class UserContextMiddleware(BaseHTTPMiddleware):
 
         if token and data.get("name"):
             data["id"] = str(request.session.get("user_id") or "")
+            data["onboarding_status"] = request.session.get("user_onboarding_status", "")
+            data["account_kind"] = request.session.get("user_account_kind", "")
+            data["is_talk_host"] = bool(request.session.get("user_is_talk_host"))
         set_current_user(data)
+
+        # Onboarding gate: an engineer doing the welcome quests sees the quest
+        # list and the profile; a clinic account without its clinic yet goes
+        # to clinic setup. The API enforces the real rules either way.
+        if token and not rejected.get("rejected"):
+            target = auth_helper.onboarding_redirect(request)
+            if target:
+                return RedirectResponse(target, status_code=302 if request.method == "GET" else 303)
+
         response = await call_next(request)
 
         if rejected.get("rejected") and request.session.get("token"):
@@ -187,6 +202,9 @@ profile_detail.rt.to_app(app)
 network_pages.rt.to_app(app)
 tasks_pages.rt.to_app(app)
 groups_page.rt.to_app(app)
+# Before organization_manage: /groups/{org_id}/engineers is the clinic page's
+# Engineers tab.
+clinic_engineers.rt.to_app(app)
 organization_detail.rt.to_app(app)
 organization_manage.rt.to_app(app)
 device_detail.rt.to_app(app)
@@ -206,6 +224,11 @@ maintenance_log_detail.rt.to_app(app)
 guides.rt.to_app(app)
 feedback_pages.rt.to_app(app)
 documents_pages.rt.to_app(app)
+getting_started.rt.to_app(app)
+invite_clinic.rt.to_app(app)
+invitation.rt.to_app(app)
+clinic_setup.rt.to_app(app)
+onboarding_host.rt.to_app(app)
 
 posthog_log.info(
     "application_started",

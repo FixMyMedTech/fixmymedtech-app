@@ -14,8 +14,9 @@ from sqlalchemy.orm import selectinload
 from config.db_config import get_db
 from utils.profile import get_current_profile
 from models.models import (
-    Device, DeviceCategory, MaintenanceLog, FaultReport, Profile, OrgJoinRequest,
+    Device, DeviceCategory, MaintenanceLog, FaultReport, Profile,
 )
+from utils import onboarding as ob
 from config.storage import upload_file, get_file
 from config.db_config import AsyncSessionLocal
 from config.discord import welcome_enabled
@@ -234,7 +235,10 @@ async def list_devices(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
+    # Members of the device's organizations, plus the responsible engineers
+    # of its clinic (confirmed, quests done, clinic active).
     org_ids = profile.org_ids()
+    responsible = await ob.responsible_org_ids(db, profile, profile.user)
     query = (
         select(Device)
         .options(
@@ -246,6 +250,8 @@ async def list_devices(
             Device.organization_id.in_(org_ids),
             Device.organization_maintenance_id.in_(org_ids),
             Device.healthsite_id.in_(org_ids),
+            Device.organization_id.in_(responsible),
+            Device.healthsite_id.in_(responsible),
         ))
         .order_by(Device.name)
     )
@@ -289,6 +295,8 @@ async def get_device(
     device = device_result.scalar_one_or_none()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
+    if not await _can_view_device(db, profile, device):
+        raise HTTPException(status_code=403, detail="Not authorized")
 
     logs_result = await db.execute(
         select(MaintenanceLog)
@@ -336,16 +344,20 @@ async def get_device(
     }
 
 
-async def _pending_request_role(db: AsyncSession, profile_id, org_id):
-    """Role carried by the caller's pending join request for this org, if any."""
-    result = await db.execute(
-        select(OrgJoinRequest.role).where(
-            OrgJoinRequest.profile_id == profile_id,
-            OrgJoinRequest.organization_id == org_id,
-            OrgJoinRequest.status == "pending",
-        )
-    )
-    return result.scalar_one_or_none()
+async def _can_view_device(db: AsyncSession, profile: Profile, device: Device) -> bool:
+    """The private device page: members of any of the device's three
+    organizations, the user who registered it, the clinic's responsible
+    engineers (confirmed, quests done, clinic active) and superusers. Everyone
+    else has the public QR page."""
+    if profile.user is not None and profile.user.is_superuser:
+        return True
+    if device.registered_by == profile.id:
+        return True
+    mine = set(profile.org_ids())
+    if {device.organization_id, device.organization_maintenance_id, device.healthsite_id} & mine:
+        return True
+    responsible = set(await ob.responsible_org_ids(db, profile, profile.user))
+    return bool({device.organization_id, device.healthsite_id} & responsible)
 
 
 @router.post("/")
@@ -354,24 +366,17 @@ async def create_device(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    org_id = (
-        body.organization_id
-        or (profile.org_memberships[0].organization_id if profile.org_memberships else None)
-    )
+    # Registering for a clinic (migration 029): its own admins, or its
+    # confirmed responsible engineers whose welcome quests are done, once the
+    # clinic is active. A pending join request no longer allows it.
+    org_id = body.organization_id
     if not org_id:
-        raise HTTPException(status_code=403, detail="No organization membership")
+        raise HTTPException(status_code=400, detail="choose_clinic")
 
-    role = profile.get_role_for_org(org_id)
-    if role is None:
-        # Not a member yet. A pending join request allows registering a device
-        # in that clinic, carrying the role that was requested. Device *listing*
-        # stays membership-gated, so nothing else in the org is exposed.
-        role = await _pending_request_role(db, profile.id, org_id)
-        if role is None:
-            raise HTTPException(status_code=403, detail="Not authorized")
-
-    if role not in ("admin", "technician"):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    for target in {org_id, body.healthsite_id} - {None}:
+        allowed, reason = await ob.registration_check(db, profile, target, profile.user)
+        if not allowed:
+            raise HTTPException(status_code=403, detail=f"registration_locked:{reason}")
 
     payload = body.model_dump(exclude_none=True)
     payload.pop("organization_id", None)

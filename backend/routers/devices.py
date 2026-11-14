@@ -1,5 +1,6 @@
 # routers/devices.py
 
+from utils.serialize import device_out, log_out, fault_brief
 from datetime import date
 from typing import Optional
 from uuid import UUID
@@ -203,10 +204,10 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
     recent_logs = logs_result.scalars().all()
 
     return {
-        "device": device,
+        "device": device_out(device),
         "documents": docs,
-        "recent_faults": recent_faults,
-        "recent_logs": recent_logs,
+        "recent_faults": [fault_brief(f) for f in recent_faults],
+        "recent_logs": [log_out(l) for l in recent_logs],
     }
 
 
@@ -256,7 +257,7 @@ async def list_devices(
         query = query.where(Device.healthsite_id == healthsite_id)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    return [device_out(d) for d in result.scalars().all()]
 
 
 @router.get("/categories")
@@ -328,9 +329,9 @@ async def get_device(
             }
 
     return {
-        "device": device,
-        "maintenance_logs": logs,
-        "fault_reports": faults,
+        "device": device_out(device),
+        "maintenance_logs": [log_out(l) for l in logs],
+        "fault_reports": [fault_brief(f) for f in faults],
         "documents": docs,
         "registered_by_profile": registrant,
     }
@@ -388,7 +389,7 @@ async def create_device(
 
     if welcome_enabled():
         spawn(announce_new_device(profile.id))
-    return device
+    return device_out(device)
 
 
 @router.patch("/{device_id}")

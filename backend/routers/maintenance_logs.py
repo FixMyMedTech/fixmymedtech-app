@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from config.db_config import get_db
 from utils.profile import get_current_profile
 from models.models import Device, MaintenanceLog, Profile, OrgUser
+from utils.serialize import log_out
 
 router = APIRouter()
 
@@ -43,7 +44,7 @@ async def get_maintenance_log(
     log = result.scalar_one_or_none()
     if not log:
         raise HTTPException(status_code=404, detail="Maintenance log not found")
-    return log
+    return log_out(log)
 
 
 @router.get("/public/{log_id}")
@@ -63,7 +64,7 @@ async def get_maintenance_log_public(
     log = result.scalar_one_or_none()
     if not log:
         raise HTTPException(status_code=404, detail="Maintenance log not found")
-    return log
+    return log_out(log)
 
 
 class MaintenanceLogCreate(BaseModel):
@@ -160,7 +161,7 @@ async def update_maintenance_log(
         )
         .where(MaintenanceLog.id == log_id)
     )
-    return result.scalar_one()
+    return log_out(result.scalar_one())
 
 
 @router.post("/")
@@ -206,4 +207,4 @@ async def create_maintenance_log(
         )
         .where(MaintenanceLog.id == log.id)
     )
-    return result.scalar_one()
+    return log_out(result.scalar_one())

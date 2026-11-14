@@ -15,7 +15,8 @@ import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api
 
-from components import page_shell, status_badge, fmt_date
+from components import page_shell, status_badge, fmt_date, device_icon, page_head, lucide
+from features.devices.cmms_ui import device_tone
 from features.devices.static.guides import category_label
 rt = APIRouter()
 
@@ -218,12 +219,13 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
     rows = []
     search_index = []
+    today_iso = __import__("datetime").date.today().isoformat()
     for d in devices:
         cat = d.get("category") or {}
         healthsite = d.get("healthsite") or {}
         hs_name = healthsite.get("name", "")
         loc_name = d.get("location", "")
-        cat_text = f"{cat.get('icon','🏥')} {category_label(cat, lang)}"
+        cat_text = category_label(cat, lang) if cat else ""
         nm = d.get("next_maintenance", "")
         overdue = nm and nm < __import__("datetime").datetime.now().isoformat()
 
@@ -239,11 +241,18 @@ async def get(req, status: str = "", healthsite_id: str = ""):
             "m": match,
         })
 
+        # One visible action (open the device); Edit and Delete wait behind
+        # "⋯" (progressive disclosure).
+        menu_items = [
+            A(_("groups.edit"), href=f"/devices/{d['id']}/edit") if can_edit(d) else "",
+            Button(_("groups.delete"), type="button", cls="danger",
+                   onclick=f"this.closest('details').open=false;delAsk({json.dumps(str(d['id']))})") if can_delete(d) else "",
+        ]
         actions = Div(
             A(_("device_list.view"), href=f"/device/{d['id']}", cls="btn btn-secondary btn-sm"),
-            A(_("groups.edit"), href=f"/devices/{d['id']}/edit", cls="btn btn-secondary btn-sm") if can_edit(d) else "",
-            Button(_("groups.delete"), type="button", cls="btn btn-danger btn-sm",
-                   onclick=f"delAsk({json.dumps(str(d['id']))})") if can_delete(d) else "",
+            Details(Summary(lucide("more"), title=_("device_list.more_actions"),
+                            aria_label=_("device_list.more_actions")),
+                    Div(*menu_items, cls="rowmenu-pop"), cls="rowmenu") if any(menu_items) else "",
             cls="actions",
         )
 
@@ -255,10 +264,11 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
         rows.append(Tr(
             Td(
-                Div(d.get("name", ""), style="font-weight:500;font-size:0.875rem;color:var(--c-text);"),
-                Div(cat_text, style="font-size:0.75rem;color:var(--c-text-2);margin-top:2px;"),
-                Div(f"{d.get('manufacturer','')} {d.get('model','')}".strip(),
-                    style="font-size:0.75rem;color:var(--c-text-3);"),
+                A(device_icon(cat, device_tone(d, today_iso)),
+                  Div(B(d.get("name", "")),
+                      Span(" · ".join(p for p in (category_label(cat, lang) if cat else "",
+                                                  f"{d.get('manufacturer','')} {d.get('model','')}".strip()) if p))),
+                  href=f"/device/{d['id']}", cls="dname"),
             ),
             Td(*loc_children, **{"data-label": _("device_list.col_location")}),
             Td(status_badge(d.get("status", "operational"), lang=lang),
@@ -285,10 +295,9 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
     # Shown instead of the table when there is nothing at all, or when the
     # search filter leaves no rows.
-    empty_msg = Div(_("device_list.empty"),
-        id="dev-empty",
-        style="text-align:center;padding:32px;color:var(--c-text-3);border:1px dashed "
-              "var(--c-border);border-radius:var(--r-lg);" + ("" if not rows else "display:none;"))
+    empty_msg = Div(Span(lucide("devices"), cls="empty-ico"), Span(_("device_list.empty")),
+        id="dev-empty", cls="empty",
+        style="" if not rows else "display:none;")
 
     search_bar = Div(
         Input(id="dev-search", type="search", cls="input",
@@ -337,11 +346,8 @@ async def get(req, status: str = "", healthsite_id: str = ""):
     )
 
     content = Div(
-        Div(
-            Div(H1(_("device_list.title")), count_line),
-            A(_("device_list.add"), href="/new_device", cls="btn btn-primary"),
-            cls="page-header"
-        ),
+        page_head(_("device_list.title"), count_line, "devices", "",
+                  A(_("device_list.add"), href="/new_device", cls="btn btn-primary")),
         Div(*pills, healthsite_filter, cls="toolbar"),
         search_bar,
         table,

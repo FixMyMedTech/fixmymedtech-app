@@ -5,7 +5,7 @@ import httpx
 import features.groups.api as groups_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import page_shell, status_badge
+from components import page_shell, status_badge, page_head
 
 rt = APIRouter()
 
@@ -511,10 +511,9 @@ async def _build_page(req, token, lang, orgs, *, results=None, search=None, erro
 
     content = Div(
         Div(
-            Div(H1(_("groups.heading"))),
+            page_head(_("groups.heading"), "", "groups", "eng"),
             _action_buttons(_),
-            style="display:flex;flex-direction:column;gap:10px;justify-content:space-between;",
-            cls="page-header"
+            style="display:flex;flex-direction:column;gap:10px;justify-content:space-between;margin-bottom:22px;"
         ),
         body,
         _org_dialog(_),

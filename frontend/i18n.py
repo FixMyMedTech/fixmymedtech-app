@@ -3714,6 +3714,35 @@ for _key, (_en, _es, _fr) in _WAVE1_STRINGS.items():
 
 # Wave 2 (clinic CMMS): device ID card, "Needs you today", device wall,
 # service plans and the clinic Privacy tab. (en, es, fr)
+# Redesign to the platform brief (sidebar sections, dashboard hero, public
+# QR page, device list). Kept here, above the wave blocks, so new waves can
+# keep appending at the end of the file.
+_REDESIGN_STRINGS = {
+    'nav.sec_equipment': ('Equipment', 'Equipos', 'Équipements'),
+    'nav.sec_grow': ('Grow the network', 'Hacer crecer la red', 'Agrandir le réseau'),
+    'nav.sec_community': ('Community', 'Comunidad', 'Communauté'),
+    'dash.hero_eyebrow': ('Today', 'Hoy', 'Aujourd’hui'),
+    'dash.hero_hi': ('Hello {name}', 'Hola {name}', 'Bonjour {name}'),
+    'dash.hero_hi_anon': ('Hello', 'Hola', 'Bonjour'),
+    'dash.hero_line': ('{pct}% of your {n} devices are working.', 'El {pct} % de tus {n} equipos funciona.',
+                       '{pct} % de vos {n} appareils fonctionnent.'),
+    'dash.hero_empty': ('Add your first device and your clinic shows up here.',
+                        'Añade tu primer equipo y tu clínica aparecerá aquí.',
+                        'Ajoutez votre premier appareil et votre clinique apparaît ici.'),
+    'dash.piece_working': ('Working', 'Funcionan', 'Fonctionnent'),
+    'dash.piece_service': ('Being serviced', 'En mantenimiento', 'En maintenance'),
+    'dash.piece_fault': ('Broken down', 'Averiados', 'En panne'),
+    'dash.piece_overdue': ('Service overdue', 'Mantenimiento atrasado', 'Entretien en retard'),
+    'device_list.more_actions': ('More actions', 'Más acciones', 'Plus d’actions'),
+    'device_list.empty_title': ('No devices yet', 'Aún no hay equipos', 'Pas encore d’appareils'),
+    'pub.more_hint': ('Details, photo, history', 'Datos, foto, historial', 'Détails, photo, historique'),
+}
+
+for _key, (_en, _es, _fr) in _REDESIGN_STRINGS.items():
+    STRINGS["en"][_key] = _en
+    STRINGS["es"][_key] = _es
+    STRINGS["fr"][_key] = _fr
+
 _WAVE2_STRINGS = {
     'cmms.report_problem': ('Report a problem', 'Reportar un problema', 'Signaler un problème'),
     'cmms.next_service': ('Next service', 'Próximo servicio', 'Prochain entretien'),

@@ -9,6 +9,6 @@ A badge names a state in one or two words. Its colour follows one rule: who has 
 | `ok` | It works or is done | operational, resolved, closed |
 | `neutral` | Not in play | decommissioned, low |
 
-The word is always there, so colour is never the only signal. Render through `status_badge()` so the mapping lives in one place.
+Each badge starts with a 6px dot in its colour, in 11px bold system sans (no mono). The word is always there, so colour is never the only signal. Render through `status_badge()` so the mapping lives in one place.
 
 **What the consumer provides:** the status key; the label comes from i18n.

@@ -6,3 +6,11 @@ The page behind every QR tag, usually opened on a phone in a ward. Phone-first, 
 - Identity: category as eyebrow, device name as `h2`, short id and location as `small`, status badge on the right.
 - If the device is out of service, the `warn-bar` comes before anything else.
 - One primary action: "Report fault".
+
+## v3 layout (platform brief)
+
+Who the device is (category picture, name, maker and serial; status only when signed in), then two full-width buttons: **Report fault** (primary) and **Call an engineer**, plus **User guide** when one exists. Under them three mini tiles: next service, manuals, open repairs. Everything else (details, photo, location, map, documents, fault and service history) is folded under **More details**; a tile opens the fold at its section.
+
+## v3 layout (platform brief)
+
+Who the device is (category picture, name, maker and serial; status only when signed in), then two full-width buttons: **Report fault** (primary) and **Call an engineer**, plus **User guide** when one exists. Under them three mini tiles: next service, manuals, open repairs. Everything else (details, photo, location, map, documents, fault and service history) is folded under **More details**; a tile opens the fold at its section.

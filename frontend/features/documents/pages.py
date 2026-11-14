@@ -16,7 +16,7 @@ from i18n import t as make_t
 import features.auth.helper as auth_helper
 import features.documents.api as docs_api
 
-from components import pub_shell
+from components import pub_shell, page_head
 from features.documents.components import (DOCS_CSS, TYPES, count_label, doc_list, ifixit_results,
                                            type_label, TYPE_ICONS)
 from posthog_client import posthog_client
@@ -100,7 +100,7 @@ async def get(req, q: str = "", type: str = ""):
 
     content = Div(
         Style(DOCS_CSS),
-        Div(H1(_("docs.library_heading")), cls="page-header"),
+        page_head(_("docs.library_heading"), "", "library", "lead"),
         P(_("docs.library_intro"), style="margin-bottom:14px;"),
         Form(
             Input(type="search", name="q", value=q, cls="input", placeholder=_("docs.search_placeholder"),

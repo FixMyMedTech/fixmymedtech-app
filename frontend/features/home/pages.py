@@ -8,7 +8,7 @@ load_dotenv()
 # __ API imports __
 import features.auth.helper as auth_helper
 
-from components import page_shell, pub_shell
+from components import page_shell, pub_shell, lucide
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -29,17 +29,29 @@ async def get(req):
 
     token, redirect = auth_helper.require_auth(req)
 
+    # Platform brief: a gradient hero with the two main actions, then big
+    # picture tiles to the main places (signed in only).
+    def big(href, icon, tone, label):
+        return A(Span(lucide(icon), cls=f"ph-ico t-{tone}" if tone else "ph-ico"), B(label),
+                 href=href, cls="big-tile")
     landing = Div(
-        H1(_("home.welcome"), style="text-align:center;margin-bottom:6px;"),
-        P(_("home.subtitle"), style="text-align:center;color:var(--c-text-3);margin-bottom:20px;"),
         Div(
-            A(_("home.scan_cta"), href="/new_device", cls="btn btn-primary",
-              style="justify-content:center;"),
-            A(_("home.devices_cta"), href="/devices", cls="btn btn-secondary",
-              style="justify-content:center;"),
-            style="display:flex;gap:10px;justify-content:center;"
+            Div(H1(_("home.welcome")), P(_("home.subtitle"))),
+            Div(
+                A(lucide("qr"), _("home.scan_cta"), href="/new_device", cls="btn btn-light"),
+                A(_("home.devices_cta"), href="/devices", cls="btn btn-ghost-light"),
+                style="display:flex;gap:10px;flex-wrap:wrap;",
+            ),
+            cls="hero",
         ),
-        cls="card", style="max-width:460px;margin:80px auto;padding:40px 32px;align-self:start;"
+        Div(
+            big("/dashboard", "dashboard", "", _("nav.dashboard")),
+            big("/faults", "faults", "danger", _("nav.faults")),
+            big("/community", "journey", "lead", _("nav.community")),
+            big("/library", "library", "eng", _("nav.library")),
+            cls="big-tiles",
+        ) if not redirect else "",
+        style="max-width:960px;",
     )
 
     if redirect and token:

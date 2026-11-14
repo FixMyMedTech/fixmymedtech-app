@@ -11,10 +11,10 @@ import features.auth.helper as auth_helper
 import features.auth.api as auth_api
 import features.devices.api as devices_api
 
-from components import page_shell, status_badge, fmt_date, map_component, enum_label
+from components import page_shell, status_badge, fmt_date, map_component, enum_label, device_icon
 from features.devices.static.guides import category_label
 from features.documents.components import DOCS_CSS, doc_list
-from features.devices.cmms_ui import CMMS_CSS
+from features.devices.cmms_ui import CMMS_CSS, STATUS_TONE
 from datetime import date
 from i18n import t as make_t
 rt = APIRouter()
@@ -256,7 +256,7 @@ async def get(req, device_id: str):
                  href=f"#{anchor}", cls=f"tile is-{tone}", data_open="more")
     photo = (Img(src=f"/device/{device_id}/photo?v={photo_cache_key or 'original'}", alt="", cls="id-photo")
              if d.get("photo_key") else
-             Div((d.get("name") or "?")[:1].upper(), cls="id-photo id-photo-empty", aria_hidden="true"))
+             device_icon(cat, STATUS_TONE.get(d.get("status") or "", ""), "lg"))
     sub_bits = [b for b in (" ".join(p for p in (d.get("manufacturer"), d.get("model")) if p),
                             d.get("location") or _("device_detail.no_location")) if b]
     id_card = Div(

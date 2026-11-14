@@ -16,7 +16,7 @@ import features.auth.helper as auth_helper
 import features.auth.api as auth_api
 import features.faults.api as faults_api
 
-from components import page_shell, status_badge, fmt_date
+from components import page_shell, status_badge, fmt_date, page_head, lucide
 from posthog_client import posthog_client
 rt = APIRouter()
 
@@ -282,10 +282,10 @@ async def get(req, status: str = "", assign: str = ""):
         style="" if rows else "display:none;",
     )
 
-    empty_msg = Div(_("fault_list.empty"),
-        id="ft-empty",
-        style="text-align:center;padding:32px;color:var(--c-text-3);border:1px dashed "
-              "var(--c-border);border-radius:var(--r-lg);" + ("" if not rows else "display:none;"))
+    empty_msg = Div(Span(lucide("check"), cls="empty-ico", style="background:var(--ok-tint);color:var(--ok);"),
+        Span(_("fault_list.empty")),
+        id="ft-empty", cls="empty",
+        style="" if not rows else "display:none;")
 
     search_bar = Div(
         Input(id="ft-search", type="search", cls="input",
@@ -349,7 +349,7 @@ async def get(req, status: str = "", assign: str = ""):
     )
 
     content = Div(
-        Div(Div(H1(_("fault_list.title")), count_line), cls="page-header"),
+        page_head(_("fault_list.title"), count_line, "faults", "danger"),
         Div(*pills, cls="toolbar"),
         search_bar,
         table,

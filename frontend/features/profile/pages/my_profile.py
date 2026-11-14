@@ -12,7 +12,7 @@ from starlette.responses import RedirectResponse, Response
 import features.profile.api as profile_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import (page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF,
+from components import (page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF, page_head,
                         stats_section)
 
 rt = APIRouter()
@@ -189,7 +189,7 @@ def _status_line(me, _):
 
 def _content(me, _, stats=None, saved=False, error=None, notice=None):
     return Div(
-        Div(H1(_("profile.heading")), cls="page-header"),
+        page_head(_("profile.heading"), "", "profile", "brand"),
         notice,
         _status_line(me, _),
         Form(

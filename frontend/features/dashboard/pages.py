@@ -12,7 +12,7 @@ import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 
 from i18n import t as make_t
-from components import page_shell, status_badge, fmt_date, map_component
+from components import page_shell, status_badge, fmt_date, map_component, lucide, current_user_ctx
 from features.devices.cmms_ui import CMMS_CSS, device_wall, needs_list
 from datetime import date
 rt = APIRouter()
@@ -134,17 +134,18 @@ async def get(req):
 
     active = [d for d in devices if d.get("status") != "decommissioned"]
     needs = Div(
-        Div(H2(_("cmms.needs_today"), style="margin:0;font-size:20px;"),
+        Div(Span(lucide("flag"), cls="sec-ico danger" if stats.get("needs_you_total") else "sec-ico ok"),
+            H2(_("cmms.needs_today")),
             Span(_("cmms.needs_count").format(n=stats.get("needs_you_total", 0)),
                  cls="badge badge-danger" if stats.get("needs_you_total") else "badge badge-ok"),
-            style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"),
+            cls="sec-h"),
         needs_list(_, stats.get("needs_you", []), stats.get("needs_you_total", 0), lang),
-        cls="card", style="margin-bottom:16px;",
+        cls="card", style="margin-bottom:16px;", id="needs",
     )
     wall = Div(
-        Div(H2(_("cmms.wall_title"), style="margin:0;font-size:20px;"),
-            A(_("cmms.all_devices"), href="/devices", style="font-size:14px;"),
-            style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;"),
+        Div(Span(lucide("devices"), cls="sec-ico"), H2(_("cmms.wall_title")),
+            A(_("cmms.all_devices"), href="/devices", cls="side"),
+            cls="sec-h"),
         device_wall(_, active, date.today().isoformat()),
         cls="card", style="margin-bottom:16px;",
     )
@@ -157,13 +158,37 @@ async def get(req):
         cls="more",
     )
 
+    # Hero (platform brief): a greeting, one line with the share of working
+    # devices, and four "pieces" that open the device list on that status.
+    words = (current_user_ctx().get("name") or "").split()
+    # "Dr. Amina Okello" → "Dr. Amina"; "Amina Okello" → "Amina".
+    first = " ".join(words[:2] if words and words[0].endswith(".") else words[:1])
+    def piece(icon, tone, num, label, href):
+        return A(Div(Span(lucide(icon), cls=f"dot {tone}"), B(str(num)), cls="piece-top"),
+                 Small(label), href=href, cls="piece")
+    hero = Div(
+        Div(
+            Div(Div(_("dash.hero_eyebrow"), cls="hero-eyebrow"),
+                H1(_("dash.hero_hi").format(name=first) if first else _("dash.hero_hi_anon")),
+                P(_("dash.hero_line").format(pct=pct, n=total) if total else _("dash.hero_empty"))),
+            A(lucide("plus"), _("dashboard.add_device").lstrip("+ "), href="/new_device", cls="btn btn-light"),
+            cls="hero-top",
+        ),
+        Div(Span(style=f"width:{pct}%"), cls="meter", role="img",
+            aria_label=f'{pct}{_("dashboard.pct_operational")}') if total else "",
+        Div(
+            piece("check", "ok", by_status.get("operational", 0), _("dash.piece_working"), "/devices?status=operational"),
+            piece("wrench", "warn", by_status.get("maintenance", 0), _("dash.piece_service"), "/devices?status=maintenance"),
+            piece("faults", "danger", by_status.get("fault", 0), _("dash.piece_fault"), "/devices?status=fault"),
+            piece("calendar", "warn", stats.get("maintenance_overdue", 0), _("dash.piece_overdue"), "#needs"),
+            cls="pieces",
+        ) if total else "",
+        cls="hero",
+    )
+
     content = Div(
         Style(CMMS_CSS),
-        Div(
-            Div(H1(_("dashboard.title")), P(_("dashboard.subtitle"), style="color:var(--c-text-3);")),
-            A(_("dashboard.add_device"), href="/new_device", cls="btn btn-primary"),
-            cls="page-header"
-        ),
+        hero,
         needs,
         wall,
         numbers,

@@ -96,19 +96,41 @@ async def get_photo(req, device_id: str):
         return Response(status_code=404)
 
 
-def _documents_card(_, docs):
-    """Read-only: what's attached. Managing documents is on the edit page."""
+def _documents_card(_, docs, device: dict | None = None, device_id: str = ""):
+    """Read-only: what's attached. Managing documents is on the edit page.
+    Wave 5: manuals in the library for the same brand and model show too
+    (by_model); with none at all, anyone can ask the community to find it."""
+    device = device or {}
+    linked = [d for d in docs if not d.get("by_model")]
+    same_model = [d for d in docs if d.get("by_model")]
+    ask = ""
+    if not docs and device.get("model"):
+        ask = Form(
+            Input(type="hidden", name="manufacturer", value=device.get("manufacturer") or ""),
+            Input(type="hidden", name="model", value=device.get("model") or ""),
+            Input(type="hidden", name="device_id", value=device_id),
+            Input(type="hidden", name="back", value=f"/device/{device_id}#documents"),
+            P(_("w5.find_manual_ask"), style="color:var(--text-muted);font-size:14px;margin:0;flex:1;min-width:200px;"),
+            Button(_("w5.find_manual_btn"), type="submit", cls="btn btn-secondary btn-sm"),
+            method="post", action="/community/tasks/find-manual",
+            style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding:12px;"
+                  "border:1px dashed var(--border-strong);border-radius:var(--radius-card);",
+        )
     return Div(
         Style(DOCS_CSS),
         H3(_("docs.heading"), style="margin-bottom:12px;"),
-        doc_list(_, docs) if docs else
-        P(_("docs.none_assigned"), style="color:var(--c-text-3);font-size:.875rem;"),
+        doc_list(_, linked) if linked else
+        P(_("docs.none_assigned"), style="color:var(--text-muted);font-size:.875rem;"),
+        Div(Div(_("w5.same_model_docs").format(model=" ".join(x for x in (device.get("manufacturer"), device.get("model")) if x)),
+                cls="eyebrow", style="margin:14px 0 8px;"),
+            doc_list(_, same_model)) if same_model else "",
+        ask,
         id="documents", cls="card", style="margin-bottom:16px;",
     )
 
 
 @rt("/device/{device_id}")
-async def get(req, device_id: str):
+async def get(req, device_id: str, msg: str = "", error: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
@@ -273,6 +295,7 @@ async def get(req, device_id: str):
             A(_("cmms.report_problem"), href=f"/d/{device_id}/report", cls="btn btn-primary"),
             A(_("call.call_btn"), href=f"/d/{device_id}/call", cls="btn btn-secondary"),
             A(_("maintenance_log.submit"), href=f"/d/{device_id}/maintenance-log", cls="btn btn-secondary btn-sm"),
+            A(_("spare.cta"), href=f"/device/{device_id}/spare-part", cls="btn btn-secondary btn-sm"),
             Button(_("device_detail.show_qr"), type="button", cls="btn btn-secondary btn-sm", onclick="showDeviceQR()"),
             cls="id-cta",
         ),
@@ -292,6 +315,8 @@ async def get(req, device_id: str):
         Style(CMMS_CSS),
         A(_("device_detail.back"), href="/devices",
         style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;margin-bottom:14px;display:inline-block;"),
+        Div(msg, cls="alert alert-success", role="status") if msg else "",
+        Div(error, cls="alert alert-error", role="alert") if error else "",
         id_card,
         # QR popup + generator
         Script(src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"),
@@ -520,7 +545,7 @@ async def get(req, device_id: str):
             ),
             cls="two-col", style="margin-bottom:16px;"
         ),
-        _documents_card(_, docs),
+        _documents_card(_, docs, d, device_id),
         # Maintenance logs
         Div(
             Div(

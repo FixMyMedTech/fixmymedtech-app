@@ -13,6 +13,10 @@ nav:
     - Register a device: register-device.md
     - Report a fault and get it repaired: report-fault.md
     - Attach a manual and search the library: attach-manual.md
+    - Look after your clinic's devices: clinic-devices.md
+    - Call an engineer: call-engineer.md
+    - Engineer workspace: engineer-workspace.md
+    - Claims, task board and missing manuals: community-work.md
   - Developers guide:
   # - Set Up: setup.md
     - Getting Started: getting_started.md

@@ -149,6 +149,10 @@ def _achievement_panel(ach, catalogue, me, _, lang):
               for i, n in enumerate(levels)], cls="cj-levels"),
         Span(_("cj.map.levels_help"), cls="cj-small"),
         P(how),
+        # Wave 5: recognised achievements are claimed, then a team confirms.
+        A(_("w5.claim_this"), href=f"/community/claims?key={quote(ach['key'])}", cls="btn btn-primary btn-sm",
+          style="align-self:flex-start;")
+        if ach["source"] != "metric" and is_member else "",
         Span(_("cj.map.earners").format(n=ach.get("earners", 0)), cls="cj-small")
         if ach["source"] != "metric" else "",
         cls="cj-card", id="cj-panel")

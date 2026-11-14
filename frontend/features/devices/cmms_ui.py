@@ -148,3 +148,39 @@ def needs_list(_, items: list, total: int, lang: str):
     more = P(_("cmms.needs_more").format(n=total - len(items)), style="color:var(--text-muted);font-size:12px;") \
         if total > len(items) else ""
     return Div(Ul(*rows, cls="needs"), more)
+
+
+def clinic_of(d: dict) -> dict:
+    """The clinic a device sits in: its healthsite, else its owning org."""
+    return d.get("healthsite") or d.get("organization") or {}
+
+
+def clinic_groups(_, devices: list, today_iso: str):
+    """Wave 3, "my devices by clinic": one card per clinic, the devices that
+    need someone first, coloured like the ward wall."""
+    if not devices:
+        return P(_("device_list.empty"), style="color:var(--text-muted);")
+    groups: dict = {}
+    for d in devices:
+        c = clinic_of(d)
+        key = str(c.get("id") or "")
+        groups.setdefault(key, {"clinic": c, "devices": []})["devices"].append(d)
+    order = {"danger": 0, "warn": 1, "ok": 2, "neutral": 3}
+    cards = []
+    for key, g in sorted(groups.items(), key=lambda kv: (kv[1]["clinic"].get("name") or "~").lower()):
+        devs = sorted(g["devices"], key=lambda d: (order[device_tone(d, today_iso)], (d.get("name") or "").lower()))
+        needing = sum(1 for d in devs if device_tone(d, today_iso) in ("danger", "warn"))
+        c = g["clinic"]
+        name = c.get("name") or _("cmms.no_ward")
+        cards.append(Div(
+            Div(A(name, href=f"/groups/{c['id']}/view", cls="ward-name", style="text-decoration:none;") if c.get("id")
+                else Span(name, cls="ward-name"),
+                Span(str(len(devs)), cls="ward-count"), cls="ward-head"),
+            P(_("wave3.clinic_needs").format(n=needing) if needing else _("wave3.clinic_ok"),
+              style=f"font-size:12px;margin:-4px 0 10px;color:var(--{'warn' if needing else 'ok'});font-weight:600;"),
+            Div(*[A(Span(cls="dot"), Span(d.get("name") or "", cls="chip-name"),
+                    href=f"/device/{d['id']}", title=d.get("location") or "",
+                    cls=f"dev is-{device_tone(d, today_iso)}") for d in devs], cls="ward-devs"),
+            cls="ward",
+        ))
+    return Div(*cards, cls="wall")

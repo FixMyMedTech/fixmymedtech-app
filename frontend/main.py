@@ -17,7 +17,7 @@ from posthog_logs import posthog_log
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
-from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,device_edit
+from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,device_edit, spare_part
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
@@ -200,7 +200,7 @@ async def post(req):
 from features.community.pages import (
     join as community_join, start as community_start, journey as community_journey,
     achievements as community_achievements, welcome as community_welcome,
-    admin_applicants, admin_members, admin_teams, admin_history,
+    admin_applicants, admin_members, admin_teams, admin_history, work as community_work,
 )
 
 auth_login.rt.to_app(app)
@@ -221,6 +221,7 @@ clinic_privacy.rt.to_app(app)
 calls_pages.rt.to_app(app)
 organization_detail.rt.to_app(app)
 organization_manage.rt.to_app(app)
+spare_part.rt.to_app(app)
 device_detail.rt.to_app(app)
 device_list.rt.to_app(app)
 device_edit.rt.to_app(app)
@@ -254,6 +255,7 @@ admin_applicants.rt.to_app(app)
 admin_members.rt.to_app(app)
 admin_teams.rt.to_app(app)
 admin_history.rt.to_app(app)
+community_work.rt.to_app(app)
 
 posthog_log.info(
     "application_started",

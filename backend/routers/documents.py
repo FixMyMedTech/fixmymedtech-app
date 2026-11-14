@@ -64,14 +64,32 @@ def doc_payload(d: Document) -> dict:
 
 
 async def device_documents(db: AsyncSession, device_id) -> list[dict]:
-    """A device's documents, newest link first (also used by routers/devices.py)."""
+    """A device's documents, newest link first (also used by routers/devices.py).
+
+    Wave 5, manuals by brand and model: after the documents linked to this
+    device come the library documents of the same model (and brand, when
+    both name one), so a manual found once helps every clinic with that
+    device. Those carry by_model=True and are not linked rows."""
     rows = (await db.execute(
         select(Document, DeviceDocument.added_by)
         .join(DeviceDocument, DeviceDocument.document_id == Document.id)
         .where(DeviceDocument.device_id == device_id)
         .order_by(DeviceDocument.created_at.desc())
     )).all()
-    return [{**doc_payload(d), "added_by": str(added_by) if added_by else None} for d, added_by in rows]
+    out = [{**doc_payload(d), "added_by": str(added_by) if added_by else None} for d, added_by in rows]
+    device = await db.get(Device, device_id)
+    model = (device.model or "").strip().lower() if device else ""
+    if model:
+        brand = (device.manufacturer or "").strip().lower()
+        q = select(Document).where(func.lower(func.trim(Document.model)) == model)
+        if brand:
+            q = q.where(or_(Document.manufacturer.is_(None), Document.manufacturer == "",
+                            func.lower(func.trim(Document.manufacturer)) == brand))
+        linked = {o["id"] for o in out}
+        for d in (await db.execute(q.order_by(Document.created_at.desc()).limit(20))).scalars().all():
+            if str(d.id) not in linked:
+                out.append({**doc_payload(d), "added_by": None, "by_model": True})
+    return out
 
 
 async def _load_device(db: AsyncSession, device_id: UUID) -> Device:

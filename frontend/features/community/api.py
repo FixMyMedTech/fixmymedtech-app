@@ -105,3 +105,68 @@ async def edit_team(token: str, team_key: str, data: dict):
 
 async def history(token: str, offset: int = 0):
     return await _get(f"/api/community/admin/history{_qs(offset=offset or None)}", token)
+
+
+# ── Wave 5: claims to validate and the task board (routers/community_work.py) ──
+async def claim_options(token: str):
+    return await _get("/api/community/claims/options", token)
+
+
+async def make_claim(token: str, data: dict):
+    return await _post("/api/community/claims", data, token)
+
+
+async def add_claim_proof(token: str, claim_id: str, filename: str, content: bytes, content_type: str = None):
+    import httpx
+    from config.api import API_URL, _raise
+    async with httpx.AsyncClient() as client:
+        r = await client.post(f"{API_URL}/api/community/claims/{claim_id}/proof",
+                              files={"photo": (filename, content, content_type or "application/octet-stream")},
+                              headers={"Authorization": f"Bearer {token}"})
+        _raise(r)
+        return r.json()
+
+
+async def get_claim_proof(token: str, claim_id: str):
+    import httpx
+    from config.api import API_URL
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{API_URL}/api/community/claims/{claim_id}/proof",
+                             headers={"Authorization": f"Bearer {token}"})
+        r.raise_for_status()
+        return r.content, r.headers.get("content-type", "image/jpeg")
+
+
+async def my_claims(token: str):
+    return await _get("/api/community/claims/mine", token)
+
+
+async def claims_to_review(token: str):
+    return await _get("/api/community/claims/review", token)
+
+
+async def answer_claim(token: str, claim_id: str, note: str):
+    return await _patch(f"/api/community/claims/{claim_id}", {"note": note}, token)
+
+
+async def review_claim(token: str, claim_id: str, action: str, note: str = ""):
+    """action: confirm | more | decline"""
+    return await _post(f"/api/community/claims/{claim_id}/{action}", {"note": note or None}, token)
+
+
+async def task_board(token: str):
+    return await _get("/api/community/tasks", token)
+
+
+async def create_task(token: str, data: dict):
+    return await _post("/api/community/tasks", data, token)
+
+
+async def find_manual(token: str, manufacturer: str, model: str, device_id: str = None):
+    return await _post("/api/community/tasks/find-manual",
+                       {"manufacturer": manufacturer or None, "model": model, "device_id": device_id or None}, token)
+
+
+async def task_action(token: str, task_id: str, action: str, data: dict | None = None):
+    """action: take | done | check | send-back | drop | cancel"""
+    return await _post(f"/api/community/tasks/{task_id}/{action}", data or {}, token)

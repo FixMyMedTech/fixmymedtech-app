@@ -196,5 +196,7 @@ The tests cover member status, the pause rule, star levels, the seeded levels an
 ## Not yet built
 
 - Communicator achievements: none are defined yet, so the Communicator team recognises none.
-- Discord announcements when someone joins a team or earns a star, the public members page, points and the task board.
+- Discord announcements when someone joins a team or earns a star, and the public members page.
+
+Claims for recognised achievements, the leader portal (**To validate**) and the task board with points are described in [Claims, task board and missing manuals](community-work.md).
 - Adding a new team or achievement tile to the map needs a line in `MAP_LAYOUT` (the database rows alone don't place it).

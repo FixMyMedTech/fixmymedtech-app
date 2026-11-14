@@ -4033,6 +4033,7 @@ _WAVE35_STRINGS = {
     'w5.send_back': ('Send back', 'Devolver', 'Renvoyer'),
     'w5.done_by': ('Done by {who} · {date}', 'Hecha por {who} · {date}', 'Faite par {who} · {date}'),
     # claims
+    'w5.claim_this': ('Claim it', 'Reclamarlo', 'Le déclarer'),
     'w5.claims_page_title': ('Claim an achievement', 'Reclamar un logro', 'Déclarer une réussite'),
     'w5.claims_page_intro': ('Some achievements can’t be counted by the app: an event you organised, a clinic you introduced. Tell your team; they confirm it.', 'Algunos logros la app no los puede contar: un evento que organizaste, una clínica que presentaste. Cuéntaselo a tu equipo; ellos lo confirman.', 'Certaines réussites ne se comptent pas toutes seules : un événement organisé, une clinique présentée. Dites-le à votre équipe ; elle confirme.'),
     'w5.claim_form_title': ('What did you do?', '¿Qué hiciste?', 'Qu’avez-vous fait ?'),

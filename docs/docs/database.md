@@ -327,3 +327,42 @@ run each SQL file exactly once, in filename order.
 |--------|------|----------|---------|-------|
 | `name` | TEXT | No (PK) | — | Migration filename, e.g. `016_profile_country.sql` |
 | `applied_at` | TIMESTAMPTZ | No | `NOW()` | When it ran |
+
+## Tables added by the platform build (migrations 029–033)
+
+These come from the platform brief, built in waves. Each migration file starts with a comment that explains its tables in full.
+
+| Migration | Tables and columns | Used by |
+| --- | --- | --- |
+| `029_community_journey.sql` | `community_teams`, `team_members`, `achievements`, `achievement_records`, `member_quests`, `community_applications`, `community_changes`; profile columns `member_status`, `join_path`, `city`, story and consent fields | [Community journey](community-guide.md) |
+| `030_onboarding_flow.sql` | `responsible_engineers`, `onboarding_invitations`; `profiles.account_kind`; `organizations.invited_by`, `clinic_status`, `push_to_healthsites` | Engineer and clinic onboarding, `/host` |
+| `031_service_plans.sql` | `service_interval_months` on `device_categories` and `devices`; `maintenance_reminders`; `organizations.show_devices_on_profiles`, `hide_name_on_profiles` | [Look after your clinic's devices](clinic-devices.md) |
+| `032_call_an_engineer.sql` | `fault_reports.call_status`, `urgency`, `call_started_at`, `call_started_by`, `call_widened_at`; `fault_call_notices`, `fault_offers`, `fault_ratings` | [Call an engineer](call-engineer.md) |
+| `033_claims_and_tasks.sql` | `achievement_claims`, `community_tasks` | [Claims, task board and missing manuals](community-work.md) |
+
+### achievement_claims
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID | Primary key |
+| `profile_id` | UUID | Who claims |
+| `achievement_key` | TEXT | A `recognised` achievement |
+| `count` | INTEGER | How many times (1–100) |
+| `note`, `proof_key` | TEXT | What happened; optional photo in MinIO |
+| `status` | TEXT | `pending`, `more_info`, `confirmed`, `declined` |
+| `confirmed_by` | UUID[] | Team members who agreed (two needed without a lead) |
+| `reviewed_by`, `reviewed_at`, `review_note` | | Last review |
+| `record_id` | UUID | The `achievement_records` row created on confirmation |
+
+### community_tasks
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID | Primary key |
+| `kind` | TEXT | `find_manual`, `verify_clinic`, `fill_brand_list`, `other` |
+| `title`, `details` | TEXT | |
+| `points` | INTEGER | Given when the task is checked |
+| `status` | TEXT | `open`, `taken`, `review`, `done`, `cancelled` |
+| `ref_manufacturer`, `ref_model`, `ref_device_id`, `ref_org_id` | | What the task is about (a find-manual task is unique per open brand + model) |
+| `created_by`, `taken_by`, `taken_at`, `done_note`, `done_at`, `checked_by`, `checked_at` | | Who did what, when |
+

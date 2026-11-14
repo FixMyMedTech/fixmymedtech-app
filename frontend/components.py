@@ -86,47 +86,45 @@ def _js_json(value) -> str:
 
 # ── Design tokens ────────────────────────────────────────────
 CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
-  --font-body:
-		'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-		'Open Sans', 'Helvetica Neue', sans-serif;
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  /* Type: the design system's system sans (fast on slow connections). */
+  --font-body: var(--font-sans);
+  --font-display: var(--font-sans);
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
-  /* Light */
-  --c-bg:        #f9fafb;
-  --c-bg-2:      #f1f5f9;
-  --c-surface:   #ffffff;
-  --c-border:    #e2e8f0;
-  --c-primary:   #2563eb;
-  --c-primary-lt: rgba(37,99,235,.10);
-  --c-primary-mid: #1d4ed8;
-  --c-text:      #0f172a;
-  --c-text-2:    #475569;
-  --c-text-3:    #94a3b8;
-  --c-green:     #16a34a;
-  --c-green-lt:  #dcfce7;
-  --c-amber:     #d97706;
-  --c-amber-lt:  #fef3c7;
-  --c-red:       #dc2626;
-  --c-red-lt:    #fee2e2;
-  --c-blue:      #2563eb;
-  --c-blue-lt:   #dbeafe;
+  /* Old --c-* names, kept for one release as aliases of the design-system
+     tokens below (docs/design-system/README.md, "Moving the app onto this
+     system"). New code uses the token names directly. Because they point at
+     the tokens, the dark theme needs no copy of them. */
+  --c-bg:          var(--bg);
+  --c-bg-2:        var(--sunken);
+  --c-surface:     var(--surface);
+  --c-border:      var(--border);
+  --c-primary:     var(--primary);
+  --c-primary-lt:  var(--primary-tint);
+  --c-primary-mid: var(--primary-hover);
+  --c-text:        var(--text);
+  --c-text-2:      var(--text-muted);
+  --c-text-3:      var(--text-muted);
+  --c-green:       var(--ok);
+  --c-green-lt:    var(--ok-tint);
+  --c-amber:       var(--warn);
+  --c-amber-lt:    var(--warn-tint);
+  --c-red:         var(--danger);
+  --c-red-lt:      var(--danger-tint);
+  --c-blue:        var(--primary);
+  --c-blue-lt:     var(--primary-tint);
 
   /* legacy aliases used by inline styles */
-  --color-text:  var(--c-text);
-  --color-bg-0:  var(--c-bg);
-  --color-bg-1:  var(--c-bg);
-  --color-bg-2:  var(--c-bg-2);
-  --color-theme-1: var(--c-primary);
-  --color-theme-2: var(--c-primary-mid);
+  --color-text:  var(--text);
+  --color-bg-0:  var(--bg);
+  --color-bg-1:  var(--bg);
+  --color-bg-2:  var(--sunken);
+  --color-theme-1: var(--primary);
+  --color-theme-2: var(--primary-hover);
 
 
-  /* FixMyMedTech design system tokens (docs/design-system/tokens.json).
-     New screens use these names; the --c-* names above stay until phase 2
-     moves the whole app over. */
+  /* FixMyMedTech design system tokens (docs/design-system/tokens.json). */
   --brand-teal: #1fb0a9;
   --brand-deep: #01437a;
   --brand-navy: #132b45;
@@ -171,28 +169,6 @@ CSS = """
 }
 
 :root[data-theme="dark"] {
-  --c-bg:        #0f172a;
-  --c-bg-2:      #1e293b;
-  --c-surface:   #1e293b;
-  --c-border:    #334155;
-  --c-primary:   #60a5fa;
-  --c-primary-lt: rgba(96,165,250,.14);
-  --c-primary-mid: #93c5fd;
-  --c-text:      #f1f5f9;
-  --c-text-2:    #cbd5e1;
-  --c-text-3:    #94a3b8;
-  --c-green:     #4ade80;
-  --c-green-lt:  #14532d;
-  --c-amber:     #fbbf24;
-  --c-amber-lt:  #78350f;
-  --c-red:       #f87171;
-  --c-red-lt:    #7f1d1d;
-  --c-blue:      #60a5fa;
-  --c-blue-lt:   #1e3a8a;
-  --color-text:  var(--c-text);
-  --color-bg-0:  var(--c-bg);
-  --color-bg-1:  var(--c-bg);
-  --color-bg-2:  var(--c-bg-2);
   --bg: #0b1a2c;
   --surface: #13283f;
   --sunken: #112538;
@@ -301,14 +277,15 @@ body.sidebar-collapsed .sb-foot { display: none; }
 .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 16px; border-radius:var(--r-md); font-family:var(--font-body); font-size:.875rem; font-weight:500; line-height:1.4; cursor:pointer; transition:all .15s; border:1px solid transparent; text-decoration:none; }
 .btn-primary { background:var(--c-primary); color:#fff; }
 .btn-primary:hover { background:var(--c-primary-mid); }
-.btn-secondary { background:var(--c-surface); color:var(--c-text); border-color:var(--c-border); }
+.btn-secondary { background:var(--surface); color:var(--text); border-color:var(--border-strong); }
 .btn-secondary:hover { border-color:var(--c-primary); color:var(--c-primary); }
 .btn-danger { background:var(--c-red-lt); color:var(--c-red); border:1px solid transparent; }
-.btn-warning { background:var(--c-amber-lt); color:var(--c-amber); border:1px solid transparent; }
-.btn-warning:hover { filter:brightness(.96); }
+/* btn-warning and btn-outline are merged into btn-secondary (design system). */
+.btn-warning { background:var(--surface); color:var(--text); border:1px solid var(--border-strong); }
+.btn-warning:hover { border-color:var(--primary); color:var(--primary); }
 .btn-sm { padding:4px 10px; font-size:.8rem; }
-.btn-outline { background:var(--c-surface); color:var(--c-text-2); border:1px solid var(--c-border); }
-.btn-outline:hover { background:var(--c-bg-2); border-color:var(--c-primary); color:var(--c-primary); }
+.btn-outline { background:var(--surface); color:var(--text); border:1px solid var(--border-strong); }
+.btn-outline:hover { border-color:var(--primary); color:var(--primary); }
 .oauth-divider { text-align:center; font-size:.78rem; color:var(--c-text-3); margin:6px 0 10px; position:relative; }
 .oauth-divider::before, .oauth-divider::after { content:""; position:absolute; top:50%; width:34%; height:1px; background:var(--c-border); }
 .oauth-divider::before { left:0; }
@@ -325,11 +302,12 @@ body.sidebar-collapsed .sb-foot { display: none; }
 
 /* Badges */
 .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:9999px; font-size:.7rem; font-weight:600; letter-spacing:.02em; font-family:var(--font-mono); }
-.badge-green { background:var(--c-green-lt); color:var(--c-green); }
-.badge-amber { background:var(--c-amber-lt); color:var(--c-amber); }
-.badge-red   { background:var(--c-red-lt);   color:var(--c-red);   }
-.badge-blue  { background:var(--c-blue-lt);  color:var(--c-blue);  }
-.badge-gray  { background:var(--c-bg-2);     color:var(--c-text-3);}
+/* Old badge names, aliases of badge-ok / -warn / -danger / -neutral. */
+.badge-green { background:var(--ok-tint); color:var(--ok); }
+.badge-amber { background:var(--warn-tint); color:var(--warn); }
+.badge-red   { background:var(--danger-tint); color:var(--danger); }
+.badge-blue  { background:var(--primary-tint); color:var(--primary); }
+.badge-gray  { background:var(--sunken); color:var(--text-muted); }
 
 /* Forms */
 .input { width:100%; padding:9px 13px; border:1px solid var(--c-border); border-radius:var(--r-md); font-family:var(--font-body); font-size:.875rem; background:var(--c-surface); color:var(--c-text); transition:border-color .15s, box-shadow .15s; }
@@ -786,56 +764,56 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
     _ = make_t(lang)
     m = {
         "device": {
-            "operational":    (_("badge.operational"),     "badge-green"),
-            "maintenance":    (_("badge.maintenance"),     "badge-amber"),
-            "fault":          (_("badge.fault"),           "badge-red"),
-            "decommissioned": (_("badge.decommissioned"),  "badge-gray"),
+            "operational":    (_("badge.operational"),     "badge-ok"),
+            "maintenance":    (_("badge.maintenance"),     "badge-warn"),
+            "fault":          (_("badge.fault"),           "badge-danger"),
+            "decommissioned": (_("badge.decommissioned"),  "badge-neutral"),
         },
         "fault": {
-            "open":        (_("badge.open"),        "badge-red"),
-            "assigned":    (_("badge.assigned"),    "badge-amber"),
-            "diagnosed":   (_("badge.diagnosed"),   "badge-amber"),
-            "approved":    (_("badge.approved"),    "badge-blue"),
-            "in_progress": (_("badge.in_progress"), "badge-blue"),
-            "resolved":    (_("badge.resolved"),    "badge-green"),
+            "open":        (_("badge.open"),        "badge-danger"),
+            "assigned":    (_("badge.assigned"),    "badge-warn"),
+            "diagnosed":   (_("badge.diagnosed"),   "badge-warn"),
+            "approved":    (_("badge.approved"),    "badge-warn"),
+            "in_progress": (_("badge.in_progress"), "badge-warn"),
+            "resolved":    (_("badge.resolved"),    "badge-ok"),
         },
         "severity": {
-            "low":      (_("badge.low"),      "badge-gray"),
-            "medium":   (_("badge.medium"),   "badge-amber"),
-            "high":     (_("badge.high"),     "badge-red"),
-            "critical": (_("badge.critical"), "badge-red"),
+            "low":      (_("badge.low"),      "badge-neutral"),
+            "medium":   (_("badge.medium"),   "badge-warn"),
+            "high":     (_("badge.high"),     "badge-danger"),
+            "critical": (_("badge.critical"), "badge-danger"),
         },
         "log": {
-            "open":        (_("badge.open"),        "badge-red"),
-            "in_progress": (_("badge.in_progress"), "badge-blue"),
-            "closed":      (_("badge.closed"),      "badge-green"),
+            "open":        (_("badge.open"),        "badge-danger"),
+            "in_progress": (_("badge.in_progress"), "badge-warn"),
+            "closed":      (_("badge.closed"),      "badge-ok"),
         },
         # Onboarding (design system: ok = done, warn = someone is on it,
         # neutral = not in play).
         "quest": {
-            "done": (_("ob.badge_done"),  "badge-green"),
-            "todo": (_("ob.badge_todo"),  "badge-gray"),
+            "done": (_("ob.badge_done"),  "badge-ok"),
+            "todo": (_("ob.badge_todo"),  "badge-neutral"),
         },
         "engineer": {
-            "can_register":   (_("ob.badge_can_register"),   "badge-green"),
-            "waiting_quests": (_("ob.badge_waiting_quests"), "badge-amber"),
-            "waiting_talk":   (_("ob.badge_waiting_talk"),   "badge-amber"),
-            "not_now":        (_("ob.badge_not_now"),        "badge-gray"),
+            "can_register":   (_("ob.badge_can_register"),   "badge-ok"),
+            "waiting_quests": (_("ob.badge_waiting_quests"), "badge-warn"),
+            "waiting_talk":   (_("ob.badge_waiting_talk"),   "badge-warn"),
+            "not_now":        (_("ob.badge_not_now"),        "badge-neutral"),
         },
         "invitation": {
-            "sent":            (_("ob.badge_sent"),            "badge-amber"),
-            "account_created": (_("ob.badge_account_created"), "badge-amber"),
-            "clinic_ready":    (_("ob.badge_clinic_ready"),    "badge-amber"),
-            "confirmed":       (_("ob.badge_confirmed"),       "badge-green"),
-            "not_now":         (_("ob.badge_not_now"),         "badge-gray"),
-            "cancelled":       (_("ob.badge_cancelled"),       "badge-gray"),
+            "sent":            (_("ob.badge_sent"),            "badge-warn"),
+            "account_created": (_("ob.badge_account_created"), "badge-warn"),
+            "clinic_ready":    (_("ob.badge_clinic_ready"),    "badge-warn"),
+            "confirmed":       (_("ob.badge_confirmed"),       "badge-ok"),
+            "not_now":         (_("ob.badge_not_now"),         "badge-neutral"),
+            "cancelled":       (_("ob.badge_cancelled"),       "badge-neutral"),
         },
         "clinic": {
-            "active":       (_("ob.badge_clinic_active"),       "badge-green"),
-            "talk_pending": (_("ob.badge_clinic_talk_pending"), "badge-amber"),
+            "active":       (_("ob.badge_clinic_active"),       "badge-ok"),
+            "talk_pending": (_("ob.badge_clinic_talk_pending"), "badge-warn"),
         },
     }
-    label, cls = m.get(type, m["device"]).get(status, (status, "badge-gray"))
+    label, cls = m.get(type, m["device"]).get(status, (status, "badge-neutral"))
     return Span(label, cls=f"badge {cls}")
 
 
@@ -989,8 +967,8 @@ def sidebar(current: str = "", lang: str = "en"):
     return Aside(
         Div(
             A(
-                Span("✚", cls="brand-mark"),
-                Span("FixMyMedTech", cls="brand"),
+                # Design system: the name is always the logo image, never retyped.
+                Img(src="/static/fixmymedtech_logo.png", cls="brand-logo", alt="FixMyMedTech"),
                 href="/home",
                 title="FixMyMedTech",
             ),

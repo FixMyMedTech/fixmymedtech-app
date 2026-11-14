@@ -64,15 +64,13 @@ def _detail(a, hosts, mine, _):
     app = a.get("application") or {}
     pid = a["id"]
     can_decide = "decide_applicants" in mine
-    can_confirm = "confirm_quests" in mine
     quests = a.get("quests") or {}
     quest_rows = []
-    for key in ("profile_complete", "intro_video", "meeting_held", "discord_joined", "consent_answered"):
+    # The three welcome quests (utils/community.py WELCOME_QUESTS). The talk is
+    # confirmed with "The call took place" below.
+    for key in ("profile_complete", "profile_photo", "community_talk"):
         done = quests.get(key)
         extra = ""
-        if key == "discord_joined" and not done and can_confirm:
-            extra = Form(Button(_("cj.admin.mark_discord"), type="submit", cls="btn btn-secondary btn-sm"),
-                         method="post", action=f"/community/admin/applicants/{pid}/quest/discord_joined")
         quest_rows.append(Div(check_mark(done), Div(Span(_(f"cj.quest.{key}"), cls="cj-quest-title"), extra,
                                                      cls="cj-quest-body"),
                               cls="cj-quest" + (" done" if done else "")))
@@ -99,7 +97,7 @@ def _detail(a, hosts, mine, _):
             Div(
                 Form(Button(_("cj.admin.meeting_held"), type="submit", cls="btn btn-primary"),
                      method="post", action=f"/community/admin/applicants/{pid}/meeting-held")
-                if not quests.get("meeting_held") else Span(_("cj.admin.meeting_recorded"), cls="badge badge-ok"),
+                if not quests.get("community_talk") else Span(_("cj.admin.meeting_recorded"), cls="badge badge-ok"),
                 cls="cj-row",
             ),
             Span(_("cj.admin.meeting_held_help"), cls="cj-small"),

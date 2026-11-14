@@ -1,14 +1,14 @@
 # Community journey: how to use it
 
-Status: phase 1 rebuilt around teams and achievements (2026-11-04). The design and the later phases are in the [technical plan](community-journey.md).
+Status: phase 1 rebuilt around teams and achievements (2026-11-04), merged with the engineer and clinic onboarding flow (2026-11-14: three welcome quests, clinics and talk hosts). The design and the later phases are in the [technical plan](community-journey.md).
 
 This page explains what the community journey does, how each kind of person uses it, and how to set it up and run it. It is written for whoever runs the community, not only for developers.
 
 ## What it does, in short
 
-- **New people join at `/join`.** They become **applicants**. An applicant can log in, but only sees Getting started, the teams and achievements map, and their profile. The rest of the platform (devices, faults, dashboard, organisations, the device library) stays closed.
+- **New engineers join at `/join`** (clinics at `/clinic/signup` or through an engineer's invitation). They become **applicants**, shown as **Visitor**. A Visitor can log in, but only sees Getting started, the manual library and their profile. The rest of the platform (devices, faults, dashboard, organisations) stays closed.
 - **Getting started opens on an introduction page** with the concept video first, then "How it works" in three steps. The welcome quests are one click further.
-- **Five welcome quests make you a member.** When all five are done, the person becomes a **member**, sees a welcome page, and the whole platform opens.
+- **Three welcome quests make you a Contributor**: complete your profile, add a photo, attend a community talk. When all three are done the person's status becomes `member` (shown as **Contributor**; "Member" is kept for after the Sociocracy for All training), they see a welcome page, and the whole platform opens: invite clinics, register devices for the clinics that named them.
 - **There are three teams**: **Communicator**, **Community Builder** and **Clinics Connector**. In each team a person is a **Candidate**, a **Member** or a **Lead**. The team name is the title people put on LinkedIn.
 - **There are five achievements, each with 10 levels of stars.** Mapper and Ambassador belong to Clinics Connector; Supporter, Event Organiser and Active Builder belong to Community Builder. Mapper is counted by the platform (devices added); the others are recognised by members of their team.
 - **The map is public** (`/community/achievements`): hexagon tiles for the first step, the teams and the achievements, with a detail panel beside it.
@@ -20,21 +20,26 @@ This page explains what the community journey does, how each kind of person uses
 
 ![Introduction page](images/community/intro.png)
 
-The introduction page (`/community/start`) is the first thing an applicant sees. Watching the video to the end there (or pressing **I've watched it**) also ticks the video quest.
+The introduction page (`/community/start`) is the first thing an applicant sees, with the concept video. The video is not a quest.
 
 ![Welcome quests](images/community/start.png)
 
 | Quest | How it gets done |
 | --- | --- |
-| Tell your story | Automatic once the profile has a photo, a country, a city, a country of training and a "why biomedical engineering" answer. |
-| Watch the welcome video | Automatic when the YouTube video on the introduction page reaches the end, or with the "I've watched it" button. |
-| Meet a community member | The host presses **The call took place** in Community admin after the welcome call. |
-| Join us on Discord | Automatic when the person connects Discord on their profile. If they joined without connecting, a Community Builder presses **Mark as joined**. |
-| Choose how we share your story | Automatic when they answer yes or no to the social media question. |
+| Complete your profile | Automatic once the profile has a name, a country, a city and a "why biomedical engineering" answer. |
+| Add a photo | Automatic once the profile has a photo. |
+| Attend a community talk | A Community Builder (or the talk host on `/host`) presses **The call took place** after the talk. |
+
+Joining the Discord and the social media answer are on the same page as optional extras; they do not open anything.
 
 The quests can be done in any order. The status changes the moment the last one is done; on their next page load the person lands on the welcome page.
 
-**Clinic staff** invited by their clinic (the existing organisation invite) become **clinic staff**, not applicants. The platform is open for them right away. Their Getting started page invites them to do the same quests if they want to become community members.
+**Clinic staff** invited by their clinic (the existing organisation invite) and **clinic accounts** become **staff**, not applicants. The platform is open for them right away. Their Getting started page invites them to do the same quests if they want to become contributors.
+
+## Clinics and talk hosts
+
+- A clinic invited by an engineer is active as soon as it is set up. A clinic created without an invitation (at `/clinic/signup`, or from Groups by anyone) waits for its **clinic talk**: until a Clinics Connector unlocks it on `/host`, nobody registers devices for it, its own admins included.
+- `/host` shows Community Builders the Visitors waiting for their talk, and Clinics Connectors the clinics waiting for theirs. Superusers see both.
 
 ## Teams and achievements
 
@@ -92,11 +97,10 @@ Nobody can recognise their own achievements; ask another team member. Team power
 ![Applicant panel](images/community/applicant.png)
 
 1. Open **Community admin → Applicants**. "Applying" lists people still doing their quests, newest first.
-2. Click a name. The panel on the right shows their answers and their five quests.
+2. Click a name. The panel on the right shows their answers and their three quests.
 3. Pick yourself (or another Community Builder) as **Host** and set the call date. Press **Save**. The applicant sees the date and the host's name on their page.
 4. After the call, press **The call took place**. If their other quests are done, they become a member right away.
-5. If they joined Discord without connecting it, press **Mark as joined**.
-6. To refuse, open **Refuse this applicant** and give a reason. The applicant sees the reason. **Reopen the application** undoes it.
+5. To refuse, open **Refuse this applicant** and give a reason. The applicant sees the reason. **Reopen the application** undoes it.
 
 The **Clinic staff** filter lists people invited by their clinic who haven't finished the quests. Nothing is needed from you there.
 

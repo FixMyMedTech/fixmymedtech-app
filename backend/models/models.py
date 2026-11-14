@@ -94,6 +94,9 @@ class Organization(Base):
     clinic_status       = Column(Text, nullable=False, default="active")   # active | talk_pending
     talk_confirmed_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
     talk_confirmed_at   = Column(DateTime(timezone=True))
+    # Privacy (migration 031): devices on the registering engineer's profile.
+    show_devices_on_profiles = Column(Boolean, nullable=False, default=True)
+    hide_name_on_profiles    = Column(Boolean, nullable=False, default=False)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -298,6 +301,7 @@ class DeviceCategory(Base):
     name    = Column(Text, nullable=False)
     slug    = Column(Text, nullable=False, unique=True)
     icon    = Column(Text, default="🏥")
+    service_interval_months = Column(Integer)   # NULL = platform default (migration 031)
 
     # Relationships
     devices   = relationship("Device", back_populates="category")
@@ -347,6 +351,7 @@ class Device(Base):
     registered_by               = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"), nullable=True)
     last_maintenance            = Column(Date)
     next_maintenance            = Column(Date)
+    service_interval_months     = Column(Integer)   # overrides the category's (migration 031)
     notes                       = Column(Text)
     created_at                  = Column(DateTime(timezone=True), server_default=func.now())
     updated_at                  = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -723,3 +728,16 @@ class CommunityChange(Base):
     after      = Column(JSONB)
     reason     = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MaintenanceReminder(Base):
+    """One reminder email per device, due date and kind (migration 031)."""
+    __tablename__ = "maintenance_reminders"
+    __table_args__ = {"schema": SCHEMA}
+
+    id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    device_id  = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"), nullable=False)
+    due_date   = Column(Date, nullable=False)
+    kind       = Column(Text, nullable=False)   # due_soon | overdue
+    recipients = Column(Integer, nullable=False, default=0)
+    sent_at    = Column(DateTime(timezone=True), server_default=func.now())

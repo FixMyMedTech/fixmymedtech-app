@@ -1,13 +1,14 @@
 # routers/devices.py
 
 from utils.serialize import device_out, log_out, fault_brief
+from utils import service as svc
 from datetime import date
 from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File as FileParam
 from fastapi.responses import Response as FastAPIResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -32,13 +33,7 @@ import os
 router = APIRouter()
 
 
-def add_months(d: date, months: int) -> date:
-    month_index = d.month - 1 + months
-    year = d.year + month_index // 12
-    month = month_index % 12 + 1
-    import calendar
-    day = min(d.day, calendar.monthrange(year, month)[1])
-    return date(year, month, day)
+add_months = svc.add_months
 
 
 class DeviceCreate(BaseModel):
@@ -59,6 +54,7 @@ class DeviceCreate(BaseModel):
     notes: Optional[str] = None
     last_maintenance: Optional[date] = None
     next_maintenance: Optional[date] = None
+    service_interval_months: Optional[int] = Field(default=None, ge=1, le=60)
 
 
 DEVICE_STATUSES = ("operational", "maintenance", "fault", "decommissioned")
@@ -79,6 +75,7 @@ class DeviceUpdate(BaseModel):
     notes: Optional[str] = None
     last_maintenance: Optional[date] = None
     next_maintenance: Optional[date] = None
+    service_interval_months: Optional[int] = Field(default=None, ge=1, le=60)
     acquisition_date: Optional[date] = None
     acquisition_type: Optional[str] = None
     healthsite_id: Optional[UUID] = None
@@ -155,6 +152,7 @@ def _device_payload(device: Device) -> dict:
         "registered_by": str(device.registered_by) if device.registered_by else None,
         "last_maintenance": device.last_maintenance,
         "next_maintenance": device.next_maintenance,
+        "service_interval_months": device.service_interval_months,
         "notes": device.notes,
         "created_at": device.created_at,
         "updated_at": device.updated_at,
@@ -342,6 +340,11 @@ async def get_device(
         "fault_reports": [fault_brief(f) for f in faults],
         "documents": docs,
         "registered_by_profile": registrant,
+        "service": {
+            "interval_months": svc.interval_months(device, device.category),
+            "category_interval_months": svc.interval_months(Device(), device.category),
+            "state": svc.service_state(device.next_maintenance),
+        },
     }
 
 
@@ -381,7 +384,9 @@ async def create_device(
 
     payload = body.model_dump(exclude_none=True)
     payload.pop("organization_id", None)
-    payload.setdefault("next_maintenance", add_months(date.today(), 6))
+    if "next_maintenance" not in payload:
+        months = payload.get("service_interval_months") or await svc.category_interval(db, payload.get("category_id"))
+        payload["next_maintenance"] = add_months(date.today(), months)
     device = Device(
         **payload,
         organization_id=org_id,

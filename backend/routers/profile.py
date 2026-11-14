@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import Optional
 
-from models.models import Profile, OrgUser, User, Device, FaultReport, MaintenanceLog
+from models.models import Profile, OrgUser, User, Device, FaultReport, MaintenanceLog, Organization, DeviceCategory
 from config.db_config import get_db
 from config.storage import upload_file, get_file, delete_file
 from config.users import current_active_user
@@ -495,6 +495,33 @@ async def list_profiles(
     }
 
 
+async def _registered_devices(db: AsyncSession, profile_id) -> list[dict]:
+    """One line per device this member registered: device type and clinic.
+    Each clinic decides (privacy switches, migration 031) whether its devices
+    appear here at all, and whether its name is replaced by "a clinic"."""
+    clinic = Organization
+    rows = (await db.execute(
+        select(DeviceCategory.name, DeviceCategory.icon, DeviceCategory.slug,
+               clinic.id, clinic.name, clinic.hide_name_on_profiles)
+        .select_from(Device)
+        .join(clinic, clinic.id == func.coalesce(Device.healthsite_id, Device.organization_id))
+        .outerjoin(DeviceCategory, DeviceCategory.slug == Device.category_id)
+        .where(Device.registered_by == profile_id,
+               clinic.show_devices_on_profiles.is_(True),
+               Device.status != "decommissioned")
+        .order_by(Device.created_at.desc())
+        .limit(50)
+    )).all()
+    return [
+        {
+            "category": cat_name, "icon": icon or "🏥", "slug": slug,
+            "clinic_id": None if hide else str(cid),
+            "clinic_name": None if hide else cname,
+        }
+        for cat_name, icon, slug, cid, cname, hide in rows
+    ]
+
+
 @router.get("/profiles/{profile_id}")
 async def get_profile_view(
     profile_id: uuid.UUID,
@@ -514,6 +541,7 @@ async def get_profile_view(
         # The same four numbers the Network table sorts by, so a member's
         # public page always agrees with their row in the directory.
         **await _counts_for(db, target.id),
+        "registered_devices": await _registered_devices(db, target.id),
         "organizations": [
             {
                 "id": m.organization_id,

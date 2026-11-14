@@ -13,6 +13,8 @@ import features.devices.api as devices_api
 
 from i18n import t as make_t
 from components import page_shell, status_badge, fmt_date, map_component
+from features.devices.cmms_ui import CMMS_CSS, device_wall, needs_list
+from datetime import date
 rt = APIRouter()
 
 # ══════════════════════════════════════════════════════════════
@@ -83,7 +85,7 @@ async def get(req):
     # Open faults
     fault_rows = []
     for f in stats.get("open_faults", []):
-        device = f.get("device") or {}
+        device = {"name": f.get("device_name"), "location": f.get("device_location")}
         fault_rows.append(
             Div(
                 Div(
@@ -102,7 +104,7 @@ async def get(req):
     # Recent maintenance
     maint_rows = []
     for m in stats.get("recent_maintenance", []):
-        device = m.get("device") or {}
+        device = {"name": m.get("device_name")}
         color = "var(--c-green)" if m.get("type") == "preventive" else "var(--c-amber)"
         maint_rows.append(
             Div(
@@ -130,15 +132,41 @@ async def get(req):
         cls="two-col"
     )
 
+    active = [d for d in devices if d.get("status") != "decommissioned"]
+    needs = Div(
+        Div(H2(_("cmms.needs_today"), style="margin:0;font-size:20px;"),
+            Span(_("cmms.needs_count").format(n=stats.get("needs_you_total", 0)),
+                 cls="badge badge-danger" if stats.get("needs_you_total") else "badge badge-ok"),
+            style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"),
+        needs_list(_, stats.get("needs_you", []), stats.get("needs_you_total", 0), lang),
+        cls="card", style="margin-bottom:16px;",
+    )
+    wall = Div(
+        Div(H2(_("cmms.wall_title"), style="margin:0;font-size:20px;"),
+            A(_("cmms.all_devices"), href="/devices", style="font-size:14px;"),
+            style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;"),
+        device_wall(_, active, date.today().isoformat()),
+        cls="card", style="margin-bottom:16px;",
+    )
+    numbers = Details(
+        Summary(_("cmms.numbers"), Span(f'{total} · {pct}{_("dashboard.pct_operational")}',
+                style="font-weight:400;font-size:12px;color:var(--text-muted);margin-left:auto;")),
+        stat_cards,
+        two_col,
+        map_component(lat=0.3476, lng=32.5825, markers=markers, fit=True) if markers else "",
+        cls="more",
+    )
+
     content = Div(
+        Style(CMMS_CSS),
         Div(
             Div(H1(_("dashboard.title")), P(_("dashboard.subtitle"), style="color:var(--c-text-3);")),
             A(_("dashboard.add_device"), href="/new_device", cls="btn btn-primary"),
             cls="page-header"
         ),
-        stat_cards,
-        two_col,
-        map_component(lat=0.3476, lng=32.5825, markers=markers, fit=True),
+        needs,
+        wall,
+        numbers,
     )
 
     return page_shell(content, current="/dashboard", title=_("title.dashboard"), lang=lang)

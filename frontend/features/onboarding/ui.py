@@ -64,6 +64,7 @@ def clinic_tabs(org_id: str, current: str, _):
     return Nav(
         A(_("ob.tab_overview"), href=f"/groups/{org_id}", cls="active" if current == "overview" else ""),
         A(_("ob.tab_engineers"), href=f"/groups/{org_id}/engineers", cls="active" if current == "engineers" else ""),
+        A(_("privacy.tab"), href=f"/groups/{org_id}/privacy", cls="active" if current == "privacy" else ""),
         cls="ob-tabs",
     )
 

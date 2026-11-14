@@ -14,6 +14,7 @@ from config.db_config import get_db
 from utils.profile import get_current_profile
 from models.models import Device, MaintenanceLog, Profile, OrgUser
 from utils.serialize import log_out
+from utils.service import roll_forward
 
 router = APIRouter()
 
@@ -128,9 +129,11 @@ async def update_maintenance_log(
             raise HTTPException(status_code=400, detail=f"Type must be one of {LOG_TYPES}")
         log.type = body.type
 
+    closing = False
     if body.status is not None:
         if body.status not in LOG_STATUSES:
             raise HTTPException(status_code=400, detail=f"Status must be one of {LOG_STATUSES}")
+        closing = body.status == "closed" and log.status != "closed"
         log.status = body.status
 
     if body.description is not None:
@@ -148,6 +151,11 @@ async def update_maintenance_log(
     if body.assigned_to is not None:
         await _validate_assignee(db, body.assigned_to, device.organization_maintenance_id)
         log.assigned_to = body.assigned_to
+
+    # Service plan: closing a log records the service and rolls the device's
+    # next service date forward (after next_due above, which it honours).
+    if closing:
+        await roll_forward(db, device, log)
 
     await db.commit()
 

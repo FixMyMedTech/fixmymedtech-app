@@ -2,7 +2,7 @@
 
 from urllib.parse import quote
 
-from config.api import _get, _post, _delete
+from config.api import _get, _post, _delete, _patch
 
 
 async def get_me(token):
@@ -94,3 +94,11 @@ async def host_clinics(token):
 
 async def host_unlock_clinic(token, org_id):
     return await _post(f"/api/onboarding/host/clinics/{org_id}/unlock", {}, token)
+
+
+async def clinic_privacy(token, org_id):
+    return await _get(f"/api/organizations/{org_id}/privacy", token)
+
+
+async def update_clinic_privacy(token, org_id, data: dict):
+    return await _patch(f"/api/organizations/{org_id}/privacy", data, token)

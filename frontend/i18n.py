@@ -3711,6 +3711,96 @@ for _key, (_en, _es, _fr) in _WAVE1_STRINGS.items():
     STRINGS["fr"][_key] = _fr
 
 
+
+# Wave 2 (clinic CMMS): device ID card, "Needs you today", device wall,
+# service plans and the clinic Privacy tab. (en, es, fr)
+_WAVE2_STRINGS = {
+    'cmms.report_problem': ('Report a problem', 'Reportar un problema', 'Signaler un problème'),
+    'cmms.next_service': ('Next service', 'Próximo servicio', 'Prochain entretien'),
+    'cmms.no_date': ('Not planned', 'Sin fecha', 'Non planifié'),
+    'cmms.set_in_edit': ('Set a date in Edit', 'Pon una fecha en Editar', 'Fixez une date dans Modifier'),
+    'cmms.overdue': ('Overdue', 'Atrasado', 'En retard'),
+    'cmms.days_late': ('{n} days late', '{n} días de retraso', '{n} jours de retard'),
+    'cmms.in_days': ('In {n} days', 'En {n} días', 'Dans {n} jours'),
+    'cmms.on_track': ('On track', 'Al día', 'À jour'),
+    'cmms.manuals': ('Manuals', 'Manuales', 'Manuels'),
+    'cmms.manuals_sub': ('Guides and documents', 'Guías y documentos', 'Guides et documents'),
+    'cmms.manuals_none': ('None yet', 'Ninguno todavía', 'Aucun pour l’instant'),
+    'cmms.repairs': ('Repairs', 'Reparaciones', 'Réparations'),
+    'cmms.repairs_open': ('Open now', 'Abiertas', 'En cours'),
+    'cmms.repairs_none': ('Nothing open', 'Nada abierto', 'Rien en cours'),
+    'cmms.more_details': ('More details', 'Más detalles', 'Plus de détails'),
+    'cmms.more_details_hint': ('Owner, location, history, QR', 'Responsable, ubicación, historial, QR',
+                               'Responsable, emplacement, historique, QR'),
+    'cmms.interval': ('Service every', 'Servicio cada', 'Entretien tous les'),
+    'cmms.every_months': ('{n} months', '{n} meses', '{n} mois'),
+    'cmms.interval_default': ('Category default ({n} months)', 'Según la categoría ({n} meses)',
+                              'Selon la catégorie ({n} mois)'),
+    'cmms.needs_today': ('Needs you today', 'Te necesita hoy', 'À traiter aujourd’hui'),
+    'cmms.needs_count': ('{n}', '{n}', '{n}'),
+    'cmms.needs_none': ('All clear', 'Todo en orden', 'Tout est en ordre'),
+    'cmms.needs_none_sub': ('No open faults and no service due in the next two weeks.',
+                            'Sin averías abiertas ni servicios en las próximas dos semanas.',
+                            'Aucune panne en cours ni entretien prévu dans les deux semaines.'),
+    'cmms.needs_more': ('{n} more on the device list.', '{n} más en la lista de equipos.',
+                        '{n} de plus dans la liste des équipements.'),
+    'cmms.need_fault': ('{device} has a fault', '{device} tiene una avería', '{device} est en panne'),
+    'cmms.need_overdue': ('{device} missed its service', '{device} no tuvo su servicio',
+                          '{device} a manqué son entretien'),
+    'cmms.need_due_soon': ('{device} is due for service', '{device} necesita servicio pronto',
+                           '{device} doit bientôt être entretenu'),
+    'cmms.was_due': ('was due {date}', 'tocaba el {date}', 'prévu le {date}'),
+    'cmms.due_on': ('due {date}', 'para el {date}', 'prévu le {date}'),
+    'cmms.open': ('Open', 'Abrir', 'Ouvrir'),
+    'cmms.log_service': ('Log service', 'Registrar servicio', 'Noter l’entretien'),
+    'cmms.wall_title': ('Your devices by ward', 'Tus equipos por servicio', 'Vos équipements par service'),
+    'cmms.all_devices': ('All devices', 'Todos los equipos', 'Tous les équipements'),
+    'cmms.wall_empty': ('No devices yet. Add your first one to see it here.',
+                        'Aún no hay equipos. Añade el primero para verlo aquí.',
+                        'Pas encore d’équipement. Ajoutez le premier pour le voir ici.'),
+    'cmms.no_ward': ('No ward set', 'Sin servicio', 'Service non renseigné'),
+    'cmms.ward_count': ('{n}', '{n}', '{n}'),
+    'cmms.legend_ok': ('Working', 'Funciona', 'Fonctionne'),
+    'cmms.legend_warn': ('Being serviced or service overdue', 'En servicio o servicio atrasado',
+                         'En entretien ou entretien en retard'),
+    'cmms.legend_danger': ('Fault', 'Avería', 'En panne'),
+    'cmms.numbers': ('Numbers and map', 'Cifras y mapa', 'Chiffres et carte'),
+    'privacy.tab': ('Privacy', 'Privacidad', 'Confidentialité'),
+    'privacy.heading': ('Your devices on engineer profiles', 'Tus equipos en los perfiles de los ingenieros',
+                        'Vos équipements sur les profils des ingénieurs'),
+    'privacy.body': ('Engineers who register your devices get a line on their public profile for each one: '
+                     'the type of device and your clinic. Your own pages always show your devices in full.',
+                     'Los ingenieros que registran tus equipos tienen una línea en su perfil público por cada uno: '
+                     'el tipo de equipo y tu clínica. Tus propias páginas siempre muestran tus equipos completos.',
+                     'Les ingénieurs qui enregistrent vos équipements ont une ligne sur leur profil public pour chacun : '
+                     'le type d’équipement et votre clinique. Vos propres pages montrent toujours vos équipements en entier.'),
+    'privacy.show_title': ('Show our devices on engineer profiles', 'Mostrar nuestros equipos en los perfiles de los ingenieros',
+                           'Montrer nos équipements sur les profils des ingénieurs'),
+    'privacy.show_help': ('Helps the engineers who work with you show their experience.',
+                          'Ayuda a los ingenieros que trabajan contigo a mostrar su experiencia.',
+                          'Aide les ingénieurs qui travaillent avec vous à montrer leur expérience.'),
+    'privacy.hide_title': ('Hide our name there', 'Ocultar nuestro nombre allí', 'Masquer notre nom'),
+    'privacy.hide_help': ('The line says "a clinic" instead of your name.',
+                          'La línea dice "una clínica" en lugar de tu nombre.',
+                          'La ligne indique « une clinique » au lieu de votre nom.'),
+    'privacy.preview_label': ('What an engineer profile shows', 'Lo que muestra el perfil de un ingeniero',
+                              'Ce que montre le profil d’un ingénieur'),
+    'privacy.preview_named': ('Ventilator · {clinic}', 'Ventilador · {clinic}', 'Ventilateur · {clinic}'),
+    'privacy.preview_anon': ('Ventilator · a clinic', 'Ventilador · una clínica', 'Ventilateur · une clinique'),
+    'privacy.preview_hidden': ('Nothing about your devices.', 'Nada sobre tus equipos.', 'Rien sur vos équipements.'),
+    'privacy.a_clinic': ('a clinic', 'una clínica', 'une clinique'),
+    'privacy.save': ('Save', 'Guardar', 'Enregistrer'),
+    'privacy.saved': ('Saved.', 'Guardado.', 'Enregistré.'),
+    'privacy.failed': ('That did not save. Try again.', 'No se guardó. Inténtalo de nuevo.',
+                       'L’enregistrement a échoué. Réessayez.'),
+    'profile.devices_heading': ('Devices at clinics', 'Equipos en clínicas', 'Équipements dans les cliniques'),
+}
+
+for _key, (_en, _es, _fr) in _WAVE2_STRINGS.items():
+    STRINGS["en"][_key] = _en
+    STRINGS["es"][_key] = _es
+    STRINGS["fr"][_key] = _fr
+
 def t(lang: str):
     strings = STRINGS.get(lang, STRINGS[DEFAULT_LANG])
     def _(key: str, default=None):

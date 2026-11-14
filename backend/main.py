@@ -14,7 +14,7 @@ import httpx
 import logging
 
 from models import models
-from config.db_config import engine
+from config.db_config import engine, AsyncSessionLocal
 from routers import devices, fault_reports, maintenance_logs, dashboard, auth, oauth, organizations, profile, healthsites, feedback, discord_link, documents, community, onboarding
 from fastapi import Depends
 from utils.profile import require_platform_access
@@ -45,6 +45,11 @@ async def lifespan(app: FastAPI):
         await bootstrap_superuser_from_env()
     except Exception as e:
         print(f"[bootstrap] ERROR: {e}")
+    # Service reminder emails (utils/service.py; MAINTENANCE_REMINDERS=off to disable)
+    from utils.service import reminders_enabled, reminder_loop
+    from utils.background import spawn as _spawn
+    if reminders_enabled():
+        _spawn(reminder_loop(AsyncSessionLocal))
     yield
 
 app = FastAPI(

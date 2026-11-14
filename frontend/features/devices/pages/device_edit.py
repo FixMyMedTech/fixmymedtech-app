@@ -18,6 +18,9 @@ from features.documents.components import DOCS_CSS, doc_list, ifixit_picker, upl
 
 rt = APIRouter()
 
+# Service plan choices (months); the category's interval is the default.
+SERVICE_INTERVALS = (1, 2, 3, 4, 6, 12, 18, 24)
+
 STATUSES = ("operational", "maintenance", "fault", "decommissioned")
 ACQUISITION_TYPES = ("purchased", "donated", "leased")
 FAULT_STATUSES = ("open", "assigned", "in_progress", "resolved")
@@ -241,7 +244,7 @@ def _info_card(device: dict, categories: list, lang: str, _):
     )
 
 
-def _maintenance_card(device: dict, _):
+def _maintenance_card(device: dict, _, default_months: int = 6):
     card_id = "maintenance"
     acq = f"{enum_label(_, 'acquisition', device.get('acquisition_type'))} · {fmt_date(device.get('acquisition_date', ''))}"
     display = Div(
@@ -250,6 +253,8 @@ def _maintenance_card(device: dict, _):
             _detail_row(_("device_detail.acquisition"), acq),
             _detail_row(_("device_detail.last_maint"), fmt_date(device.get("last_maintenance", ""))),
             _detail_row(_("device_detail.next_maint"), fmt_date(device.get("next_maintenance", ""))),
+            _detail_row(_("cmms.interval"), _("cmms.every_months").format(
+                n=device.get("service_interval_months") or default_months)),
         ),
         id=f"{card_id}-display",
     )
@@ -276,6 +281,13 @@ def _maintenance_card(device: dict, _):
                       Input(name="next_maintenance", type="date",
                             value=(device.get("next_maintenance") or "")[:10],
                             cls="input", style="max-width:260px;")),
+            _edit_row(_("cmms.interval"), Select(
+                Option(_("cmms.interval_default").format(n=default_months), value="",
+                       selected=not device.get("service_interval_months")),
+                *[Option(_("cmms.every_months").format(n=m), value=str(m),
+                         selected=device.get("service_interval_months") == m)
+                  for m in SERVICE_INTERVALS],
+                name="service_interval_months", cls="input", style="max-width:260px;")),
             _edit_row(_("new_device.notes"),
                       Textarea(device.get("notes") or "", name="notes", rows="4",
                                cls="input", style="max-width:420px;")),
@@ -673,7 +685,7 @@ async def get(req, device_id: str):
             cls="page-header", style="margin-bottom:14px;"
         ),
         _ownership_card(d, me, my_orgs, all_orgs, _),
-        Div(_info_card(d, categories, lang, _), _maintenance_card(d, _),
+        Div(_info_card(d, categories, lang, _), _maintenance_card(d, _, (payload.get("service") or {}).get("category_interval_months") or 6),
             cls="two-col", style="margin-bottom:16px;"),
         Div(_photo_card(d, device_id, _), _map_card(d, device_id, _),
             cls="two-col", style="margin-bottom:16px;"),
@@ -694,6 +706,7 @@ async def post(req, device_id: str,
                notes: Optional[str] = None,
                last_maintenance: Optional[str] = None,
                next_maintenance: Optional[str] = None,
+               service_interval_months: Optional[str] = None,
                acquisition_date: Optional[str] = None,
                acquisition_type: Optional[str] = None,
                healthsite_id: Optional[str] = None,
@@ -737,6 +750,10 @@ async def post(req, device_id: str,
                        ("acquisition_date", acquisition_date)):
         if (value or "").strip():
             data[key] = value.strip()
+    # Only the maintenance card sends this field; "" clears the override.
+    if service_interval_months is not None:
+        v = service_interval_months.strip()
+        data["service_interval_months"] = int(v) if v.isdigit() and int(v) in SERVICE_INTERVALS else None
     if healthsite_id is not None:
         data["healthsite_id"] = healthsite_id.strip() or None
     if (organization_maintenance_id or "").strip():

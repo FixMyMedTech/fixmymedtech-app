@@ -215,3 +215,29 @@ async def send_engineer_confirmed_email(email: str, name: str, clinic: str,
         link=link,
         button="Open FixMyMedTech",
     )
+
+
+async def send_service_reminder_email(email: str, name: str, device: str, ward: str,
+                                      clinic: str, due, overdue: bool, link: str) -> None:
+    """A device's planned service is due soon or overdue (utils/service.py)."""
+    where = " · ".join(p for p in (ward, clinic) if p)
+    what = f"{device} ({where})" if where else device
+    when = due.strftime("%d %b %Y") if hasattr(due, "strftime") else str(due)
+    if overdue:
+        subject = f"Service overdue: {device}"
+        heading = "A device missed its service"
+        line = f"{what} was due for its planned service on {when}."
+    else:
+        subject = f"Service due soon: {device}"
+        heading = "A service is coming up"
+        line = f"{what} is due for its planned service on {when}."
+    await _send_onboarding(
+        email,
+        subject=subject,
+        heading=heading,
+        paragraphs=[f"Hi {name}," if name else "Hi,", line,
+                    "When the work is done, close its maintenance log and the next date is set for you."],
+        link=link,
+        button="Open the device",
+        footer="You get this because you look after this clinic's devices on FixMyMedTech.",
+    )

@@ -23,6 +23,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 docs/site/
 docs/venv/
+.venv/
 /resources
 useful_commands.txt
 frontend/.sesskey

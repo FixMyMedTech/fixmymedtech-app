@@ -1,0 +1,7 @@
+# Host-side dependencies for the helper scripts in this folder.
+# Install into the repo-root venv: .venv/bin/pip install -r scripts/requirements.txt
+sqlalchemy
+asyncpg
+python-dotenv
+httpx
+qrcode[pil]

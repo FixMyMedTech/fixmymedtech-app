@@ -3,8 +3,9 @@
 
 Usage:
     docker compose exec backend python /app/scripts/seed_test_data.py
-    # or from host:
-    python scripts/seed_test_data.py
+    # or from host (repo root, in a venv; bare pip fails on PEP 668 systems):
+    python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
+    .venv/bin/python scripts/seed_test_data.py
 """
 
 import os, sys, uuid

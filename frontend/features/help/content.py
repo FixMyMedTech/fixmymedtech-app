@@ -237,5 +237,18 @@ def docs_url(guide: Guide) -> str:
 def video_url(guide: Guide) -> str:
     """The guide's video link from HELP_VIDEO_<SLUG>, or "" when unset.
     Only http(s) links are used."""
-    url = (os.getenv(guide.video_var()) or "").strip()
+    url = (os.getenv(guide.video_var()) or "").strip() or _videos_map().get(guide.slug, "")
     return url if url.startswith(("https://", "http://")) else ""
+
+
+def _videos_map() -> dict:
+    """HELP_VIDEOS: one variable for every guide video, as
+    "register-device=https://...,report-fault=https://..." (guide slug, "=",
+    link; separated by commas). Handy on servers, where each new variable
+    has to be added to the deploy workflow."""
+    out = {}
+    for item in (os.getenv("HELP_VIDEOS") or "").split(","):
+        slug, sep, url = item.strip().partition("=")
+        if sep and slug.strip() and url.strip():
+            out[slug.strip()] = url.strip()
+    return out

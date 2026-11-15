@@ -109,6 +109,7 @@ services:
       SESSION_COOKIE: fmmt_local_session
       POSTHOG_PROJECT_TOKEN: ${POSTHOG_PROJECT_TOKEN:-}
       POSTHOG_HOST: ${POSTHOG_HOST:-}
+      HELP_VIDEOS: ${HELP_VIDEOS:-}
       # In-app help: docs site and one optional video per guide (.env.example).
       DOCS_URL: ${DOCS_URL:-}
       HELP_VIDEO_THREE_WORLDS: ${HELP_VIDEO_THREE_WORLDS:-}

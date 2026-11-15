@@ -63,5 +63,11 @@ async def get(req):
 
     # Community hub: first-visit tour of the three worlds (members only).
     from features.community.hub import tour_panel
-    landing = Div(tour_panel(req, lang, back="/home"), *landing.children, style="max-width:960px;")
+    tour = tour_panel(req, lang, back="/home")
+    if tour:
+        # The tour already shows the three worlds: leave the doors out until
+        # it is dismissed, so they are never on the page twice.
+        landing = Div(tour, *[c for c in landing.children
+                              if "doors" not in str(getattr(c, "attrs", {}).get("class", ""))],
+                      style="max-width:960px;")
     return page_shell(landing, current="/home", title=_("title.home"), lang=lang)

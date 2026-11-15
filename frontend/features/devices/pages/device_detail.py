@@ -445,9 +445,9 @@ async def get(req, device_id: str, msg: str = "", error: str = ""):
                     style="display:flex;justify-content:center;margin-bottom:14px;"
                 ),
                 Div(
-                    Button("⬇ " + _("device_detail.download_qr"), type="button",
+                    Button(_("device_detail.download_qr"), type="button",
                            cls="btn btn-primary btn-sm", onclick="downloadDeviceQR()"),
-                    Button("🖨 " + _("device_detail.print_qr"), type="button",
+                    Button(_("device_detail.print_qr"), type="button",
                            cls="btn btn-secondary btn-sm", onclick="printDeviceQR()"),
                     Button(_("groups.close_btn"), type="button", cls="btn btn-secondary btn-sm",
                            onclick="document.getElementById('deviceQrDialog').close()"),

@@ -68,6 +68,8 @@ jobs:
             COMMUNITY_INTRO_VIDEO_URL=${{ vars.COMMUNITY_INTRO_VIDEO_URL }}
             STAFF_INTRO_VIDEO_URL=${{ vars.STAFF_INTRO_VIDEO_URL }}
             DISCORD_INVITE_URL=${{ vars.DISCORD_INVITE_URL }}
+            DOCS_URL=${{ vars.DOCS_URL }}
+            HELP_VIDEOS=${{ vars.HELP_VIDEOS }}
             EOF
 
       - name: Copy code to server

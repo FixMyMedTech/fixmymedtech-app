@@ -56,10 +56,12 @@ There are five achievements, each with 10 levels of stars. A level is reached wh
     - dashed border: comes after (for example a team you haven't joined);
     - grey, no label: not discovered yet.
 2. Tap a tile. The panel on the right explains the team or the achievement: its 10 levels, who recognises it, and **Claim it** for recognised achievements.
-3. Open **My journey** to see your teams, your achievements with their stars, and your counts (devices registered, faults resolved, maintenance visits, invites who joined, manuals added).
+3. Open **My journey**, the Community home. It has two halves: **Discover the app** (the short guides in **Learn the app**, the three worlds, your next step) and **What the app needs now** (open tasks, manuals to find, claims to confirm, people waiting for a talk: each number opens the page where you can help). Below are your teams, your achievements with their stars, and your counts (devices registered, faults resolved, maintenance visits, invites who joined, manuals added).
 4. Take small jobs on the **Task board** to earn points.
 
 ![Teams and achievements](images/guide/achievements-map.png){ .shot loading=lazy }
+
+![My journey: discover the app, and what the app needs now](images/guide/community-home.png){ .shot loading=lazy }
 
 ## What happens next
 

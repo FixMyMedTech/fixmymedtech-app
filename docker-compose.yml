@@ -68,6 +68,8 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set}
       POSTHOG_PROJECT_TOKEN: ${POSTHOG_PROJECT_TOKEN:-}
       POSTHOG_HOST: ${POSTHOG_HOST:-}
+      DOCS_URL: ${DOCS_URL:-}
+      HELP_VIDEOS: ${HELP_VIDEOS:-}
     ports:
       - "127.0.0.1:5001:5001"
     depends_on:

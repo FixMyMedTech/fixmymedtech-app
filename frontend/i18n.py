@@ -677,7 +677,7 @@ STRINGS = {
         "badge.critical": "Critical",
         "badge.closed": "Closed",
         "badge.overdue": "overdue",
-        "qr.scan": "📷 Scan QR code",
+        "qr.scan": "Scan QR code",
         "qr.cancel": "Cancel",
         "qr.manual_label": "Or enter code manually:",
         "qr.manual_placeholder": "e.g. 3f1c9a20-4b7e-4c3d-9e5a-1d2f3b4c5d6e",
@@ -1474,7 +1474,7 @@ STRINGS = {
         "badge.critical": "Cr\u00edtica",
         "badge.closed": "Cerrado",
         "badge.overdue": "vencido",
-        "qr.scan": "📷 Escanear QR",
+        "qr.scan": "Escanear QR",
         "qr.cancel": "Cancelar",
         "qr.manual_label": "O ingrese el c\u00f3digo manualmente:",
         "qr.manual_placeholder": "ej. 3f1c9a20-4b7e-4c3d-9e5a-1d2f3b4c5d6e",
@@ -2257,7 +2257,7 @@ STRINGS = {
         "badge.critical": "Critique",
         "badge.closed": "Ferm\u00e9",
         "badge.overdue": "en retard",
-        "qr.scan": "📷 Scanner le QR code",
+        "qr.scan": "Scanner le QR code",
         "qr.cancel": "Annuler",
         "qr.manual_label": "Ou entrez le code manuellement:",
         "qr.manual_placeholder": "ex. 3f1c9a20-4b7e-4c3d-9e5a-1d2f3b4c5d6e",
@@ -4039,7 +4039,7 @@ _WAVE35_STRINGS = {
     'w5.sc_board': ('Task board', 'Tablero', 'Tableau'),
     'w5.sc_board_sub': ('post or take a task', 'publica o toma una tarea', 'publier ou prendre une tâche'),
     'w5.claims_title': ('Claims to validate', 'Reclamos por validar', 'Déclarations à valider'),
-    'w5.claims_none': ('Nothing to validate. 🎉', 'Nada por validar. 🎉', 'Rien à valider. 🎉'),
+    'w5.claims_none': ('Nothing to validate.', 'Nada por validar.', 'Rien à valider.'),
     'w5.claims_not_yours': ('Join a team to validate its achievements.', 'Únete a un equipo para validar sus logros.', 'Rejoignez une équipe pour valider ses réussites.'),
     'w5.claim_eyebrow': ('{team}', '{team}', '{team}'),
     'w5.claim_line': ('{who}: {what} ×{n}', '{who}: {what} ×{n}', '{who} : {what} ×{n}'),
@@ -4138,7 +4138,7 @@ for _key, (_en, _es, _fr) in _WAVE35_STRINGS.items():
 
 # ── Three worlds (navigation) ────────────────────────────────
 _WORLDS_STRINGS = {
-    'nav.world_equipment': ('Equipment', 'Equipos', 'Équipements'),
+    'nav.world_equipment': ('Equipment', 'Equipamiento', 'Équipements'),
     'nav.world_work': ('Work', 'Trabajo', 'Travail'),
     'nav.world_community': ('Community', 'Comunidad', 'Communauté'),
     'nav.worlds_label': ('Parts of the app', 'Partes de la aplicación', 'Parties de l’application'),
@@ -4157,10 +4157,10 @@ for _key, (_en, _es, _fr) in _WORLDS_STRINGS.items():
 # .s<N>t (step title) / .s<N> (step sentence), see features/help/content.py.
 _HELP_STRINGS = {
     # Interface
-    'nav.learn': ('Learn the app', 'Aprende a usar la app', 'Découvrir l’application'),
-    'help.page_title': ('Learn the app', 'Aprende a usar la app', 'Découvrir l’application'),
+    'nav.learn': ('Learn the app', 'Aprende a usar la app', 'Apprendre l’application'),
+    'help.page_title': ('Learn the app', 'Aprende a usar la app', 'Apprendre l’application'),
     'help.page_sub': ('Short guides to each part of FixMyMedTech, picked for your account.', 'Guías cortas para cada parte de FixMyMedTech, elegidas para tu cuenta.', 'De courts guides pour chaque partie de FixMyMedTech, choisis pour votre compte.'),
-    'help.title': ('Learn the app — FixMyMedTech', 'Aprende a usar la app — FixMyMedTech', 'Découvrir l’application — FixMyMedTech'),
+    'help.title': ('Learn the app — FixMyMedTech', 'Aprende a usar la app — FixMyMedTech', 'Apprendre l’application — FixMyMedTech'),
     'help.steps_n': ('{n} steps', '{n} pasos', '{n} étapes'),
     'help.video': ('Video', 'Vídeo', 'Vidéo'),
     'help.go_there': ('Go there', 'Ir allí', 'Y aller'),
@@ -4503,7 +4503,7 @@ _HUB_STRINGS = {
     'hub.discover_text': ('What it does, where things are, and what to try next.',
                           'Qué hace, dónde están las cosas y qué probar ahora.',
                           'Ce qu’elle fait, où sont les choses, et quoi essayer ensuite.'),
-    'hub.learn.title': ('Learn the app', 'Aprende la aplicación', 'Apprendre l’application'),
+    'hub.learn.title': ('Learn the app', 'Aprende a usar la app', 'Apprendre l’application'),
     'hub.learn.text': ('Short guides with pictures: tag a device, report a fault, invite a clinic.',
                        'Guías cortas con imágenes: etiquetar un equipo, reportar una avería, invitar a una clínica.',
                        'Des guides courts en images : étiqueter un appareil, signaler une panne, inviter une clinique.'),

@@ -166,13 +166,24 @@ async def get(req):
     def piece(icon, tone, num, label, href):
         return A(Div(Span(lucide(icon), cls=f"dot {tone}"), B(str(num)), cls="piece-top"),
                  Small(label), href=href, cls="piece")
+    # Community hub: the Equipment world's next step (clinic accounts). A
+    # clinic still waiting for its clinic talk can't add devices yet, so the
+    # hero's "Add device" gives way to the "Book your clinic talk" card.
+    from features.community import hub
+    try:
+        step = (await hub.equipment_step(req, token, total_devices=total if stats else None)
+                if not hub._is_engineer(req) else None)
+    except Exception:
+        step = None
+    next_step = Div(Style(hub.HUB_CSS), hub.next_step_card(step, _)) if step else ""
+    can_add = auth_helper.adds_devices(req) and not (step and step.get("key") == "book_talk")
     hero = Div(
         Div(
             Div(Div(_("dash.hero_eyebrow"), cls="hero-eyebrow"),
                 H1(_("dash.hero_hi").format(name=first) if first else _("dash.hero_hi_anon")),
                 P(_("dash.hero_line").format(pct=pct, n=total) if total else _("dash.hero_empty"))),
             A(lucide("plus"), _("dashboard.add_device").lstrip("+ "), href="/new_device", cls="btn btn-light")
-            if auth_helper.adds_devices(req) else "",
+            if can_add else "",
             cls="hero-top",
         ),
         Div(Span(style=f"width:{pct}%"), cls="meter", role="img",
@@ -187,9 +198,6 @@ async def get(req):
         cls="hero",
     )
 
-    # Community hub: the Equipment world's next step (clinic accounts).
-    from features.community.hub import next_step_block
-    next_step = await next_step_block(req, token, "equipment", _, total_devices=total if stats else None)
 
     content = Div(
         Style(CMMS_CSS),

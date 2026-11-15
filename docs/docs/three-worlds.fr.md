@@ -10,7 +10,7 @@ FixMyMedTech a trois parties, appelées **mondes**. Chacune a sa couleur et son 
 | --- | --- | --- | --- |
 | <span class="world equipment">Équipements</span> | Bleu | Les appareils de la clinique : liste, pannes, entretien, manuels | **Tableau de bord**, **Appareils**, **Pannes**, **Groupes**, **Bibliothèque** |
 | <span class="world work">Travail</span> | Turquoise | La journée de l'ingénieur : quoi faire ensuite, demandes de réparation, cliniques à faire venir | **Tâches**, **Demandes**, **Inviter une clinique**, **Animation des rencontres** (animateurs seulement) |
-| <span class="world community">Communauté</span> | Violet | Votre parcours, les équipes, les personnes, les petits travaux de la communauté | **Mon parcours**, **Équipes et réussites**, **Réseau**, **Tableau des tâches**, **À valider** et **Admin communauté** (membres d'équipe seulement) |
+| <span class="world community">Communauté</span> | Violet | Votre parcours, les équipes, les personnes, les petits travaux de la communauté | **Mon parcours**, **Équipes et réussites**, **Réseau**, **Tableau des tâches**, **Apprendre l’application**, **À valider** et **Admin communauté** (membres d'équipe seulement) |
 
 ![Accueil : une porte par monde](images/guide/home-doors.png){ .shot loading=lazy }
 
@@ -29,15 +29,37 @@ FixMyMedTech a trois parties, appelées **mondes**. Chacune a sa couleur et son 
 </figure>
 </div>
 
+## L'aide dans l'application
+
+Vous n'avez pas besoin de ce site pour vous repérer : la version courte de chaque guide est dans l'application.
+
+- **La première fois** que vous voyez les trois mondes, **Accueil** les présente une fois en trois cartes. Appuyez sur **C’est compris** pour fermer.
+- **Le bouton « ? »** (en bas à droite, sur chaque page) ouvre **Comment marche cette page** : quelques étapes sur la page où vous êtes.
+- **Apprendre l’application** liste les guides courts pour votre compte. Chacun renvoie à la page complète de ce site, et propose **Proposer une amélioration** pour nous dire ce qui manque.
+- **Votre prochaine étape** s'affiche en haut de **Tableau de bord**, **Tâches** et **Mon parcours** jusqu'à ce qu'elle soit faite, puis disparaît.
+
+<div class="shots" markdown>
+<figure markdown>
+![Le bouton « ? » ouvre l'aide de la page où vous êtes](images/guide/help-panel.png){ .phone loading=lazy }
+<figcaption>« ? » puis <strong>Comment marche cette page</strong>.</figcaption>
+</figure>
+<figure markdown>
+![Un guide court dans l'application](images/guide/guide-page.png){ .phone loading=lazy }
+<figcaption>Un guide dans <strong>Apprendre l’application</strong>.</figcaption>
+</figure>
+</div>
+
+![Apprendre l'application : des guides courts, par monde](images/guide/learn-the-app.png){ .shot loading=lazy }
+
 ## Qui voit quoi
 
 Vous ne voyez que ce que vous pouvez utiliser. Le reste s'ouvre au fur et à mesure.
 
 | Qui | Ce que vous voyez |
 | --- | --- |
-| **Nouvel ingénieur** (Visiteur : étapes d'accueil pas terminées) | Seulement **Premiers pas** et **Bibliothèque**. Pas d'onglets. Toutes les autres pages vous ramènent à **Premiers pas**. |
+| **Nouvel ingénieur** (Visiteur : étapes d'accueil pas terminées) | Seulement **Premiers pas**, **Bibliothèque** et **Apprendre l’application**. Pas d'onglets. Toutes les autres pages vous ramènent à **Premiers pas**. |
 | **Ingénieur dont les étapes d'accueil sont terminées** (Contributeur) | Les trois mondes. **Premiers pas** disparaît ; **Inviter une clinique** est votre prochaine étape. |
-| **Compte clinique et personnel de clinique** (administrateur, infirmier, médecin, technicien ajouté par la clinique) | Un seul menu, sans onglets : **Tableau de bord**, **Appareils**, **Pannes**, **Groupes**, **Bibliothèque**, **Tâches**, **Réseau**. |
+| **Compte clinique et personnel de clinique** (administrateur, infirmier, médecin, technicien ajouté par la clinique) | Un seul menu, sans onglets : **Tableau de bord**, **Appareils**, **Pannes**, **Groupes**, **Bibliothèque**, **Tâches**, **Réseau**, **Apprendre l’application**. |
 
 Certaines personnes voient quelques entrées de plus :
 

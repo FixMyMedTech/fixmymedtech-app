@@ -55,7 +55,18 @@ const DESKTOP = 1280;
 // CSS selector to screenshot alone; `act`: an action before the shot.
 const SHOTS = [
   // Start here
-  { name: 'home-doors', as: 'engineer', path: '/home', width: DESKTOP, clip: { y: 0, height: 580 } },
+  // The one-time tour shows until "Got it" is pressed: shoot it first, then
+  // dismiss it so the doors show.
+  { name: 'home-tour', as: 'engineer', path: '/home', width: DESKTOP, clip: { y: 0, height: 420 }, optional: '#tour' },
+  { name: 'home-doors', as: 'engineer', path: '/home', width: DESKTOP, clip: { y: 0, height: 580 },
+    act: async p => { if (await p.$('#tour button[type=submit]')) { await Promise.all([p.waitForLoadState('networkidle'), p.click('#tour button[type=submit]')]); } } },
+  { name: 'community-home', as: 'engineer', path: '/community', width: DESKTOP, full: true, maxHeight: 1500 },
+  { name: 'learn-the-app', as: 'engineer', path: '/community/guides', width: DESKTOP, clip: { y: 0, height: 760 } },
+  { name: 'guide-page', as: 'engineer', path: '/community/guides/register-device', width: PHONE, full: true, maxHeight: 1500 },
+  { name: 'help-menu', as: 'clinic_admin', path: '/devices', width: PHONE,
+    keepHelp: true, act: async p => { await p.click('#fb-btn'); await p.waitForTimeout(300); } },
+  { name: 'help-panel', as: 'clinic_admin', path: '/devices', width: PHONE,
+    keepHelp: true, act: async p => { await p.click('#fb-btn'); await p.click('.fb-help[onclick]'); await p.waitForTimeout(400); } },
   { name: 'phone-worlds', as: 'engineer', path: '/dashboard', width: PHONE },
   { name: 'visitor-start', as: 'visitor', path: '/community/start', width: PHONE },
   { name: 'visitor-quests', as: 'visitor', path: '/community/start/quests', width: PHONE },
@@ -194,9 +205,11 @@ async function shoot(browser, shot, lang, ids) {
   const page = await login(ctx, shot.as);
   await setLang(page, lang);
   await page.goto(BASE + target, { waitUntil: 'networkidle' });
+  if (shot.optional && !(await page.$(shot.optional))) { console.log(`skip ${shot.name}: ${shot.optional} not on the page`); await ctx.close(); return; }
   if (shot.act) await shot.act(page);
-  // The floating "?" help button covers content in crops; hide it.
-  await page.addStyleTag({ content: '#fb-btn,.fb-btn,.fb-menu{display:none!important}' }).catch(() => {});
+  // The floating "?" help button covers content in crops; hide it (except
+  // on the shots that are about it).
+  if (!shot.keepHelp) await page.addStyleTag({ content: '#fb-btn,.fb-btn,.fb-menu{display:none!important}' }).catch(() => {});
   const file = path.join(OUT, lang === 'en' ? `${shot.name}.png` : `${shot.name}.${lang}.png`);
   if (shot.el) {
     const el = await page.$(shot.el);

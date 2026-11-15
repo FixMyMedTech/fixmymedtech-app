@@ -20,7 +20,7 @@ import features.auth.helper as auth_helper
 import features.calls.api as calls_api
 import features.faults.api as faults_api
 import features.auth.api as auth_api
-from components import page_shell, status_badge, alert, fmt_date
+from components import page_shell, status_badge, alert, fmt_date, page_head
 from i18n import t as make_t
 
 rt = APIRouter()
@@ -516,8 +516,7 @@ async def get_requests(req):
     open_ = data.get("open", [])
     mine = data.get("mine", [])
     content = Div(
-        H1(_("call.requests_title")),
-        P(_("call.requests_intro"), cls="muted", style="margin-bottom:16px;"),
+        page_head(_("call.requests_title"), _("call.requests_intro"), "inbox"),
         alert(_("call.unlock_to_offer"), "info") if data and not data.get("can_offer") else "",
         Div(H3(_("call.your_offers"), cls="card-title"), *[item(r, True) for r in mine], cls="card",
             style="margin-bottom:16px;") if mine else "",

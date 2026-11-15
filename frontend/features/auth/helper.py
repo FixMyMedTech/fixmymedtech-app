@@ -43,8 +43,24 @@ def cache_onboarding(req, me: dict) -> None:
     quests themselves are the community gate below (member_status)."""
     req.session["user_account_kind"] = me.get("account_kind") or ""
     req.session["user_is_talk_host"] = "1" if me.get("is_talk_host") else ""
-    has_clinic = any(o.get("role") == "admin" for o in me.get("organizations") or [])
+    # Any place in a clinic counts: a nurse invited by the clinic has no
+    # clinic of their own to set up (only a clinic account with none does).
+    has_clinic = bool(me.get("organizations"))
     req.session["user_clinic_ready"] = "1" if has_clinic else ""
+    # Who sees "Add device": engineers, and clinic admins. A nurse
+    # (clinical_staff) reports and calls, but doesn't register devices.
+    roles = {o.get("role") for o in me.get("organizations") or []}
+    req.session["user_adds_devices"] = "1" if (
+        (me.get("account_kind") or "engineer") == "engineer" or "admin" in roles or me.get("is_superuser")) else ""
+
+
+def adds_devices(req) -> bool:
+    """Show "Add device" (the API still decides per clinic)."""
+    return req.session.get("user_adds_devices", "1") == "1"
+
+
+def is_clinic_account(req) -> bool:
+    return req.session.get("user_account_kind") == "clinic"
 
 
 # Paths a clinic account still setting up its clinic can always open.

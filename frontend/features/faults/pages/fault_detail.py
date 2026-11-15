@@ -368,7 +368,7 @@ async def get(req, device_id: str, fault_id: str, err: str = "", ok: str = ""):
         )
 
     # Wave 3: a part is missing → write the spare-part post from here.
-    spare_link = "" if status == "resolved" else Div(
+    spare_link = "" if status == "resolved" or auth_helper.is_clinic_account(req) else Div(
         Span(_("spare.fault_hint"), style="color:var(--text-muted);font-size:14px;"),
         A(_("spare.cta"), href=f"/device/{device_id}/spare-part", cls="btn btn-secondary btn-sm"),
         style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;",

@@ -166,9 +166,9 @@ All test passwords are `Pass123!`.
 | --- | --- |
 | `applicant@test.org` | An applicant (Esi Boateng, Kampala) with an open application |
 | `tech@mulago.org` (John Okello) | Community Builder lead: reviews applicants, makes candidates, recognises Supporter, Event Organiser and Active Builder |
-| `admin@kenyatta.org` | Communicator lead: can edit the Communicator page |
+| `tech@kenyatta.org` | Communicator lead: can edit the Communicator page |
 | `eng@mulago.org` (Paul Wasswa) | Clinics Connector member with Supporter and Active Builder stars |
-| `nurse@mulago.org` | Candidate Communicator |
+| `nurse@mulago.org` | Clinic staff (a clinic account, not in a team) |
 
 Make one of them a superuser in SQLAdmin to name leads and see everything. To test the full journey, join at `/join` with a new email, then review yourself as `tech@mulago.org`.
 

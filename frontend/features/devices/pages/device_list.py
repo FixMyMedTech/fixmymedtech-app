@@ -362,7 +362,8 @@ async def get(req, status: str = "", healthsite_id: str = "", view: str = ""):
 
     content = Div(
         page_head(_("device_list.title"), count_line, "devices", "",
-                  A(_("device_list.add"), href="/new_device", cls="btn btn-primary")),
+                  *([A(_("device_list.add"), href="/new_device", cls="btn btn-primary")]
+                    if auth_helper.adds_devices(req) else [])),
         Div(*pills, healthsite_filter, cls="toolbar"),
         Div(view_toggle, style="margin:-4px 0 12px;"),
         *( [Style(CMMS_CSS), clinic_groups(_, devices, __import__("datetime").date.today().isoformat())]

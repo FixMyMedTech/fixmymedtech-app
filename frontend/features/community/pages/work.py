@@ -18,7 +18,7 @@ from starlette.responses import RedirectResponse, Response
 
 import features.auth.helper as auth_helper
 import features.community.api as community_api
-from components import page_shell, fmt_date, page_head
+from components import page_shell, fmt_date, page_head, lucide
 from features.community.ui import flash, error_detail, perms, has_dashboard, name_of
 from i18n import t as make_t
 
@@ -29,9 +29,10 @@ WORK_CSS = """
 .work .lead-in{color:var(--text-muted);margin:-4px 0 16px;}
 .work .muted{color:var(--text-muted);font-size:14px;}
 .work .small{font-size:12px;color:var(--text-muted);}
-.shortcuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
-.shortcut{display:block;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border-strong);border-radius:var(--radius-card);text-decoration:none;color:var(--text);}
+.shortcuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+.shortcut{display:block;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border-strong);border-radius:var(--radius-card);text-decoration:none;color:var(--text);}
 .shortcut:hover{background:var(--sunken);}
+.shortcut .num svg{width:24px;height:24px;display:block;color:var(--lead);}
 .shortcut .num{font-size:24px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;}
 .shortcut .lbl{font-size:14px;font-weight:600;}
 .shortcut .sub{font-size:12px;color:var(--text-muted);}
@@ -176,11 +177,11 @@ async def lead(req, msg: str = "", error: str = ""):
         shortcut(str(len(to_check)), _("w5.sc_tasks"), _("w5.sc_tasks_sub"), "#check", "warn" if to_check else "ok"),
     ]
     if user_hosts:
-        shortcut_host = shortcut("🎙", _("w5.sc_host"), _("w5.sc_host_sub"), "/host", "primary")
+        shortcut_host = shortcut(lucide("mic"), _("w5.sc_host"), _("w5.sc_host_sub"), "/host", "primary")
         shortcuts.append(shortcut_host)
     if has_dashboard(req):
-        shortcuts.append(shortcut("⚙", _("w5.sc_admin"), _("w5.sc_admin_sub"), "/community/admin", "primary"))
-    shortcuts.append(shortcut("✚", _("w5.sc_board"), _("w5.sc_board_sub"), "/community/tasks", "primary"))
+        shortcuts.append(shortcut(lucide("shield"), _("w5.sc_admin"), _("w5.sc_admin_sub"), "/community/admin", "primary"))
+    shortcuts.append(shortcut(lucide("board"), _("w5.sc_board"), _("w5.sc_board_sub"), "/community/tasks", "primary"))
 
     content = Div(
         page_head(_("w5.lead_title"), _("w5.lead_intro"), "check", "lead"),

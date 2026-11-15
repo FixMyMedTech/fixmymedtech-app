@@ -145,21 +145,29 @@ async def seed():
                 )
                 print(f"  ✓ {email:<30} → {user_id}")
 
-            # Insert into profiles. Test users are community members already
-            # (status 'member' + Ambassador, see migration 029), so they can
-            # use the whole platform without doing the welcome quests.
+            # Insert into profiles. Engineers (technician, engineering_staff)
+            # are community members already (status 'member', see migration
+            # 029), so they use the whole platform without the welcome quests.
+            # Clinic admins and clinical staff are clinic accounts (030):
+            # account_kind 'clinic', status 'staff', so they see the clinic's
+            # app, not the engineer's.
+            clinic_side = role in ("admin", "clinical_staff")
             await db.execute(
                 text(f"""
-                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, member_status, member_since)
-                    VALUES (:id, :username, :full_name, :country, 'member', NOW())
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, member_status, member_since, account_kind)
+                    VALUES (:id, :username, :full_name, :country, :status, NOW(), :kind)
                     ON CONFLICT (id) DO UPDATE SET
-                        full_name=EXCLUDED.full_name
+                        full_name=EXCLUDED.full_name,
+                        member_status=EXCLUDED.member_status,
+                        account_kind=EXCLUDED.account_kind
                 """),
                 {
                     "id": str(user_id),
                     "username": email.replace("@", "_").split(".")[0],
                     "full_name": full_name,
                     "country": ORGANIZATIONS[org_idx]["country"],
+                    "status": "staff" if clinic_side else "member",
+                    "kind": "clinic" if clinic_side else "engineer",
                 },
             )
             # Insert into org_users (junction table)
@@ -191,18 +199,17 @@ async def seed():
         #   tech@mulago.org    John Okello, lead of Community Builders: reviews
         #                      applicants, adds Community Builders, recognises
         #                      Supporter / Event Organiser / Active Builder
-        #   admin@kenyatta.org lead of Communicators
+        #   tech@kenyatta.org  lead of Communicators
         #   eng@mulago.org     Paul Wasswa, member of Clinics Connectors
-        #   nurse@mulago.org   candidate Communicator
+        # Clinic admins and nurses are clinic accounts, not in any team.
         # applicant@test.org has just joined and only sees /community/start.
         async def profile_id(email):
             return (await db.execute(
                 text(f"SELECT id FROM {SCHEMA}.users WHERE email = :e"), {"e": email})).scalar()
 
         places = [("tech@mulago.org", "community_builder", "lead"),
-                  ("admin@kenyatta.org", "communicator", "lead"),
-                  ("eng@mulago.org", "clinics_connector", "member"),
-                  ("nurse@mulago.org", "communicator", "candidate")]
+                  ("tech@kenyatta.org", "communicator", "lead"),
+                  ("eng@mulago.org", "clinics_connector", "member")]
         for email, team, level in places:
             pid = await profile_id(email)
             if pid:
@@ -246,7 +253,7 @@ async def seed():
             """), {"id": str(app_id)})
         await db.commit()
         print("✓ community accounts seeded: tech@mulago.org leads Community Builders, "
-              "admin@kenyatta.org leads Communicators, applicant@test.org is an applicant")
+              "tech@kenyatta.org leads Communicators, applicant@test.org is an applicant")
 
         # ── 4. Onboarding test accounts ──────────────────────
         for email, password, full_name, superuser, status in ONBOARDING_USERS:

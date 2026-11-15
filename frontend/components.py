@@ -1180,11 +1180,12 @@ def sidebar(current: str = "", lang: str = "en"):
         if user.get("is_talk_host"):
             grow.append(("/host", "mic", _("nav.talk_host")))
         grow.append(("/groups", "groups", _("nav.groups")))
+        # Clinic accounts (staff) are not community members: no journey,
+        # achievements or task board for them, only the people directory.
         community = [
-            ("/community", "journey",   _("nav.community")),
-            ("/community/achievements", "hexagon", _("nav.community_achievements")),
+            *([("/community", "journey",   _("nav.community")),
+               ("/community/achievements", "hexagon", _("nav.community_achievements"))] if engineer else []),
             ("/network",   "network",   _("nav.network")),
-            ("/library",   "library",   _("nav.library")),
             *([("/community/tasks", "board", _("nav.task_board"))] if status == "member" else []),
             *([("/lead", "check", _("nav.lead"))] if any(p.startswith("recognise:") for p in perms) else []),
         ]
@@ -1200,6 +1201,7 @@ def sidebar(current: str = "", lang: str = "en"):
                 ("/faults",    "faults",    _("nav.faults")),
                 *([("/requests", "inbox", _("nav.requests"))] if engineer and status == "member" else []),
                 ("/tasks",     "tasks",     _("nav.tasks")),
+                ("/library",   "library",   _("nav.library")),
             ]),
             (_("nav.sec_grow"), "eng", grow),
             (_("nav.sec_community"), "lead", community),

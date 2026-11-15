@@ -171,7 +171,8 @@ async def get(req):
             Div(Div(_("dash.hero_eyebrow"), cls="hero-eyebrow"),
                 H1(_("dash.hero_hi").format(name=first) if first else _("dash.hero_hi_anon")),
                 P(_("dash.hero_line").format(pct=pct, n=total) if total else _("dash.hero_empty"))),
-            A(lucide("plus"), _("dashboard.add_device").lstrip("+ "), href="/new_device", cls="btn btn-light"),
+            A(lucide("plus"), _("dashboard.add_device").lstrip("+ "), href="/new_device", cls="btn btn-light")
+            if auth_helper.adds_devices(req) else "",
             cls="hero-top",
         ),
         Div(Span(style=f"width:{pct}%"), cls="meter", role="img",

@@ -295,7 +295,9 @@ async def get(req, device_id: str, msg: str = "", error: str = ""):
             A(_("cmms.report_problem"), href=f"/d/{device_id}/report", cls="btn btn-primary"),
             A(_("call.call_btn"), href=f"/d/{device_id}/call", cls="btn btn-secondary"),
             A(_("maintenance_log.submit"), href=f"/d/{device_id}/maintenance-log", cls="btn btn-secondary btn-sm"),
-            A(_("spare.cta"), href=f"/device/{device_id}/spare-part", cls="btn btn-secondary btn-sm"),
+            # Spare parts are the engineer's job; clinic accounts call one.
+            A(_("spare.cta"), href=f"/device/{device_id}/spare-part", cls="btn btn-secondary btn-sm")
+            if not auth_helper.is_clinic_account(req) else "",
             Button(_("device_detail.show_qr"), type="button", cls="btn btn-secondary btn-sm", onclick="showDeviceQR()"),
             cls="id-cta",
         ),

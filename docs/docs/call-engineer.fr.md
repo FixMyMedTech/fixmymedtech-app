@@ -43,7 +43,7 @@ Appeler un ingénieur marche un peu comme appeler un taxi : des ingénieurs sont
 
 ## Pour les ingénieurs
 
-Les ingénieurs répondent depuis **Travail → Demandes** : voir [Demandes et offres](requests.md) (en anglais).
+Les ingénieurs répondent depuis **Travail → Demandes** : voir [Demandes et offres](requests.md).
 
 ## En cas de problème
 

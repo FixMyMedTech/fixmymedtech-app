@@ -57,7 +57,7 @@ Votre statut apparaît sur votre profil, sous **Statut du compte :**.
     - **Assistez à une rencontre de la communauté** : un court appel vidéo. L'animateur coche cette étape après l'appel.
 
     Quand la dernière est faite, vous voyez *« Bienvenue dans la communauté ! »* et les trois mondes s'ouvrent. Vous pouvez inviter des cliniques et enregistrer les appareils de chaque clinique qui vous nomme ingénieur responsable.
-3. **Membre d'une équipe.** Il y a trois équipes : les **Communicants**, les **Bâtisseurs de communauté** et les **Connecteurs de cliniques**. Un Bâtisseur de communauté fait de vous un **Candidat** ; le **Responsable** de l'équipe fait ensuite de vous un **Membre**. Voir [Comment fonctionne la communauté](community-guide.md) (en anglais).
+3. **Membre d'une équipe.** Il y a trois équipes : les **Communicants**, les **Bâtisseurs de communauté** et les **Connecteurs de cliniques**. Un Bâtisseur de communauté fait de vous un **Candidat** ; le **Responsable** de l'équipe fait ensuite de vous un **Membre**. Voir [Comment fonctionne la communauté](community-guide.md).
 
 !!! note "Personnel de clinique"
     Les personnes ajoutées par leur clinique, et les comptes clinique, n'ont pas besoin des étapes d'accueil : les pages de leur clinique sont ouvertes tout de suite. Ils peuvent quand même faire les étapes pour devenir contributeurs de la communauté.

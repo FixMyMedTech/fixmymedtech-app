@@ -85,9 +85,10 @@ theme:
 
 plugins:
   - search
-  # English is the default (page.md); French sits next to it (page.fr.md).
-  # A page without a French file falls back to English. Images follow the
-  # same rule: images/guide/x.fr.png replaces x.png on French pages.
+  # English is the default (page.md); French (page.fr.md) and Spanish
+  # (page.es.md) sit next to it. A page without a translation falls back to
+  # English. Images follow the same rule: images/guide/x.fr.png replaces
+  # x.png on French pages.
   - i18n:
       docs_structure: suffix
       fallback_to_default: true
@@ -132,6 +133,40 @@ plugins:
             Questions and problems: Questions et problèmes
             Glossary: Glossaire
             Developers: Développeurs
+        - locale: es
+          name: Español
+          build: true
+          site_name: Ayuda de FixMyMedTech
+          site_description: Cómo usar FixMyMedTech, la plataforma donde clínicas e ingenieros biomédicos mantienen en funcionamiento los dispositivos médicos.
+          nav_translations:
+            Home: Inicio
+            Start here: Empezar
+            How the app is organised: Cómo está organizada la aplicación
+            I work in a clinic: Trabajo en una clínica
+            I am an engineer: Soy ingeniero
+            I lead or host in the community: Soy líder o anfitrión en la comunidad
+            Equipment: Equipamiento
+            Set up your clinic: Configura tu clínica
+            Register a device: Registrar un dispositivo
+            Look after your clinic's devices: Cuida los dispositivos de tu clínica
+            Report a fault and get it repaired: Reportar una falla y conseguir que se repare
+            Call an engineer: Llamar a un ingeniero
+            Attach a manual and search the library: Adjuntar un manual y buscar en la biblioteca
+            Groups, members and roles: Grupos, miembros y roles
+            Work: Trabajo
+            Engineer workspace: Espacio del ingeniero
+            Invite a clinic: Invitar a una clínica
+            Requests and offers: Solicitudes y ofertas
+            Talk host: Anfitrión de charlas
+            Community: Comunidad
+            How the community works: Cómo funciona la comunidad
+            Claims, task board and missing manuals: Reclamos, tablero de tareas y manuales que faltan
+            To validate: Por validar
+            Network and your profile: Red y perfil
+            Help: Ayuda
+            Questions and problems: Preguntas y problemas
+            Glossary: Glosario
+            Developers: Desarrolladores
 
 extra_css:
   - stylesheets/extra.css

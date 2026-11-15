@@ -15,7 +15,7 @@ Every user guide follows the same shape:
 4. **What happens next**;
 5. **If something goes wrong**.
 
-Use the app's exact labels, in bold, as they appear in `frontend/i18n.py` (English) and, on French pages, the French string of the same key.
+Use the app's exact labels, in bold, as they appear in `frontend/i18n.py` (English) and, on French and Spanish pages, the French or Spanish string of the same key (never your own translation of a label the app already has).
 
 ## Page names are a contract
 
@@ -36,9 +36,11 @@ Translations use the [mkdocs-static-i18n](https://github.com/ultrabug/mkdocs-sta
 
 The header has a language switcher. Menu titles are translated in `mkdocs.yml` (`nav_translations`).
 
-Translated now: `index`, `three-worlds`, `start-clinic`, `start-engineer`, `start-lead`, `faq`, `glossary`, `register-device`, `report-fault`, `attach-manual`, `clinic-devices`, `call-engineer`, `engineer-workspace`, `community-work`. Spanish is not set up yet: add `- locale: es` under `languages` in `mkdocs.yml` and `page.es.md` files.
+Translated now, in French (`page.fr.md`) and in Spanish (`page.es.md`): `index`, `three-worlds`, `start-clinic`, `start-engineer`, `start-lead`, `faq`, `glossary`, `register-device`, `report-fault`, `attach-manual`, `clinic-devices`, `call-engineer`, `engineer-workspace`, `community-work`, `community-guide`, `clinic-setup`, `groups`, `invite-clinic`, `requests`, `talk-host`, `validate`, `network`. Every help-centre page exists in the three languages. The Developers pages and the Code of Conduct are English only. To add a language, add a `- locale: xx` block under `languages` in `mkdocs.yml` (with `site_name`, `site_description` and `nav_translations`) and the `page.xx.md` files.
 
-When you change an English page, change its French page in the same pull request.
+Spanish pages call the Equipment world **Equipamiento** and speak to the reader as *tú*; French pages use *vous*.
+
+When you change an English page, change its French and Spanish pages in the same pull request.
 
 ## Build and preview
 

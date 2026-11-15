@@ -59,7 +59,7 @@ La clinique doit **vous confirmer**. Pendant sa configuration, on lui demande *�
 
 ![Inviter une clinique](images/guide/invite-clinic.png){ .shot loading=lazy }
 
-Détails : [Inviter une clinique](invite-clinic.md) (en anglais).
+Détails : [Inviter une clinique](invite-clinic.md).
 
 ## 5. Enregistrer un appareil pour une clinique
 
@@ -81,7 +81,7 @@ Quand une clinique touche **Appeler un ingénieur**, les ingénieurs qu'elle a n
 2. Ouvrez-en une, indiquez votre **prix de visite** et quand vous pouvez venir, touchez **Envoyer l'offre**. Ou touchez **Pas pour moi**.
 3. Si la clinique accepte, la panne vous est assignée : diagnostic, approbation, réparation.
 
-Détails : [Demandes et offres](requests.md) (en anglais) et [Signaler une panne et la faire réparer](report-fault.md).
+Détails : [Demandes et offres](requests.md) et [Signaler une panne et la faire réparer](report-fault.md).
 
 ## 7. Organiser votre journée avec Tâches
 
@@ -99,7 +99,7 @@ Dans **Appareils**, choisissez **Par clinique** pour voir vos appareils regroup�
 - **Équipes et réussites** : la carte des trois équipes et des cinq réussites.
 - **Tableau des tâches** : de petits travaux (trouver un manuel, vérifier une clinique) qui rapportent des points.
 
-Voir [Comment fonctionne la communauté](community-guide.md) (en anglais).
+Voir [Comment fonctionne la communauté](community-guide.md).
 
 ## En cas de problème
 

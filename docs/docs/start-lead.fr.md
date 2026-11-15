@@ -36,7 +36,7 @@ Personne ne valide ni ne reconnaît ses propres réussites.
 
 ![Animation des rencontres](images/guide/host.png){ .shot loading=lazy }
 
-Détails : [Talk host](talk-host.md) (en anglais).
+Détails : [Animation des rencontres](talk-host.md).
 
 ## Valider les déclarations et vérifier les tâches
 
@@ -47,7 +47,7 @@ Détails : [Talk host](talk-host.md) (en anglais).
 
 ![À valider](images/guide/to-validate.png){ .shot loading=lazy }
 
-Détails : [To validate](validate.md) (en anglais).
+Détails : [À valider](validate.md).
 
 ## Gérer les équipes et les candidats
 

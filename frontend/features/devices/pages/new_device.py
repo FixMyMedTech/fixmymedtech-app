@@ -110,7 +110,7 @@ def _locked_page(lang, data):
     items = [Li(Strong(c.get("name", "")), Span(" · ", reasons.get(c.get("reason"), ""), cls="ob-muted"))
              for c in locked]
     if not data.get("is_unlocked"):
-        cta = A(_("ob.see_quests"), href="/getting-started", cls="btn btn-primary")
+        cta = A(_("ob.see_quests"), href="/community/start/quests", cls="btn btn-primary")
         lead = _("ob.lock_lead_quests")
     else:
         cta = A(_("ob.invite_clinic_cta"), href="/invite-clinic", cls="btn btn-primary")

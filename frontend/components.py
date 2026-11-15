@@ -588,6 +588,50 @@ tr:hover td { background:var(--c-bg-2); }
 /* Public pages (no sidebar): content starts below the fixed top bar */
 .public-shell .pub-page { padding-top: var(--topbar-h); }
 
+/* ── World switcher (three worlds) ────────────────────────────
+   Tabs in the brand bar on wide screens, a bottom tab bar on phones. */
+.worlds { display:flex; gap:4px; }
+.wt { --tone: var(--primary); display:flex; align-items:center; gap:7px; text-decoration:none; font-weight:600; white-space:nowrap; }
+.wt.w-work { --tone: var(--accent); } .wt.w-community { --tone: var(--lead); }
+.wt-ico { display:grid; place-items:center; }
+.wt-ico svg { width:17px; height:17px; display:block; }
+.worlds-top { margin:0 auto; padding:4px; border-radius:12px; background:rgba(255,255,255,.12); }
+.worlds-top .wt { padding:5px 14px; border-radius:9px; font-size:.84rem; color:var(--on-brand); opacity:.85; transition:background .15s, opacity .15s; }
+.worlds-top .wt:hover { background:rgba(255,255,255,.14); opacity:1; }
+.worlds-top .wt.on { background:var(--surface); color:var(--tone); opacity:1; font-weight:700; }
+.worlds-bottom { display:none; }
+@media (max-width: 768px) {
+  .worlds-top { display:none; }
+  .worlds-bottom {
+    display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:0;
+    position:fixed; left:0; right:0; bottom:0; z-index:280;
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:4px 8px calc(4px + env(safe-area-inset-bottom, 0px));
+  }
+  .worlds-bottom .wt { flex-direction:column; gap:2px; padding:4px 0; font-size:.7rem; color:var(--text-muted); }
+  .worlds-bottom .wt-ico { width:44px; height:26px; border-radius:13px; transition:background .15s, color .15s; }
+  .worlds-bottom .wt.on { color:var(--tone); font-weight:700; }
+  .worlds-bottom .wt.on .wt-ico { background:var(--tone); color:var(--surface); }
+  /* Room for the tab bar: lift the "?" button and the page end above it. */
+  body:has(.worlds-bottom) { --worlds-h: 58px; }
+  body:has(.worlds-bottom) .fb-widget { bottom:calc(16px + var(--worlds-h) + env(safe-area-inset-bottom, 0px)); }
+  body:has(.worlds-bottom) .main { padding-bottom:calc(var(--fb-clearance) + var(--worlds-h)); }
+}
+@media print { .worlds { display:none; } }
+/* World doors on /home: one big door per unlocked world. */
+.doors { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-top:18px; }
+.door { --tone: var(--primary); --tone-tint: var(--primary-tint); display:flex; flex-direction:column; gap:10px; padding:20px; border-radius:var(--radius-panel, 18px); background:var(--surface); border:1px solid var(--border); border-top:5px solid var(--tone); text-decoration:none; color:var(--text); transition:transform .15s, box-shadow .15s, border-color .15s; }
+.door.w-work { --tone: var(--accent); --tone-tint: var(--accent-tint); } .door.w-community { --tone: var(--lead); --tone-tint: var(--lead-tint); }
+.door:hover { transform:translateY(-2px); box-shadow:0 14px 30px -20px var(--tone); }
+.door-ico { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; background:var(--tone); color:var(--surface); }
+.door-ico svg { width:26px; height:26px; }
+.door b { font-size:1.1rem; }
+.door p { font-size:.85rem; }
+.door-links { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+.door-links span { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; font-weight:600; padding:3px 9px; border-radius:99px; background:var(--tone-tint); color:var(--tone); }
+.door-links svg { width:13px; height:13px; }
+@media (prefers-reduced-motion: reduce) { .door { transition:none; } .door:hover { transform:none; } }
+
 /* Mobile: drawer sidebar */
 .sb-toggle, .sb-close, .sb-backdrop { display:none; }
 
@@ -1151,61 +1195,120 @@ def lucide(name: str, cls: str = ""):
 DASHBOARD_PERMISSIONS = ("view_applicants", "view_members", "view_history")
 
 
-def sidebar(current: str = "", lang: str = "en"):
+# ── Three worlds (platform brief) ───────────────────────────
+# Equipment = the clinic CMMS (primary blue), Work = the engineer's workspace
+# (teal), Community = journey, teams, recognition, library (lead purple).
+# The brand bar switches world, the sidebar lists only the current world's
+# pages. Which world a page belongs to comes from its path; pages outside
+# every world (profile, home) keep the world you came from.
+WORLD_TONES = {"equipment": "", "work": "eng", "community": "lead"}
+WORLD_ICONS = {"equipment": "devices", "work": "wrench", "community": "journey"}
+WORLD_PATHS = (
+    ("work", ("/tasks", "/requests", "/invite-clinic", "/host", "/getting-started")),
+    ("community", ("/community", "/lead", "/network", "/library", "/documents")),
+    ("equipment", ("/dashboard", "/devices", "/device", "/new_device", "/faults",
+                   "/groups", "/calls", "/clinic", "/d/", "/scan-result")),
+)
+
+
+def world_for_path(path: str) -> str:
+    """The world a path belongs to, or "" (profile, home, feedback...)."""
+    for world, prefixes in WORLD_PATHS:
+        for pre in prefixes:
+            if path == pre or path.startswith(pre if pre.endswith("/") else pre + "/"):
+                return world
+    return ""
+
+
+def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
+    """The worlds this account has unlocked, each with its sidebar links:
+    [{"key", "tone", "icon", "label", "href", "links": [(href, icon, label)]}].
+    Guardrail "show less, unlock more": a new engineer (welcome quests not
+    done) has the community only; a clinic account has its equipment only
+    (with the library and the people directory); an engineer whose quests are
+    done has all three."""
     _ = make_t(lang)
-    user = current_user_ctx()
+    user = user if user is not None else current_user_ctx()
     status = user.get("member_status") or "member"
     perms = set(user.get("permissions") or [])
     engineer = (user.get("account_kind") or "engineer") == "engineer"
-    # Links come in sections (platform brief): (heading, tone, links). Tone
-    # colours the icon tiles: "" = equipment work (clinic blue), "eng" =
-    # growing the network (engineer teal), "lead" = community (lead purple).
-    # Profile and Sign out live in the avatar menu (top right).
+
+    def world(key, links):
+        return {"key": key, "tone": WORLD_TONES[key], "icon": WORLD_ICONS[key],
+                "label": _(f"nav.world_{key}"), "href": links[0][0], "links": links}
+
     if status in ("applicant", "refused"):
-        # Guardrail "show less, unlock more": until the three welcome quests
-        # are done, the quests and the manual library only.
-        sections = [
-            ("", "lead", [
-                ("/community/start", "journey", _("nav.community_start")),
-                ("/library",         "library", _("nav.library")),
-            ]),
-        ]
-    else:
-        grow = []
-        if engineer and status == "member":
-            grow = [
-                ("/getting-started", "flag", _("nav.getting_started")),
-                ("/invite-clinic",   "mail", _("nav.invite_clinic")),
-            ]
-        if user.get("is_talk_host"):
-            grow.append(("/host", "mic", _("nav.talk_host")))
-        grow.append(("/groups", "groups", _("nav.groups")))
-        # Clinic accounts (staff) are not community members: no journey,
-        # achievements or task board for them, only the people directory.
-        community = [
-            *([("/community", "journey",   _("nav.community")),
-               ("/community/achievements", "hexagon", _("nav.community_achievements"))] if engineer else []),
-            ("/network",   "network",   _("nav.network")),
-            ("/library",   "library",   _("nav.library")),
-            *([("/community/tasks", "board", _("nav.task_board"))] if status == "member" else []),
-            *([("/lead", "check", _("nav.lead"))] if any(p.startswith("recognise:") for p in perms) else []),
-        ]
-        if perms & set(DASHBOARD_PERMISSIONS):
-            community.append(("/community/admin", "shield", _("nav.community_admin")))
-        sections = [
-            ("", "", [
-                ("/home",      "home",      _("nav.home")),
-                ("/dashboard", "dashboard", _("nav.dashboard")),
-            ]),
-            (_("nav.sec_equipment"), "", [
-                ("/devices",   "devices",   _("nav.devices")),
-                ("/faults",    "faults",    _("nav.faults")),
-                *([("/requests", "inbox", _("nav.requests"))] if engineer and status == "member" else []),
-                ("/tasks",     "tasks",     _("nav.tasks")),
-            ]),
-            (_("nav.sec_grow"), "eng", grow),
-            (_("nav.sec_community"), "lead", community),
-        ]
+        return [world("community", [
+            ("/community/start", "journey", _("nav.community_start")),
+            ("/library",         "library", _("nav.library")),
+        ])]
+
+    equipment = [
+        ("/dashboard", "dashboard", _("nav.dashboard")),
+        ("/devices",   "devices",   _("nav.devices")),
+        ("/faults",    "faults",    _("nav.faults")),
+        ("/groups",    "groups",    _("nav.groups")),
+    ]
+    leader = [("/lead", "check", _("nav.lead"))] if any(p.startswith("recognise:") for p in perms) else []
+    admin = [("/community/admin", "shield", _("nav.community_admin"))] if perms & set(DASHBOARD_PERMISSIONS) else []
+    host = [("/host", "mic", _("nav.talk_host"))] if user.get("is_talk_host") else []
+
+    if not engineer:
+        # Clinic accounts and clinic staff are not community members: one
+        # world, plus the manuals and the people directory they still need.
+        return [world("equipment", equipment + [
+            ("/tasks",   "tasks",   _("nav.tasks")),
+            ("/network", "network", _("nav.network")),
+            ("/library", "library", _("nav.library")),
+        ] + host + leader + admin)]
+
+    work = [
+        ("/tasks",        "tasks", _("nav.tasks")),
+        ("/requests",     "inbox", _("nav.requests")),
+        # Getting started is done (member): the invite page is the next step.
+        ("/invite-clinic", "mail", _("nav.invite_clinic")),
+    ] + host
+    community = [
+        ("/community",              "journey", _("nav.community")),
+        ("/community/achievements", "hexagon", _("nav.community_achievements")),
+        ("/network",                "network", _("nav.network")),
+        ("/community/tasks",        "board",   _("nav.task_board")),
+        ("/library",                "library", _("nav.library")),
+    ] + leader + admin
+    return [world("equipment", equipment), world("work", work), world("community", community)]
+
+
+def current_world(worlds: list[dict], user: dict | None = None) -> dict:
+    user = user if user is not None else current_user_ctx()
+    want = user.get("world") or ""
+    for w in worlds:
+        if w["key"] == want:
+            return w
+    return worlds[0]
+
+
+def world_switcher(lang: str = "en", where: str = "top"):
+    """The world tabs: in the brand bar on wide screens (where="top"), a
+    bottom tab bar on phones (where="bottom"). Hidden while the account has
+    a single world."""
+    _ = make_t(lang)
+    worlds = user_worlds(lang)
+    if len(worlds) < 2:
+        return ""
+    cur = current_world(worlds)["key"]
+    tabs = [A(Span(lucide(w["icon"]), cls="wt-ico"), Span(w["label"], cls="wt-label"),
+              href=w["href"], cls=" ".join(c for c in ("wt", f"w-{w['key']}",
+                                                         "on" if w["key"] == cur else "") if c),
+              aria_current="page" if w["key"] == cur else None)
+            for w in worlds]
+    return Nav(*tabs, cls=f"worlds worlds-{where}", aria_label=_("nav.worlds_label"))
+
+
+def sidebar(current: str = "", lang: str = "en"):
+    worlds = user_worlds(lang)
+    world = current_world(worlds)
+    # One world at a time: no section headings, the tone is the world's.
+    sections = [("", world["tone"], world["links"])]
     nav_items = []
     for heading, tone, links in sections:
         if not links:
@@ -1475,6 +1578,7 @@ def topbar(authenticated: bool, current: str = "", lang: str = "en"):
             title="FixMyMedTech",
             cls="brand"
         ),
+        world_switcher(lang, "top") if authenticated else "",
         Div(*right, cls="top-right"),
         cls="topbar"
     )
@@ -1491,6 +1595,7 @@ def shell(content, title: str = "FixMyMedTech", lang: str = "en",
                 Main(content, cls="main"),
                 cls="shell"
             ),
+            world_switcher(lang, "bottom"),
         )
     else:
         body_inner = Div(content, cls="shell public-shell")

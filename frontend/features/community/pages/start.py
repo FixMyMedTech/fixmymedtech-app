@@ -160,7 +160,7 @@ def _intro(me, _, lang, notice=None):
             cls="cj-quest" + (" done" if state == "done" else ""))
 
     if status == "member":
-        action = A(_("cj.start.next_steps"), href="/getting-started", cls="btn btn-primary")
+        action = A(_("cj.start.next_steps"), href="/invite-clinic", cls="btn btn-primary")
     elif done:
         action = A(_("cj.intro.continue").format(done=done, total=total), href="/community/start/quests",
                    cls="btn btn-primary")

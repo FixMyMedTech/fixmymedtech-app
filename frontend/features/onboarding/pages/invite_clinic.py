@@ -12,19 +12,19 @@ from starlette.responses import RedirectResponse
 import features.auth.helper as auth_helper
 import features.onboarding.api as ob_api
 from features.onboarding.ui import ONBOARDING_CSS, error_detail
-from components import page_shell, status_badge, fmt_date, alert
+from components import page_shell, status_badge, fmt_date, alert, page_head, lucide
 from i18n import t as make_t
 
 rt = APIRouter()
 
 
-def _page(_, me, invitations, *, sent=None, error="", values=None):
+def _page(_, me, invitations, clinics=(), *, sent=None, error="", values=None):
     v = values or {}
     if not me.get("can_invite_clinics"):
         form_card = Div(
             H3(_("ob.invite_locked_heading"), cls="card-title"),
             P(_("ob.invite_locked_body")),
-            A(_("ob.see_quests"), href="/getting-started", cls="btn btn-primary"),
+            A(_("ob.see_quests"), href="/community/start/quests", cls="btn btn-primary"),
             cls="card ob-locked", style="max-width:720px;",
         )
     else:
@@ -65,11 +65,20 @@ def _page(_, me, invitations, *, sent=None, error="", values=None):
     else:
         table = P(_("ob.invitations_empty"), cls="ob-muted")
 
+    # Clinics that named this engineer (was on the old Getting started page).
+    clinics_card = Div(
+        H3(_("ob.my_clinics"), cls="card-title"),
+        Ul(*[Li(Span(c.get("name", "")), status_badge(c.get("status", ""), "engineer")) for c in clinics],
+           cls="ob-list"),
+        cls="card", style="max-width:720px;margin-top:16px;") if clinics else ""
+
     return Div(
         Style(ONBOARDING_CSS),
-        H1(_("ob.invite_clinic")),
-        P(_("ob.invite_intro"), style="color:var(--c-text-2);margin-bottom:18px;"),
+        page_head(_("ob.invite_clinic"), _("ob.invite_intro"), "mail", "eng",
+                  *([A(lucide("plus"), _("ob.register_device_cta"), href="/new_device", cls="btn btn-secondary")]
+                    if me.get("can_invite_clinics") else [])),
         form_card,
+        clinics_card,
         Div(H3(_("ob.invitations_heading"), cls="card-title"), table,
             P(_("ob.invitations_hint"), cls="ob-muted", style="margin-top:10px;"),
             cls="card", style="max-width:960px;margin-top:16px;"),
@@ -85,7 +94,11 @@ async def _load(token):
         invitations = await ob_api.my_clinic_invitations(token)
     except Exception:
         invitations = []
-    return me, invitations
+    try:
+        clinics = await ob_api.my_clinics(token)
+    except Exception:
+        clinics = []
+    return me, invitations, clinics
 
 
 @rt("/invite-clinic")
@@ -95,8 +108,8 @@ async def get(req, sent: str = ""):
         return redirect
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
-    me, invitations = await _load(token)
-    return page_shell(_page(_, me, invitations, sent=sent or None),
+    me, invitations, clinics = await _load(token)
+    return page_shell(_page(_, me, invitations, clinics, sent=sent or None),
                       current="/invite-clinic", title=_("ob.invite_clinic"), lang=lang)
 
 
@@ -120,6 +133,6 @@ async def post(req, email: str = "", message: str = ""):
             error = _("ob.invite_locked_body") if error_detail(e) == "quests_pending" else _("ob.invite_failed")
         except Exception:
             error = _("ob.invite_failed")
-    me, invitations = await _load(token)
-    return page_shell(_page(_, me, invitations, error=error, values={"email": email, "message": message}),
+    me, invitations, clinics = await _load(token)
+    return page_shell(_page(_, me, invitations, clinics, error=error, values={"email": email, "message": message}),
                       current="/invite-clinic", title=_("ob.invite_clinic"), lang=lang)

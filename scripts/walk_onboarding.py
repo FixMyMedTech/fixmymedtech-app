@@ -96,7 +96,11 @@ eng_id = sql(f"select id from fixmymedtech.users where email='{eng_email}'")
 r = host.post(f"/host/applicants/{eng_id}/talk")
 check("host confirms the talk", r.headers.get("location") == "/host?ok=1", r.headers.get("location"))
 r = eng.get("/getting-started")
-check("engineer is now a Contributor (quests done)", "Welcome steps done" in r.text)
+check("quests done: Getting started is gone, next step is Invite a clinic", r.headers.get("location") == "/invite-clinic", r.headers.get("location"))
+r = eng.get("/invite-clinic")
+check("engineer is now a Contributor (invite form open)", r.status_code == 200 and 'name="email"' in r.text, r.status_code)
+check("menu has no Getting started next to Invite a clinic", 'href="/getting-started"' not in r.text and 'href="/community/start"' not in r.text)
+check("the three worlds show as tabs", all(f"wt w-{w}" in r.text for w in ("equipment", "work", "community")))
 r = eng.get("/home")
 if r.headers.get("location") == "/community/welcome":
     # Shown once when the quests are done.
@@ -244,10 +248,10 @@ old = client(); login(old, "admin@mulago.org")
 check("existing admin not gated", old.get("/home").status_code == 200)
 
 # ── 11. i18n smoke: French and Spanish pages render ─────────────
-for lang, word in (("fr", "Premiers pas"), ("es", "Primeros pasos")):
-    eng.post("/lang", data={"lang": lang}, headers={"Referer": "/getting-started"})
-    r = eng.get("/getting-started")
-    check(f"Getting started in {lang}", word in r.text)
+for lang, word in (("fr", "Inviter une clinique"), ("es", "Invitar a una clínica")):
+    eng.post("/lang", data={"lang": lang}, headers={"Referer": "/invite-clinic"})
+    r = eng.get("/invite-clinic")
+    check(f"Invite a clinic in {lang}", word in r.text)
 eng.post("/lang", data={"lang": "en"})
 
 failed = [n for n, ok in results if not ok]

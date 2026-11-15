@@ -4136,6 +4136,22 @@ for _key, (_en, _es, _fr) in _WAVE35_STRINGS.items():
     STRINGS["es"][_key] = _es
     STRINGS["fr"][_key] = _fr
 
+# ── Three worlds (navigation) ────────────────────────────────
+_WORLDS_STRINGS = {
+    'nav.world_equipment': ('Equipment', 'Equipos', 'Équipements'),
+    'nav.world_work': ('Work', 'Trabajo', 'Travail'),
+    'nav.world_community': ('Community', 'Comunidad', 'Communauté'),
+    'nav.worlds_label': ('Parts of the app', 'Partes de la aplicación', 'Parties de l’application'),
+    'home.door_equipment': ('Devices, breakdowns and service, clinic by clinic.', 'Equipos, averías y mantenimiento, clínica por clínica.', 'Appareils, pannes et entretien, clinique par clinique.'),
+    'home.door_work': ('What to do next, and the clinics you bring in.', 'Qué hacer ahora y las clínicas que traes.', 'Quoi faire ensuite, et les cliniques que vous amenez.'),
+    'home.door_community': ('Your journey, teams, people and manuals.', 'Tu recorrido, equipos, personas y manuales.', 'Votre parcours, les équipes, les personnes et les manuels.'),
+    'ob.invite_next_heading': ('Or register a device yourself', 'O registra un equipo tú mismo', 'Ou enregistrez un appareil vous-même'),
+}
+for _key, (_en, _es, _fr) in _WORLDS_STRINGS.items():
+    STRINGS["en"][_key] = _en
+    STRINGS["es"][_key] = _es
+    STRINGS["fr"][_key] = _fr
+
 def t(lang: str):
     strings = STRINGS.get(lang, STRINGS[DEFAULT_LANG])
     def _(key: str, default=None):

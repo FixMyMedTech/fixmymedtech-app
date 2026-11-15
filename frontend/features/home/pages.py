@@ -8,7 +8,7 @@ load_dotenv()
 # __ API imports __
 import features.auth.helper as auth_helper
 
-from components import page_shell, pub_shell, lucide
+from components import page_shell, pub_shell, lucide, user_worlds
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -29,11 +29,14 @@ async def get(req):
 
     token, redirect = auth_helper.require_auth(req)
 
-    # Platform brief: a gradient hero with the two main actions, then big
-    # picture tiles to the main places (signed in only).
-    def big(href, icon, tone, label):
-        return A(Span(lucide(icon), cls=f"ph-ico t-{tone}" if tone else "ph-ico"), B(label),
-                 href=href, cls="big-tile")
+    # Platform brief: a gradient hero with the two main actions, then one big
+    # door per world this account has unlocked (signed in only). The sidebar
+    # has no Home link: the logo opens this page.
+    def door(w):
+        return A(Span(lucide(w["icon"]), cls="door-ico"), B(w["label"]),
+                 P(_(f"home.door_{w['key']}")),
+                 Div(*[Span(lucide(icon), label) for _href, icon, label in w["links"][:4]], cls="door-links"),
+                 href=w["href"], cls=f"door w-{w['key']}")
     landing = Div(
         Div(
             Div(H1(_("home.welcome")), P(_("home.subtitle"))),
@@ -44,13 +47,7 @@ async def get(req):
             ),
             cls="hero",
         ),
-        Div(
-            big("/dashboard", "dashboard", "", _("nav.dashboard")),
-            big("/faults", "faults", "danger", _("nav.faults")),
-            big("/community", "journey", "lead", _("nav.community")),
-            big("/library", "library", "eng", _("nav.library")),
-            cls="big-tiles",
-        ) if not redirect else "",
+        Div(*[door(w) for w in user_worlds(lang)], cls="doors") if not redirect else "",
         style="max-width:960px;",
     )
 

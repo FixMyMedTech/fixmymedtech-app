@@ -151,6 +151,13 @@ class UserContextMiddleware(BaseHTTPMiddleware):
             data["id"] = str(request.session.get("user_id") or "")
             data["account_kind"] = request.session.get("user_account_kind", "")
             data["is_talk_host"] = bool(request.session.get("user_is_talk_host"))
+            # Three worlds: the page's path picks the world; a page outside
+            # every world (profile, home) keeps the one you came from.
+            from components import world_for_path
+            world = world_for_path(request.url.path)
+            if world and request.method == "GET" and request.session.get("world") != world:
+                request.session["world"] = world
+            data["world"] = world or request.session.get("world", "")
         set_current_user(data)
 
         # Onboarding: a clinic account without its clinic yet goes to clinic

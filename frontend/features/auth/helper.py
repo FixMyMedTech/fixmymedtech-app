@@ -68,7 +68,7 @@ CLINIC_SETUP_OPEN_PREFIXES = (
     "/profile", "/logout", "/lang", "/static", "/d/", "/invite/", "/library",
     "/documents/", "/feedback", "/favicon.ico", "/apple-touch-icon.png", "/login",
     "/signup", "/join", "/forgot-password", "/reset-password", "/oauth-callback",
-    "/clinic/",
+    "/clinic/", "/community/guides",
 )
 
 
@@ -252,7 +252,9 @@ APPLICANT_PATHS = ("/community/start", "/community/welcome", "/community/achieve
                    # Invitation links and the onboarding entry point.
                    "/invite", "/getting-started", "/clinic",
                    # Wave 5: anyone signed in may ask for a missing manual.
-                   "/community/tasks/find-manual")
+                   "/community/tasks/find-manual",
+                   # In-app help: the guides an applicant can use.
+                   "/community/guides")
 
 
 def applicant_allowed(path: str) -> bool:

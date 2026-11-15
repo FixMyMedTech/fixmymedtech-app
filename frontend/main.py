@@ -33,6 +33,7 @@ from features.maintenance.pages import public_log, maintenance_log, maintenance_
 from features.onboarding.pages import (getting_started, invite_clinic, invitation, clinic_setup,
                                        clinic_engineers, clinic_privacy, host as onboarding_host)
 from features.calls import pages as calls_pages
+from features.help import pages as help_pages
 from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
@@ -158,6 +159,7 @@ class UserContextMiddleware(BaseHTTPMiddleware):
             if world and request.method == "GET" and request.session.get("world") != world:
                 request.session["world"] = world
             data["world"] = world or request.session.get("world", "")
+        data["path"] = request.url.path  # in-app help: the "?" button's guide
         set_current_user(data)
 
         # Onboarding: a clinic account without its clinic yet goes to clinic
@@ -263,6 +265,8 @@ admin_members.rt.to_app(app)
 admin_teams.rt.to_app(app)
 admin_history.rt.to_app(app)
 community_work.rt.to_app(app)
+# In-app help: /community/guides (no other /community route matches it).
+help_pages.rt.to_app(app)
 
 posthog_log.info(
     "application_started",

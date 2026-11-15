@@ -1141,6 +1141,29 @@ LUCIDE_ICONS = {
     "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>'
              '<path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
 }
+# In-app help (features/help): guide pictures, the "?" menu and video cards.
+LUCIDE_ICONS.update({
+    "learn": '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>'
+             '<path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+    "layers": '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>'
+              '<path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>'
+              '<path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
+    "file-up": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>'
+               '<path d="M12 12v6"/><path d="m15 15-3-3-3 3"/>',
+    "award": '<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/>'
+             '<circle cx="12" cy="8" r="6"/>',
+    "play": '<polygon points="6 3 20 12 6 21 6 3"/>',
+    "message": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    "bug": '<path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/>'
+           '<path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/>'
+           '<path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/>'
+           '<path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>',
+    "external": '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/>',
+    "arrow-right": '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+    "arrow-left": '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+    "x": '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    "help": '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+})
 
 # Device category slug → picture (lucide name). Replaces the emoji stored on
 # the category row: the design system has no emoji in the product.
@@ -1240,6 +1263,7 @@ def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
     if status in ("applicant", "refused"):
         return [world("community", [
             ("/community/start", "journey", _("nav.community_start")),
+            ("/community/guides", "learn",  _("nav.learn")),
             ("/library",         "library", _("nav.library")),
         ])]
 
@@ -1260,6 +1284,7 @@ def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
         return [world("equipment", equipment + [
             ("/tasks",   "tasks",   _("nav.tasks")),
             ("/network", "network", _("nav.network")),
+            ("/community/guides", "learn", _("nav.learn")),
         ] + host + leader + admin)]
 
     work = [
@@ -1273,6 +1298,7 @@ def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
         ("/community/achievements", "hexagon", _("nav.community_achievements")),
         ("/network",                "network", _("nav.network")),
         ("/community/tasks",        "board",   _("nav.task_board")),
+        ("/community/guides",       "learn",   _("nav.learn")),
     ] + leader + admin
     return [world("equipment", equipment), world("work", work), world("community", community)]
 
@@ -1360,12 +1386,21 @@ def language_switcher(current_lang: str):
 
 def feedback_widget(lang: str = "en"):
     """Floating "?" button (bottom-right) opening a menu to send feedback or
-    report an issue. Rendered by every shell, so it is on every page."""
+    report an issue. Rendered by every shell, so it is on every page.
+    In-app help (features/help) adds "How this page works" when a guide
+    documents the current path, and "Learn the app"."""
     _ = make_t(lang)
+    # Imported here: features.help imports this module.
+    from features.help.widget import help_menu
+    help_items, help_extra = help_menu(lang)
     return Div(
+        *help_extra,
         Div(
-            A("💬 ", _("feedback.menu_feedback"), href="/feedback?type=feedback", data_type="feedback"),
-            A("🐞 ", _("feedback.menu_issue"), href="/feedback?type=issue", data_type="issue"),
+            *help_items,
+            A(Span(lucide("message"), cls="nav-menu-ico"), _("feedback.menu_feedback"),
+              href="/feedback?type=feedback", data_type="feedback"),
+            A(Span(lucide("bug"), cls="nav-menu-ico"), _("feedback.menu_issue"),
+              href="/feedback?type=issue", data_type="issue"),
             id="fb-menu", cls="fb-menu",
         ),
         Button("?", id="fb-btn", type="button", cls="fb-btn",

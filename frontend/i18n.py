@@ -4152,6 +4152,289 @@ for _key, (_en, _es, _fr) in _WORLDS_STRINGS.items():
     STRINGS["es"][_key] = _es
     STRINGS["fr"][_key] = _fr
 
+# ── In-app help: guides, "Learn the app", the "?" panel ─────
+# Keys help.* (features/help/). Guide texts: help.<slug>.title / .sum /
+# .s<N>t (step title) / .s<N> (step sentence), see features/help/content.py.
+_HELP_STRINGS = {
+    # Interface
+    'nav.learn': ('Learn the app', 'Aprende a usar la app', 'Découvrir l’application'),
+    'help.page_title': ('Learn the app', 'Aprende a usar la app', 'Découvrir l’application'),
+    'help.page_sub': ('Short guides to each part of FixMyMedTech, picked for your account.', 'Guías cortas para cada parte de FixMyMedTech, elegidas para tu cuenta.', 'De courts guides pour chaque partie de FixMyMedTech, choisis pour votre compte.'),
+    'help.title': ('Learn the app — FixMyMedTech', 'Aprende a usar la app — FixMyMedTech', 'Découvrir l’application — FixMyMedTech'),
+    'help.steps_n': ('{n} steps', '{n} pasos', '{n} étapes'),
+    'help.video': ('Video', 'Vídeo', 'Vidéo'),
+    'help.go_there': ('Go there', 'Ir allí', 'Y aller'),
+    'help.full_guide': ('Read the full guide', 'Leer la guía completa', 'Lire le guide complet'),
+    'help.full_guide_sub': ('Every detail on the documentation site.', 'Todos los detalles en el sitio de documentación.', 'Tous les détails sur le site de documentation.'),
+    'help.suggest': ('Suggest an improvement', 'Sugerir una mejora', 'Proposer une amélioration'),
+    'help.suggest_sub': ('Something missing or wrong in this guide? Tell us.', '¿Falta algo o hay un error en esta guía? Cuéntanos.', 'Il manque quelque chose ou une erreur dans ce guide ? Dites-le-nous.'),
+    'help.suggest_summary': ('Guide: {title}', 'Guía: {title}', 'Guide : {title}'),
+    'help.back': ('All guides', 'Todas las guías', 'Tous les guides'),
+    'help.video_title': ('Watch the video', 'Ver el vídeo', 'Voir la vidéo'),
+    'help.video_sub': ('Opens in a new tab', 'Se abre en una pestaña nueva', 'S’ouvre dans un nouvel onglet'),
+    'help.this_page': ('How this page works', 'Cómo funciona esta página', 'Comment marche cette page'),
+    'help.open_full': ('Open the full guide', 'Abrir la guía completa', 'Ouvrir le guide complet'),
+    'help.close': ('Close', 'Cerrar', 'Fermer'),
+    'help.empty': ('No guide for your account yet.', 'Todavía no hay guías para tu cuenta.', 'Pas encore de guide pour votre compte.'),
+    'help.step_n': ('Step {n}', 'Paso {n}', 'Étape {n}'),
+
+    # How the app is organised
+    'help.three-worlds.title': ('How the app is organised', 'Cómo está organizada la app', 'Comment l’application est organisée'),
+    'help.three-worlds.sum': ('Three worlds, each with its colour: Equipment, Work and Community.', 'Tres mundos, cada uno con su color: Equipos, Trabajo y Comunidad.', 'Trois mondes, chacun sa couleur : Équipements, Travail et Communauté.'),
+    'help.three-worlds.s1t': ('Equipment, in blue', 'Equipos, en azul', 'Équipements, en bleu'),
+    'help.three-worlds.s1': ('Devices, faults, services and manuals: the clinic’s equipment.', 'Equipos, fallas, mantenimientos y manuales: el equipamiento de la clínica.', 'Appareils, pannes, entretiens et manuels : l’équipement de la clinique.'),
+    'help.three-worlds.s2t': ('Work, in teal', 'Trabajo, en verde azulado', 'Travail, en bleu-vert'),
+    'help.three-worlds.s2': ('What to do next as an engineer: tasks, requests near you and the clinics you invite.', 'Qué hacer ahora como ingeniero/a: tareas, solicitudes cercanas y las clínicas que invitas.', 'Quoi faire ensuite en tant qu’ingénieur : tâches, demandes près de vous et cliniques invitées.'),
+    'help.three-worlds.s3t': ('Community, in purple', 'Comunidad, en morado', 'Communauté, en violet'),
+    'help.three-worlds.s3': ('Your journey, teams, achievements and the people around you.', 'Tu recorrido, equipos, logros y las personas a tu alrededor.', 'Votre parcours, les équipes, les réussites et les personnes autour de vous.'),
+    'help.three-worlds.s4t': ('Switch worlds', 'Cambiar de mundo', 'Changer de monde'),
+    'help.three-worlds.s4': ('Use the tabs in the top bar, or the bar at the bottom on a phone. New worlds open as you go.', 'Usa las pestañas de la barra superior, o la barra inferior en el móvil. Se abren mundos nuevos a medida que avanzas.', 'Utilisez les onglets de la barre du haut, ou la barre du bas sur téléphone. De nouveaux mondes s’ouvrent au fil du temps.'),
+    'help.three-worlds.s5t': ('Help on every page', 'Ayuda en cada página', 'De l’aide sur chaque page'),
+    'help.three-worlds.s5': ('Tap the round “?” button at the bottom right to see how a page works or to send feedback.', 'Pulsa el botón redondo «?» abajo a la derecha para ver cómo funciona una página o enviar un comentario.', 'Touchez le bouton rond « ? » en bas à droite pour voir comment marche une page ou envoyer un commentaire.'),
+
+    # Welcome quests
+    'help.getting-started.title': ('Welcome quests', 'Misiones de bienvenida', 'Quêtes de bienvenue'),
+    'help.getting-started.sum': ('Three short steps that open the whole platform to a new engineer.', 'Tres pasos cortos que abren toda la plataforma a un ingeniero/a nuevo/a.', 'Trois courtes étapes qui ouvrent toute la plateforme à un nouvel ingénieur.'),
+    'help.getting-started.s1t': ('Watch the introduction', 'Mira la introducción', 'Regardez l’introduction'),
+    'help.getting-started.s1': ('A few minutes on what the community does and how you can take part.', 'Unos minutos sobre lo que hace la comunidad y cómo participar.', 'Quelques minutes sur ce que fait la communauté et comment y participer.'),
+    'help.getting-started.s2t': ('Complete your profile', 'Completa tu perfil', 'Complétez votre profil'),
+    'help.getting-started.s2': ('Your name, country, city and why you chose biomedical engineering.', 'Tu nombre, país, ciudad y por qué elegiste la ingeniería biomédica.', 'Votre nom, pays, ville et pourquoi vous avez choisi le génie biomédical.'),
+    'help.getting-started.s3t': ('Add a photo', 'Añade una foto', 'Ajoutez une photo'),
+    'help.getting-started.s3': ('A clear photo of your face helps the community recognise you.', 'Una foto clara de tu cara ayuda a la comunidad a reconocerte.', 'Une photo nette de votre visage aide la communauté à vous reconnaître.'),
+    'help.getting-started.s4t': ('Attend a community talk', 'Asiste a una charla de la comunidad', 'Participez à une rencontre de la communauté'),
+    'help.getting-started.s4': ('Book a welcome call. Your host confirms it after the talk.', 'Reserva una llamada de bienvenida. Tu anfitrión la confirma después de la charla.', 'Réservez un appel de bienvenue. Votre hôte le confirme après la rencontre.'),
+    'help.getting-started.s5t': ('The platform opens', 'Se abre la plataforma', 'La plateforme s’ouvre'),
+    'help.getting-started.s5': ('With the three quests done you are a Contributor: invite clinics and register their devices.', 'Con las tres misiones hechas eres Colaborador/a: invita clínicas y registra sus equipos.', 'Les trois quêtes faites, vous êtes Contributeur : invitez des cliniques et enregistrez leurs appareils.'),
+
+    # Register a device
+    'help.register-device.title': ('Register a device and print its QR', 'Registrar un equipo e imprimir su QR', 'Enregistrer un appareil et imprimer son QR'),
+    'help.register-device.sum': ('Scan the QR label, fill six short steps, then print the code.', 'Escanea la etiqueta QR, completa seis pasos cortos e imprime el código.', 'Scannez l’étiquette QR, remplissez six courtes étapes, puis imprimez le code.'),
+    'help.register-device.s1t': ('Scan the QR label', 'Escanea la etiqueta QR', 'Scannez l’étiquette QR'),
+    'help.register-device.s1': ('Tap Scan QR code and point the camera at the label. No camera? Type the code printed under it.', 'Pulsa Escanear QR y apunta la cámara a la etiqueta. ¿Sin cámara? Escribe el código impreso debajo.', 'Touchez Scanner le QR code et visez l’étiquette. Pas de caméra ? Saisissez le code imprimé dessous.'),
+    'help.register-device.s2t': ('Fill the six steps', 'Completa los seis pasos', 'Remplissez les six étapes'),
+    'help.register-device.s2': ('Only the category is required. Add a photo, the location, service dates and notes if you have them.', 'Solo la categoría es obligatoria. Añade foto, ubicación, fechas de mantenimiento y notas si las tienes.', 'Seule la catégorie est obligatoire. Ajoutez photo, emplacement, dates d’entretien et notes si vous les avez.'),
+    'help.register-device.s3t': ('Attach manuals', 'Adjunta manuales', 'Joignez des manuels'),
+    'help.register-device.s3': ('At the last step, tick iFixit manuals to attach, then tap Register device.', 'En el último paso, marca manuales de iFixit para adjuntar y pulsa Registrar dispositivo.', 'À la dernière étape, cochez des manuels iFixit à joindre, puis touchez Enregistrer l’appareil.'),
+    'help.register-device.s4t': ('Print the QR code', 'Imprime el código QR', 'Imprimez le QR code'),
+    'help.register-device.s4': ('On the device page, tap Show QR, then Print or Download PNG, and stick it on the device.', 'En la página del equipo, pulsa Mostrar QR, luego Imprimir o Descargar PNG, y pégalo en el equipo.', 'Sur la page de l’appareil, touchez Afficher le QR, puis Imprimer ou Télécharger PNG, et collez-le sur l’appareil.'),
+    'help.register-device.s5t': ('Who can register', 'Quién puede registrar', 'Qui peut enregistrer'),
+    'help.register-device.s5': ('Clinic admins, and engineers the clinic named responsible once their welcome quests are done.', 'Los administradores de la clínica, y los ingenieros que la clínica nombró responsables una vez hechas sus misiones de bienvenida.', 'Les admins de la clinique, et les ingénieurs qu’elle a nommés responsables, une fois leurs quêtes de bienvenue faites.'),
+
+    # Report a fault
+    'help.report-fault.title': ('Report a fault', 'Reportar una falla', 'Signaler une panne'),
+    'help.report-fault.sum': ('From the first report to the repair: who does each step.', 'Del primer reporte a la reparación: quién hace cada paso.', 'Du premier signalement à la réparation : qui fait chaque étape.'),
+    'help.report-fault.s1t': ('Report it (anyone)', 'Repórtala (cualquier persona)', 'Signalez-la (tout le monde)'),
+    'help.report-fault.s1': ('Scan the device’s QR label and tap Report fault. Describe it, add a photo, choose the severity.', 'Escanea la etiqueta QR del equipo y pulsa Reportar falla. Descríbela, añade una foto y elige la gravedad.', 'Scannez l’étiquette QR de l’appareil et touchez Signaler un problème. Décrivez-le, ajoutez une photo, choisissez la gravité.'),
+    'help.report-fault.s2t': ('Assign (maintenance admin)', 'Asignar (admin. de mantenimiento)', 'Assigner (admin. maintenance)'),
+    'help.report-fault.s2': ('The admin of the organisation that maintains the device picks a technician under Faults.', 'El administrador de la organización que mantiene el equipo elige un técnico en Fallas.', 'L’admin de l’organisation qui entretient l’appareil choisit un technicien dans Pannes.'),
+    'help.report-fault.s3t': ('Diagnose and quote', 'Diagnóstico y cotización', 'Diagnostic et devis'),
+    'help.report-fault.s3': ('The technician writes a diagnosis and an estimated price, and sends it for approval.', 'El técnico escribe un diagnóstico y un precio estimado, y lo envía a aprobación.', 'Le technicien rédige un diagnostic et un prix estimé, puis l’envoie pour approbation.'),
+    'help.report-fault.s4t': ('Approve (clinic admin)', 'Aprobar (admin. de la clínica)', 'Approuver (admin. de la clinique)'),
+    'help.report-fault.s4': ('The admin of the hospital where the device is approves, or rejects with a comment.', 'El administrador del hospital donde está el equipo aprueba, o rechaza con un comentario.', 'L’admin de l’hôpital où se trouve l’appareil approuve, ou rejette avec un commentaire.'),
+    'help.report-fault.s5t': ('Repair and close', 'Reparar y cerrar', 'Réparer et clôturer'),
+    'help.report-fault.s5': ('The technician repairs it, writes what was done and the final price, and closes the fault.', 'El técnico repara, anota lo que hizo y el precio final, y cierra la falla.', 'Le technicien répare, note ce qui a été fait et le prix final, puis clôture la panne.'),
+
+    # Look after your clinic's devices
+    'help.clinic-devices.title': ('Look after your clinic’s devices', 'Cuidar los equipos de tu clínica', 'Suivre les appareils de votre clinique'),
+    'help.clinic-devices.sum': ('What needs someone today, every device by ward, and when each one is due.', 'Lo que necesita a alguien hoy, cada equipo por sala y cuándo toca su mantenimiento.', 'Ce qui demande quelqu’un aujourd’hui, chaque appareil par service, et quand l’entretenir.'),
+    'help.clinic-devices.s1t': ('Needs you today', 'Te necesita hoy', 'À traiter aujourd’hui'),
+    'help.clinic-devices.s1': ('The dashboard lists open faults, overdue services and services due in the next 14 days.', 'El panel lista las fallas abiertas, los mantenimientos atrasados y los de los próximos 14 días.', 'Le tableau de bord liste les pannes ouvertes, les entretiens en retard et ceux des 14 prochains jours.'),
+    'help.clinic-devices.s2t': ('Your devices by ward', 'Tus equipos por sala', 'Vos appareils par service'),
+    'help.clinic-devices.s2': ('One dot per device: green working, orange maintenance or overdue, red fault, grey decommissioned.', 'Un punto por equipo: verde funciona, naranja mantenimiento o atrasado, rojo falla, gris dado de baja.', 'Un point par appareil : vert il marche, orange entretien ou retard, rouge panne, gris réformé.'),
+    'help.clinic-devices.s3t': ('Find a device', 'Encuentra un equipo', 'Trouvez un appareil'),
+    'help.clinic-devices.s3': ('Devices lists them all. Needs attention keeps those with a fault, in maintenance or overdue.', 'Dispositivos los lista todos. Requiere atención deja los que tienen falla, están en mantenimiento o atrasados.', 'Appareils les liste tous. À traiter ne garde que ceux en panne, en entretien ou en retard.'),
+    'help.clinic-devices.s4t': ('The device ID card', 'La ficha del equipo', 'La carte d’identité de l’appareil'),
+    'help.clinic-devices.s4': ('Next service, manuals and open repairs at a glance, with Report a problem and Call an engineer.', 'Próximo mantenimiento, manuales y reparaciones abiertas de un vistazo, con Reportar un problema y Llamar a un ingeniero.', 'Prochain entretien, manuels et réparations ouvertes d’un coup d’œil, avec Signaler un problème et Appeler un ingénieur.'),
+    'help.clinic-devices.s5t': ('Service reminders', 'Recordatorios de mantenimiento', 'Rappels d’entretien'),
+    'help.clinic-devices.s5': ('Admins get an email 14 days before a service and when it is overdue. Closing a maintenance log sets the next date.', 'Los administradores reciben un correo 14 días antes y cuando se atrasa. Cerrar un registro de mantenimiento fija la próxima fecha.', 'Les admins reçoivent un e-mail 14 jours avant et en cas de retard. Clôturer un journal d’entretien fixe la date suivante.'),
+
+    # Call an engineer
+    'help.call-engineer.title': ('Call an engineer', 'Llamar a un ingeniero', 'Appeler un ingénieur'),
+    'help.call-engineer.sum': ('Like calling a ride: engineers send a visit offer, you pick one.', 'Como pedir un taxi: los ingenieros envían una oferta de visita y tú eliges.', 'Comme appeler un taxi : les ingénieurs envoient une offre de visite, vous choisissez.'),
+    'help.call-engineer.s1t': ('Call from the device', 'Llama desde el equipo', 'Appelez depuis l’appareil'),
+    'help.call-engineer.s1': ('On the device page, its QR page or an open fault, tap Call an engineer.', 'En la página del equipo, su página QR o una falla abierta, pulsa Llamar a un ingeniero.', 'Sur la page de l’appareil, sa page QR ou une panne ouverte, touchez Appeler un ingénieur.'),
+    'help.call-engineer.s2t': ('Say what is happening', 'Di qué pasa', 'Dites ce qui se passe'),
+    'help.call-engineer.s2': ('Describe the problem and how urgent it is: Device stopped or This week.', 'Describe el problema y su urgencia: El equipo se paró o Esta semana.', 'Décrivez le problème et son urgence : L’appareil est à l’arrêt ou Cette semaine.'),
+    'help.call-engineer.s3t': ('Engineers are told', 'Se avisa a los ingenieros', 'Les ingénieurs sont prévenus'),
+    'help.call-engineer.s3': ('Your own engineers first, then the one who registered the device, then engineers in your city.', 'Primero tus ingenieros, luego quien registró el equipo y después los ingenieros de tu ciudad.', 'D’abord vos ingénieurs, puis celui qui a enregistré l’appareil, puis les ingénieurs de votre ville.'),
+    'help.call-engineer.s4t': ('Pick an offer', 'Elige una oferta', 'Choisissez une offre'),
+    'help.call-engineer.s4': ('Each offer shows a visit fee and an arrival time. Accept it, or ask once for less.', 'Cada oferta muestra una tarifa de visita y una hora de llegada. Acéptala o pide una vez menos.', 'Chaque offre indique des frais de visite et une heure d’arrivée. Acceptez-la, ou demandez une fois moins cher.'),
+    'help.call-engineer.s5t': ('Sign off', 'Confirma el cierre', 'Validez la fin'),
+    'help.call-engineer.s5': ('After the repair, say whether it works now and rate the repair.', 'Tras la reparación, di si ya funciona y valora la reparación.', 'Après la réparation, dites si l’appareil marche et notez la réparation.'),
+
+    # Set up your clinic
+    'help.clinic-setup.title': ('Set up your clinic', 'Configura tu clínica', 'Configurer votre clinique'),
+    'help.clinic-setup.sum': ('Find your clinic and name the engineers who look after its devices.', 'Encuentra tu clínica y nombra a los ingenieros que cuidan sus equipos.', 'Trouvez votre clinique et nommez les ingénieurs qui s’occupent de ses appareils.'),
+    'help.clinic-setup.s1t': ('Find your clinic', 'Encuentra tu clínica', 'Trouvez votre clinique'),
+    'help.clinic-setup.s1': ('Search the health facilities near you on healthsites.io. Not listed? Create it.', 'Busca los centros de salud cercanos en healthsites.io. ¿No aparece? Créala.', 'Cherchez les établissements de santé proches sur healthsites.io. Absente ? Créez-la.'),
+    'help.clinic-setup.s2t': ('Check the clinic profile', 'Revisa el perfil de la clínica', 'Vérifiez le profil de la clinique'),
+    'help.clinic-setup.s2': ('Contact email, address and type. You can change them later on the clinic page.', 'Correo de contacto, dirección y tipo. Puedes cambiarlos después en la página de la clínica.', 'E-mail de contact, adresse et type. Vous pourrez les changer sur la page de la clinique.'),
+    'help.clinic-setup.s3t': ('Name your engineers', 'Nombra a tus ingenieros', 'Nommez vos ingénieurs'),
+    'help.clinic-setup.s3': ('Add each engineer’s email, staff or external. They register devices in your clinic’s name.', 'Añade el correo de cada ingeniero, interno o externo. Registran equipos en nombre de tu clínica.', 'Ajoutez l’e-mail de chaque ingénieur, interne ou externe. Ils enregistrent les appareils au nom de votre clinique.'),
+    'help.clinic-setup.s4t': ('Book the clinic talk', 'Reserva la charla de la clínica', 'Réservez la rencontre clinique'),
+    'help.clinic-setup.s4': ('A clinic created without an invitation meets the community first. Engineers register its devices after the talk.', 'Una clínica creada sin invitación conoce primero a la comunidad. Los ingenieros registran sus equipos después de la charla.', 'Une clinique créée sans invitation rencontre d’abord la communauté. Les ingénieurs enregistrent ses appareils après la rencontre.'),
+    'help.clinic-setup.s5t': ('Privacy', 'Privacidad', 'Confidentialité'),
+    'help.clinic-setup.s5': ('On the clinic page, choose whether engineer profiles show your devices and your name.', 'En la página de la clínica, elige si los perfiles de los ingenieros muestran tus equipos y tu nombre.', 'Sur la page de la clinique, choisissez si les profils des ingénieurs montrent vos appareils et votre nom.'),
+
+    # Groups
+    'help.groups.title': ('Groups and organisations', 'Grupos y organizaciones', 'Groupes et organisations'),
+    'help.groups.sum': ('The clinics and organisations you belong to, and who can do what.', 'Las clínicas y organizaciones a las que perteneces, y quién puede hacer qué.', 'Les cliniques et organisations dont vous faites partie, et qui peut faire quoi.'),
+    'help.groups.s1t': ('Your organisations', 'Tus organizaciones', 'Vos organisations'),
+    'help.groups.s1': ('Groups lists the hospitals, clinics and engineering organisations you are a member of.', 'Grupos lista los hospitales, clínicas y organizaciones de ingeniería de los que eres miembro.', 'Groupes liste les hôpitaux, cliniques et organisations d’ingénierie dont vous êtes membre.'),
+    'help.groups.s2t': ('Add one', 'Añade una', 'Ajoutez-en une'),
+    'help.groups.s2': ('Add an organisation, or a healthsite found on healthsites.io near you.', 'Añade una organización, o un centro de salud encontrado cerca en healthsites.io.', 'Ajoutez une organisation, ou un établissement trouvé près de vous sur healthsites.io.'),
+    'help.groups.s3t': ('Ask to join', 'Pide unirte', 'Demandez à rejoindre'),
+    'help.groups.s3': ('Pick a hospital marked Already imported to ask to join it. One of its admins approves.', 'Elige un hospital marcado como Ya importado para pedir unirte. Uno de sus administradores lo aprueba.', 'Choisissez un hôpital marqué Déjà importé pour demander à le rejoindre. Un de ses admins approuve.'),
+    'help.groups.s4t': ('Manage members', 'Gestiona los miembros', 'Gérez les membres'),
+    'help.groups.s4': ('An organisation’s admins add members and set their role: admin, technician, engineer or clinical staff.', 'Los administradores añaden miembros y fijan su rol: administrador, técnico, ingeniero o personal clínico.', 'Les admins ajoutent des membres et fixent leur rôle : admin, technicien, ingénieur ou personnel clinique.'),
+
+    # Manual library
+    'help.manual-library.title': ('Manual library', 'Biblioteca de manuales', 'Bibliothèque de manuels'),
+    'help.manual-library.sum': ('Search every manual in FixMyMedTech and on iFixit.', 'Busca cualquier manual en FixMyMedTech y en iFixit.', 'Cherchez tous les manuels de FixMyMedTech et d’iFixit.'),
+    'help.manual-library.s1t': ('Search', 'Busca', 'Cherchez'),
+    'help.manual-library.s1': ('By device, manufacturer or model, for example Mindray Accutorr 3.', 'Por equipo, fabricante o modelo, por ejemplo Mindray Accutorr 3.', 'Par appareil, fabricant ou modèle, par exemple Mindray Accutorr 3.'),
+    'help.manual-library.s2t': ('FixMyMedTech first', 'Primero FixMyMedTech', 'FixMyMedTech d’abord'),
+    'help.manual-library.s2': ('Documents already in FixMyMedTech come first, then iFixit. Filter by type.', 'Primero los documentos que ya están en FixMyMedTech, luego iFixit. Filtra por tipo.', 'Les documents déjà dans FixMyMedTech d’abord, puis iFixit. Filtrez par type.'),
+    'help.manual-library.s3t': ('Browse by brand', 'Explora por marca', 'Parcourez par marque'),
+    'help.manual-library.s3': ('Without a search, documents are grouped by brand, then model.', 'Sin búsqueda, los documentos se agrupan por marca y luego por modelo.', 'Sans recherche, les documents sont classés par marque, puis par modèle.'),
+    'help.manual-library.s4t': ('Can’t find it?', '¿No lo encuentras?', 'Introuvable ?'),
+    'help.manual-library.s4': ('Tap Find this manual: a task goes on the community’s task board.', 'Pulsa Encontrar este manual: se publica una tarea en el tablero de la comunidad.', 'Touchez Trouver ce manuel : une tâche est publiée au tableau de la communauté.'),
+
+    # Attach a manual
+    'help.attach-manual.title': ('Attach a manual to a device', 'Adjuntar un manual a un equipo', 'Joindre un manuel à un appareil'),
+    'help.attach-manual.sum': ('Link manuals from iFixit or upload your own PDF.', 'Vincula manuales de iFixit o sube tu propio PDF.', 'Liez des manuels d’iFixit ou téléversez votre PDF.'),
+    'help.attach-manual.s1t': ('Edit the device', 'Edita el equipo', 'Modifiez l’appareil'),
+    'help.attach-manual.s1': ('Under Devices, open the device’s menu and tap Edit.', 'En Dispositivos, abre el menú del equipo y pulsa Editar.', 'Dans Appareils, ouvrez le menu de l’appareil et touchez Modifier.'),
+    'help.attach-manual.s2t': ('Find on iFixit', 'Busca en iFixit', 'Cherchez sur iFixit'),
+    'help.attach-manual.s2': ('In the Documents card, the search starts from the brand and model. Tick manuals and attach them.', 'En la tarjeta Documentos, la búsqueda parte de la marca y el modelo. Marca manuales y adjúntalos.', 'Dans la carte Documents, la recherche part de la marque et du modèle. Cochez des manuels et joignez-les.'),
+    'help.attach-manual.s3t': ('Or upload a PDF', 'O sube un PDF', 'Ou téléversez un PDF'),
+    'help.attach-manual.s3': ('Give a title, type and language (PDF, up to 50 MB). Uploads are public: never include patient data.', 'Pon título, tipo e idioma (PDF, hasta 50 MB). Lo subido es público: nunca incluyas datos de pacientes.', 'Indiquez titre, type et langue (PDF, 50 Mo max.). Les fichiers sont publics : jamais de données de patients.'),
+    'help.attach-manual.s4t': ('Everyone can open it', 'Todos pueden abrirlo', 'Tout le monde peut l’ouvrir'),
+    'help.attach-manual.s4': ('The manual shows on the device page and on its public QR page.', 'El manual aparece en la página del equipo y en su página QR pública.', 'Le manuel apparaît sur la page de l’appareil et sur sa page QR publique.'),
+
+    # My work
+    'help.my-work.title': ('My work', 'Mi trabajo', 'Mon travail'),
+    'help.my-work.sum': ('One page that answers “what should I do next?”.', 'Una página que responde «¿qué hago ahora?».', 'Une page qui répond à « que faire ensuite ? ».'),
+    'help.my-work.s1t': ('Open requests', 'Solicitudes abiertas', 'Demandes ouvertes'),
+    'help.my-work.s1': ('Calls for an engineer near you, the most urgent first, and your offers waiting for an answer.', 'Llamadas a un ingeniero cerca de ti, las más urgentes primero, y tus ofertas en espera.', 'Les appels à un ingénieur près de vous, les plus urgents d’abord, et vos offres en attente.'),
+    'help.my-work.s2t': ('My community tasks', 'Mis tareas de la comunidad', 'Mes tâches de la communauté'),
+    'help.my-work.s2': ('The tasks you took on the task board, with their points.', 'Las tareas que tomaste en el tablero, con sus puntos.', 'Les tâches prises au tableau, avec leurs points.'),
+    'help.my-work.s3t': ('Repairs and services', 'Reparaciones y mantenimientos', 'Réparations et entretiens'),
+    'help.my-work.s3': ('Faults and maintenance logs assigned to you.', 'Las fallas y registros de mantenimiento asignados a ti.', 'Les pannes et journaux d’entretien qui vous sont assignés.'),
+    'help.my-work.s4t': ('Ask for a spare part', 'Pide un repuesto', 'Demandez une pièce'),
+    'help.my-work.s4': ('On a device page, Ask for a spare part writes a post to share on WhatsApp or Discord.', 'En la página de un equipo, Pedir un repuesto redacta un mensaje para WhatsApp o Discord.', 'Sur la page d’un appareil, Demander une pièce rédige un message à partager sur WhatsApp ou Discord.'),
+
+    # Requests and offers
+    'help.requests-offers.title': ('Requests and offers', 'Solicitudes y ofertas', 'Demandes et offres'),
+    'help.requests-offers.sum': ('Answer clinics near you that called an engineer.', 'Responde a las clínicas cercanas que llamaron a un ingeniero.', 'Répondez aux cliniques proches qui appellent un ingénieur.'),
+    'help.requests-offers.s1t': ('See requests near you', 'Mira las solicitudes cercanas', 'Voyez les demandes près de vous'),
+    'help.requests-offers.s1': ('A badge says why you see each one: your clinic, you registered the device, or nearby.', 'Una etiqueta dice por qué la ves: tu clínica, registraste el equipo o está cerca.', 'Un badge dit pourquoi vous la voyez : votre clinique, vous avez enregistré l’appareil, ou à proximité.'),
+    'help.requests-offers.s2t': ('Send an offer', 'Envía una oferta', 'Envoyez une offre'),
+    'help.requests-offers.s2': ('Your visit fee and when you can be there, with a note if you like. Or tap Not for me.', 'Tu tarifa de visita y cuándo puedes ir, con una nota si quieres. O pulsa No es para mí.', 'Vos frais de visite et quand vous pouvez venir, avec une note si vous voulez. Ou touchez Pas pour moi.'),
+    'help.requests-offers.s3t': ('Answer a counter-offer', 'Responde a una contraoferta', 'Répondez à une contre-offre'),
+    'help.requests-offers.s3': ('A clinic can ask once for less. Accept or decline its price.', 'Una clínica puede pedir una vez menos. Acepta o rechaza su precio.', 'Une clinique peut demander une fois moins cher. Acceptez ou refusez son prix.'),
+    'help.requests-offers.s4t': ('Do the repair', 'Haz la reparación', 'Faites la réparation'),
+    'help.requests-offers.s4': ('Once your offer is accepted, the fault is yours: diagnose, repair and close it.', 'Aceptada tu oferta, la falla es tuya: diagnostica, repara y ciérrala.', 'Une fois votre offre acceptée, la panne est à vous : diagnostiquez, réparez et clôturez.'),
+
+    # Invite a clinic
+    'help.invite-clinic.title': ('Invite a clinic', 'Invitar una clínica', 'Inviter une clinique'),
+    'help.invite-clinic.sum': ('Bring a clinic you work with onto FixMyMedTech.', 'Trae a FixMyMedTech una clínica con la que trabajas.', 'Faites venir sur FixMyMedTech une clinique avec qui vous travaillez.'),
+    'help.invite-clinic.s1t': ('Send the invitation', 'Envía la invitación', 'Envoyez l’invitation'),
+    'help.invite-clinic.s1': ('Enter the clinic’s contact email and a few words from you.', 'Escribe el correo de contacto de la clínica y unas palabras tuyas.', 'Saisissez l’e-mail de contact de la clinique et quelques mots de votre part.'),
+    'help.invite-clinic.s2t': ('The clinic sets up', 'La clínica se configura', 'La clinique se configure'),
+    'help.invite-clinic.s2': ('It gets an email that explains FixMyMedTech, with a link to set up its clinic.', 'Recibe un correo que explica FixMyMedTech, con un enlace para configurar su clínica.', 'Elle reçoit un e-mail qui présente FixMyMedTech, avec un lien pour configurer sa clinique.'),
+    'help.invite-clinic.s3t': ('Follow it', 'Síguela', 'Suivez-la'),
+    'help.invite-clinic.s3': ('Sent, account created, clinic set up, confirmed. You stay recorded as the engineer who invited it.', 'Enviada, cuenta creada, clínica configurada, confirmada. Quedas como el ingeniero que la invitó.', 'Envoyée, compte créé, clinique configurée, confirmée. Vous restez l’ingénieur qui l’a invitée.'),
+    'help.invite-clinic.s4t': ('Register its devices', 'Registra sus equipos', 'Enregistrez ses appareils'),
+    'help.invite-clinic.s4': ('Once the clinic names you a responsible engineer, you can register its devices.', 'Cuando la clínica te nombra ingeniero responsable, puedes registrar sus equipos.', 'Dès que la clinique vous nomme ingénieur responsable, vous pouvez enregistrer ses appareils.'),
+
+    # Talk host
+    'help.talk-host.title': ('Host the talks', 'Animar las charlas', 'Animer les rencontres'),
+    'help.talk-host.sum': ('Confirm community talks and unlock clinics after their clinic talk.', 'Confirma las charlas de la comunidad y desbloquea clínicas tras su charla.', 'Confirmez les rencontres et débloquez les cliniques après leur rencontre.'),
+    'help.talk-host.s1t': ('Visitors waiting', 'Visitantes en espera', 'Visiteurs en attente'),
+    'help.talk-host.s1': ('The list shows each Visitor and their three welcome steps.', 'La lista muestra cada Visitante y sus tres pasos de bienvenida.', 'La liste montre chaque Visiteur et ses trois étapes de bienvenue.'),
+    'help.talk-host.s2t': ('After the talk', 'Después de la charla', 'Après la rencontre'),
+    'help.talk-host.s2': ('Tap Confirm talk attended. With their other steps done, they become a Contributor.', 'Pulsa Confirmar asistencia. Con sus otros pasos hechos, pasa a ser Colaborador/a.', 'Touchez Confirmer la présence. Ses autres étapes faites, la personne devient Contributeur.'),
+    'help.talk-host.s3t': ('Clinics waiting', 'Clínicas en espera', 'Cliniques en attente'),
+    'help.talk-host.s3': ('Clinics created without an invitation wait for their clinic talk.', 'Las clínicas creadas sin invitación esperan su charla.', 'Les cliniques créées sans invitation attendent leur rencontre.'),
+    'help.talk-host.s4t': ('Unlock a clinic', 'Desbloquea una clínica', 'Débloquez une clinique'),
+    'help.talk-host.s4': ('After its talk, tap Talk done, unlock. Engineers can then register its devices.', 'Tras su charla, pulsa Charla hecha, desbloquear. Los ingenieros ya pueden registrar sus equipos.', 'Après sa rencontre, touchez Rencontre faite, débloquer. Les ingénieurs peuvent alors enregistrer ses appareils.'),
+
+    # Journey, teams and achievements
+    'help.journey.title': ('Journey, teams and achievements', 'Recorrido, equipos y logros', 'Parcours, équipes et réussites'),
+    'help.journey.sum': ('Your teams, your stars, and how to grow in the community.', 'Tus equipos, tus estrellas y cómo crecer en la comunidad.', 'Vos équipes, vos étoiles, et comment grandir dans la communauté.'),
+    'help.journey.s1t': ('My journey', 'Mi recorrido', 'Mon parcours'),
+    'help.journey.s1': ('Your teams, your achievements with stars and what you have done so far.', 'Tus equipos, tus logros con estrellas y lo que has hecho hasta ahora.', 'Vos équipes, vos réussites avec étoiles et ce que vous avez fait jusqu’ici.'),
+    'help.journey.s2t': ('Join a team', 'Únete a un equipo', 'Rejoignez une équipe'),
+    'help.journey.s2': ('Communicators, Community Builders or Clinics Connectors. A Community Builder makes you a candidate, the lead a member.', 'Comunicadores, Constructores de comunidad o Conectores de clínicas. Un Constructor te hace candidato/a, el líder miembro.', 'Communicants, Bâtisseurs de communauté ou Connecteurs de cliniques. Un Bâtisseur vous rend candidat, le responsable membre.'),
+    'help.journey.s3t': ('Earn stars', 'Gana estrellas', 'Gagnez des étoiles'),
+    'help.journey.s3': ('Each achievement has 10 levels. Mapper counts the devices you register by itself.', 'Cada logro tiene 10 niveles. Los equipos que registras se cuentan solos.', 'Chaque réussite a 10 niveaux. Les appareils que vous enregistrez se comptent tout seuls.'),
+    'help.journey.s4t': ('Claim the rest', 'Reclama el resto', 'Déclarez le reste'),
+    'help.journey.s4': ('Events, help, posts: the app can’t see them, so you claim them and your team confirms.', 'Eventos, ayuda, publicaciones: la app no los ve, así que los reclamas y tu equipo confirma.', 'Événements, aide, publications : l’application ne les voit pas, vous les déclarez et votre équipe confirme.'),
+
+    # Claims
+    'help.claims.title': ('Claim an achievement', 'Reclamar un logro', 'Déclarer une réussite'),
+    'help.claims.sum': ('Get recognised for work the app cannot see.', 'Obtén reconocimiento por lo que la app no puede ver.', 'Faites reconnaître ce que l’application ne voit pas.'),
+    'help.claims.s1t': ('Pick the achievement', 'Elige el logro', 'Choisissez la réussite'),
+    'help.claims.s1': ('On the achievements map, tap Claim it, or open the claim page.', 'En el mapa de logros, pulsa Reclamarlo, o abre la página de reclamos.', 'Sur la carte des réussites, touchez Le déclarer, ou ouvrez la page des déclarations.'),
+    'help.claims.s2t': ('Say what happened', 'Cuenta qué pasó', 'Dites ce qui s’est passé'),
+    'help.claims.s2': ('How many times, where, when and who was there. A photo helps the team say yes quickly.', 'Cuántas veces, dónde, cuándo y quién estaba. Una foto ayuda al equipo a decir que sí rápido.', 'Combien de fois, où, quand et qui était là. Une photo aide l’équipe à dire oui vite.'),
+    'help.claims.s3t': ('Send to my team', 'Envía a mi equipo', 'Envoyez à mon équipe'),
+    'help.claims.s3': ('Follow it under My claims: waiting, asked for more, confirmed or declined.', 'Síguelo en Mis reclamos: en espera, piden más, confirmado o rechazado.', 'Suivez-la dans Mes déclarations : en attente, précisions demandées, confirmée ou refusée.'),
+    'help.claims.s4t': ('Answer questions', 'Responde preguntas', 'Répondez aux questions'),
+    'help.claims.s4': ('If the team asks for more, answer under the claim and send it again.', 'Si el equipo pide más, responde bajo el reclamo y envíalo de nuevo.', 'Si l’équipe demande plus, répondez sous la déclaration et renvoyez-la.'),
+
+    # Task board
+    'help.task-board.title': ('Task board and missing manuals', 'Tablero de tareas y manuales que faltan', 'Tableau des tâches et manuels manquants'),
+    'help.task-board.sum': ('Small jobs that grow the network, with points.', 'Pequeñas tareas que hacen crecer la red, con puntos.', 'De petites tâches qui font grandir le réseau, avec des points.'),
+    'help.task-board.s1t': ('Take a task', 'Toma una tarea', 'Prenez une tâche'),
+    'help.task-board.s1': ('Tap I’ll do it on an open task. It moves to Mine. Give it back if you can’t finish.', 'Pulsa Lo hago yo en una tarea abierta. Pasa a Mías. Devuélvela si no puedes terminar.', 'Touchez Je m’en occupe sur une tâche ouverte. Elle passe dans Les miennes. Rendez-la si vous ne pouvez pas finir.'),
+    'help.task-board.s2t': ('Mark it done', 'Márcala como hecha', 'Marquez-la faite'),
+    'help.task-board.s2': ('Add a note or a link. The author or a team lead checks it, and the points are yours.', 'Añade una nota o un enlace. El autor o un líder la revisa y los puntos son tuyos.', 'Ajoutez une note ou un lien. L’auteur ou un responsable vérifie, et les points sont à vous.'),
+    'help.task-board.s3t': ('Post a task', 'Publica una tarea', 'Publiez une tâche'),
+    'help.task-board.s3': ('Kind, what needs doing, details and points.', 'Tipo, qué hay que hacer, detalles y puntos.', 'Type, ce qu’il faut faire, détails et points.'),
+    'help.task-board.s4t': ('Find this manual', 'Encontrar este manual', 'Trouver ce manuel'),
+    'help.task-board.s4': ('On a device with no manual, or after an empty library search, it posts a task worth 20 points.', 'En un equipo sin manual, o tras una búsqueda vacía en la biblioteca, publica una tarea de 20 puntos.', 'Sur un appareil sans manuel, ou après une recherche vide en bibliothèque, il publie une tâche de 20 points.'),
+
+    # Validate claims
+    'help.validate-claims.title': ('Validate claims', 'Validar reclamos', 'Valider les déclarations'),
+    'help.validate-claims.sum': ('Confirm what your team members did, and check finished tasks.', 'Confirma lo que hicieron los miembros de tu equipo y revisa las tareas terminadas.', 'Confirmez ce qu’ont fait les membres de votre équipe et vérifiez les tâches finies.'),
+    'help.validate-claims.s1t': ('Open To validate', 'Abre Por validar', 'Ouvrez À valider'),
+    'help.validate-claims.s1': ('Claims for your team’s achievements, with the note and the photo.', 'Reclamos de los logros de tu equipo, con la nota y la foto.', 'Les déclarations pour les réussites de votre équipe, avec la note et la photo.'),
+    'help.validate-claims.s2t': ('Confirm', 'Confirma', 'Confirmez'),
+    'help.validate-claims.s2': ('A lead confirms alone. Otherwise two team members must agree.', 'Un líder confirma solo. Si no, dos miembros del equipo deben estar de acuerdo.', 'Un responsable confirme seul. Sinon, deux membres de l’équipe doivent être d’accord.'),
+    'help.validate-claims.s3t': ('Ask for more or decline', 'Pide más o rechaza', 'Demandez plus ou refusez'),
+    'help.validate-claims.s3': ('Send it back with a short question, or close it. You can’t validate your own claim.', 'Devuélvela con una pregunta corta, o ciérrala. No puedes validar tu propio reclamo.', 'Renvoyez-la avec une courte question, ou fermez-la. Vous ne pouvez pas valider votre propre déclaration.'),
+    'help.validate-claims.s4t': ('Check tasks', 'Revisa tareas', 'Vérifiez les tâches'),
+    'help.validate-claims.s4': ('Finished tasks from the board: Looks good gives the points, Send back returns it.', 'Tareas terminadas del tablero: Está bien da los puntos, Devolver la devuelve.', 'Tâches finies du tableau : C’est bon donne les points, Renvoyer la retourne.'),
+
+    # Network
+    'help.network.title': ('Network', 'Red', 'Réseau'),
+    'help.network.sum': ('Find the engineers and clinic people on FixMyMedTech.', 'Encuentra a los ingenieros y al personal de clínicas en FixMyMedTech.', 'Trouvez les ingénieurs et le personnel des cliniques sur FixMyMedTech.'),
+    'help.network.s1t': ('Search', 'Busca', 'Cherchez'),
+    'help.network.s1': ('By name, username or city.', 'Por nombre, usuario o ciudad.', 'Par nom, identifiant ou ville.'),
+    'help.network.s2t': ('Cards or list', 'Tarjetas o lista', 'Cartes ou liste'),
+    'help.network.s2': ('The list sorts by devices registered, repairs, services and invitations.', 'La lista se ordena por equipos registrados, reparaciones, mantenimientos e invitaciones.', 'La liste se trie par appareils enregistrés, réparations, entretiens et invitations.'),
+    'help.network.s3t': ('Open a profile', 'Abre un perfil', 'Ouvrez un profil'),
+    'help.network.s3': ('See a member’s country, organisations and the same four counters.', 'Mira el país, las organizaciones y los mismos cuatro contadores de un miembro.', 'Voyez le pays, les organisations et les quatre mêmes compteurs d’un membre.'),
+
+    # Profile
+    'help.profile.title': ('Your profile', 'Tu perfil', 'Votre profil'),
+    'help.profile.sum': ('How the community sees you.', 'Cómo te ve la comunidad.', 'Comment la communauté vous voit.'),
+    'help.profile.s1t': ('Basic info', 'Datos básicos', 'Infos de base'),
+    'help.profile.s1': ('Your name, username, country, city and a few words about you.', 'Tu nombre, usuario, país, ciudad y unas palabras sobre ti.', 'Votre nom, identifiant, pays, ville et quelques mots sur vous.'),
+    'help.profile.s2t': ('Photo', 'Foto', 'Photo'),
+    'help.profile.s2': ('A clear photo of your face.', 'Una foto clara de tu cara.', 'Une photo nette de votre visage.'),
+    'help.profile.s3t': ('Verify your email', 'Verifica tu correo', 'Vérifiez votre e-mail'),
+    'help.profile.s3': ('So we can reach you about your devices and repairs.', 'Para poder contactarte sobre tus equipos y reparaciones.', 'Pour pouvoir vous joindre au sujet de vos appareils et réparations.'),
+    'help.profile.s4t': ('Connect Discord', 'Conecta Discord', 'Connectez Discord'),
+    'help.profile.s4': ('Join the community’s Discord. We post a short welcome there.', 'Únete al Discord de la comunidad. Publicamos allí una breve bienvenida.', 'Rejoignez le Discord de la communauté. Nous y publions un court message de bienvenue.'),
+}
+for _key, (_en, _es, _fr) in _HELP_STRINGS.items():
+    STRINGS["en"][_key] = _en
+    STRINGS["es"][_key] = _es
+    STRINGS["fr"][_key] = _fr
+
 def t(lang: str):
     strings = STRINGS.get(lang, STRINGS[DEFAULT_LANG])
     def _(key: str, default=None):

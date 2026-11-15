@@ -4,7 +4,7 @@
 
 **Pour qui :** les ingénieurs et techniciens dont les étapes d'accueil sont terminées (Contributeurs).
 
-**Ce qu'il vous faut avant :** au moins une clinique qui vous a nommé (voir [Inviter une clinique](invite-clinic.md), en anglais), ou un rôle dans une organisation qui entretient des appareils.
+**Ce qu'il vous faut avant :** au moins une clinique qui vous a nommé (voir [Inviter une clinique](invite-clinic.md)), ou un rôle dans une organisation qui entretient des appareils.
 
 ## Étapes
 
@@ -51,7 +51,7 @@ Le nom de la clinique n'est jamais dans le message, seulement sa ville et son pa
 ## Et ensuite
 
 - Une offre acceptée, ou une panne qui vous est assignée, apparaît sous **Réparations et entretiens qui me sont confiés**. Suivez les étapes de [Signaler une panne et la faire réparer](report-fault.md).
-- Chaque appareil que vous enregistrez compte pour votre réussite **Cartographe** ; voir [Comment fonctionne la communauté](community-guide.md) (en anglais).
+- Chaque appareil que vous enregistrez compte pour votre réussite **Cartographe** ; voir [Comment fonctionne la communauté](community-guide.md).
 
 ## En cas de problème
 

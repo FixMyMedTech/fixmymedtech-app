@@ -16,7 +16,7 @@ Certaines réussites se comptent seules (les appareils enregistrés). D'autres n
 4. Suivez-la sous **Mes déclarations** : **En attente de l'équipe**, **Précisions demandées**, **Confirmé** ou **Refusé**.
 5. Si l'équipe demande des précisions, répondez sous la déclaration (vous pouvez ajouter une photo) et touchez **Renvoyer**.
 
-Une fois confirmée, le compte augmente, et vos étoiles peut-être aussi. Le côté de l'équipe est dans [À valider](validate.md) (en anglais).
+Une fois confirmée, le compte augmente, et vos étoiles peut-être aussi. Le côté de l'équipe est dans [À valider](validate.md).
 
 <div class="shots" markdown>
 <figure markdown>

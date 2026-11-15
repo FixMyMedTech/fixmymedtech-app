@@ -101,4 +101,4 @@ Le bouton en forme de lune en bas du menu.
 
 ### Comment devenir animateur de rencontres ? { #how-do-i-become-a-talk-host }
 
-Les animateurs sont membres des Bâtisseurs de communauté (rencontres de la communauté) ou des Connecteurs de cliniques (rencontres cliniques). Demandez à un Bâtisseur de communauté de faire de vous un candidat pour l'une de ces équipes. Voir [Comment fonctionne la communauté](community-guide.md) (en anglais).
+Les animateurs sont membres des Bâtisseurs de communauté (rencontres de la communauté) ou des Connecteurs de cliniques (rencontres cliniques). Demandez à un Bâtisseur de communauté de faire de vous un candidat pour l'une de ces équipes. Voir [Comment fonctionne la communauté](community-guide.md).

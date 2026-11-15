@@ -1,66 +1,140 @@
-site_name: FixMyMedTech Documentation
-repo_url: https://github.com/FixMyMedTech/fixmymedtech-app
+site_name: FixMyMedTech Help
 site_url: https://fixmymedtech.github.io/fixmymedtech-app/
-site_description: Medical equipment management for LMICs.
+site_description: How to use FixMyMedTech, the platform where clinics and biomedical engineers keep medical devices working.
 site_author: Care Again
-edit_uri: edit/main/docs/
-repo_name: FixMyMedTech/fixmymedtech-app/
+repo_url: https://github.com/FixMyMedTech/fixmymedtech-app
+repo_name: FixMyMedTech/fixmymedtech-app
+edit_uri: edit/main/docs/docs/
 copyright: Maintained by <a href="https://www.careagain.org/">Care Again</a>.
 
+# The user help centre first, the developer section after. The page file
+# names under docs/ are a contract: the app links to {DOCS_URL}{page}/ (see
+# developers-docs.md). Do not rename them.
 nav:
-  - Overview: index.md
-  - User guide:
-    - Register a device: register-device.md
-    - Report a fault and get it repaired: report-fault.md
-    - Attach a manual and search the library: attach-manual.md
-    - Look after your clinic's devices: clinic-devices.md
-    - Call an engineer: call-engineer.md
-    - Engineer workspace: engineer-workspace.md
-    - Claims, task board and missing manuals: community-work.md
-  - Developers guide:
-  # - Set Up: setup.md
-    - Getting Started: getting_started.md
-    # - Arquitecture: architecture.md
-    - Database Schema: database.md
-    # - Authentication: auth.md
-    # - Deployment: deployment.md
-    - Collaboration: collaboration.md
-    - Community journey (plan): community-journey.md
-    - Community journey (how to use): community-guide.md
+  - Home: index.md
+  - Start here:
+      - How the app is organised: three-worlds.md
+      - I work in a clinic: start-clinic.md
+      - I am an engineer: start-engineer.md
+      - I lead or host in the community: start-lead.md
+  - Equipment:
+      - Set up your clinic: clinic-setup.md
+      - Register a device: register-device.md
+      - Look after your clinic's devices: clinic-devices.md
+      - Report a fault and get it repaired: report-fault.md
+      - Call an engineer: call-engineer.md
+      - Attach a manual and search the library: attach-manual.md
+      - Groups, members and roles: groups.md
+  - Work:
+      - Engineer workspace: engineer-workspace.md
+      - Invite a clinic: invite-clinic.md
+      - Requests and offers: requests.md
+      - Talk host: talk-host.md
+  - Community:
+      - How the community works: community-guide.md
+      - Claims, task board and missing manuals: community-work.md
+      - To validate: validate.md
+      - Network and your profile: network.md
+  - Help:
+      - Questions and problems: faq.md
+      - Glossary: glossary.md
+  - Developers:
+      - Overview: developers.md
+      - Getting started: getting_started.md
+      - Running without Docker: setup.md
+      - Architecture: architecture.md
+      - Database schema: database.md
+      - Collaboration: collaboration.md
+      - Community journey (plan): community-journey.md
+      - Community journey (setup and testing): community-setup.md
+      - How these docs work: developers-docs.md
   - Code of Conduct: CODE_OF_CONDUCT.md
   - License: LICENSE
+
 theme:
   name: material
   logo: images/favicon.svg
   favicon: images/favicon.svg
-  feature:
-    tabs: true
-  highlightjs: true
   features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
     - content.code.copy
-  hljs_languages:
-    - python
-    - yaml
-    - bash
-    - json
-    - markdown
+    - toc.follow
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: white
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: black
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
   icon:
     repo: fontawesome/brands/github
+
+plugins:
+  - search
+  # English is the default (page.md); French sits next to it (page.fr.md).
+  # A page without a French file falls back to English. Images follow the
+  # same rule: images/guide/x.fr.png replaces x.png on French pages.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: fr
+          name: Français
+          build: true
+          site_name: Aide FixMyMedTech
+          site_description: Comment utiliser FixMyMedTech, la plateforme où cliniques et ingénieurs biomédicaux gardent les équipements médicaux en état de marche.
+          nav_translations:
+            Home: Accueil
+            Start here: Commencer
+            How the app is organised: Comment l'application est organisée
+            I work in a clinic: Je travaille dans une clinique
+            I am an engineer: Je suis ingénieur
+            I lead or host in the community: J'anime ou je dirige dans la communauté
+            Equipment: Équipements
+            Set up your clinic: Configurer votre clinique
+            Register a device: Enregistrer un appareil
+            Look after your clinic's devices: Suivre les appareils de votre clinique
+            Report a fault and get it repaired: Signaler une panne et la faire réparer
+            Call an engineer: Appeler un ingénieur
+            Attach a manual and search the library: Joindre un manuel et chercher dans la bibliothèque
+            Groups, members and roles: Groupes, membres et rôles
+            Work: Travail
+            Engineer workspace: L'espace de l'ingénieur
+            Invite a clinic: Inviter une clinique
+            Requests and offers: Demandes et offres
+            Talk host: Animation des rencontres
+            Community: Communauté
+            How the community works: Comment fonctionne la communauté
+            Claims, task board and missing manuals: Déclarations, tableau des tâches et manuels manquants
+            To validate: À valider
+            Network and your profile: Réseau et profil
+            Help: Aide
+            Questions and problems: Questions et problèmes
+            Glossary: Glossaire
+            Developers: Développeurs
+
+extra_css:
+  - stylesheets/extra.css
 
 extra:
   social:
@@ -68,8 +142,14 @@ extra:
       link: https://github.com/FixMyMedTech/fixmymedtech-app/
 
 markdown_extensions:
+  - admonition
   - attr_list
-  - pymdownx.snippets
+  - def_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -81,13 +161,8 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
-
-  - toc:
-      permalink: true
-
   - pymdownx.arithmatex:
       generic: true
-  - def_list
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:

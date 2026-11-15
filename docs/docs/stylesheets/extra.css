@@ -1,0 +1,102 @@
+/* FixMyMedTech colours (docs/design-system/tokens.json) on the Material theme. */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #01437a;          /* brand-deep: header and tabs */
+  --md-primary-fg-color--light: #026fa8;
+  --md-primary-fg-color--dark: #132b45;
+  --md-primary-bg-color: #ffffff;
+  --md-accent-fg-color: #007c88;           /* accent (teal) */
+  --md-typeset-a-color: #026fa8;           /* primary */
+  --fmt-equipment: #026fa8;
+  --fmt-equipment-tint: #e0f0f8;
+  --fmt-work: #007c88;
+  --fmt-work-tint: #dff4f3;
+  --fmt-community: #5b3fa8;
+  --fmt-community-tint: #ece6fa;
+  --fmt-border: #d5e0e9;
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #01437a;
+  --md-primary-fg-color--light: #4fb6e8;
+  --md-primary-fg-color--dark: #0b1a2c;
+  --md-accent-fg-color: #3cc3cf;
+  --md-typeset-a-color: #4fb6e8;
+  --md-default-bg-color: #0b1a2c;
+  --fmt-equipment: #4fb6e8;
+  --fmt-equipment-tint: #0e3550;
+  --fmt-work: #3cc3cf;
+  --fmt-work-tint: #0f3a3d;
+  --fmt-community: #b9a4f5;
+  --fmt-community-tint: #2c2350;
+  --fmt-border: #26405a;
+}
+
+/* "In the app" line at the top of each guide. */
+.md-typeset .in-app {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .6rem;
+  padding: .55rem .8rem;
+  border: 1px solid var(--fmt-border);
+  border-left-width: 4px;
+  border-radius: 6px;
+  font-size: .8rem;
+}
+.md-typeset .in-app.equipment { border-left-color: var(--fmt-equipment); }
+.md-typeset .in-app.work { border-left-color: var(--fmt-work); }
+.md-typeset .in-app.community { border-left-color: var(--fmt-community); }
+.md-typeset .in-app.all { border-left-color: #728599; }
+
+/* World chips: the colour of each world in the app. */
+.md-typeset .world {
+  display: inline-block;
+  padding: 0 .5em;
+  border-radius: 1em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.md-typeset .world.equipment { color: var(--fmt-equipment); background: var(--fmt-equipment-tint); }
+.md-typeset .world.work { color: var(--fmt-work); background: var(--fmt-work-tint); }
+.md-typeset .world.community { color: var(--fmt-community); background: var(--fmt-community-tint); }
+
+/* Screenshots: phone shots stay phone-sized, wide shots get a frame. */
+.md-typeset img.shot {
+  border: 1px solid var(--fmt-border);
+  border-radius: 8px;
+}
+.md-typeset img.phone {
+  width: 300px;
+  max-width: 100%;
+  border: 1px solid var(--fmt-border);
+  border-radius: 14px;
+}
+.md-typeset .shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.md-typeset .shots figure { margin: 0; }
+.md-typeset figcaption { font-size: .7rem; color: var(--md-default-fg-color--light); }
+
+/* The three doors on the home page. */
+.md-typeset .doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: .8rem;
+  margin: 1.2rem 0;
+}
+.md-typeset .doors a.door {
+  display: block;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--fmt-border);
+  border-top: 4px solid var(--fmt-equipment);
+  border-radius: 8px;
+  color: inherit;
+}
+.md-typeset .doors a.door:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+.md-typeset .doors a.door.work { border-top-color: var(--fmt-work); }
+.md-typeset .doors a.door.community { border-top-color: var(--fmt-community); }
+.md-typeset .doors a.door strong { display: block; font-size: 1rem; margin-bottom: .3rem; }
+.md-typeset .doors a.door span { font-size: .75rem; color: var(--md-default-fg-color--light); }

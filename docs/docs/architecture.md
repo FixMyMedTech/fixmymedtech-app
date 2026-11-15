@@ -57,8 +57,12 @@ fixmymedtech-app/
 │   ├── models/models.py            ← SQLAlchemy models
 │   ├── routers/                    ← auth, profile, oauth, devices, fault_reports,
 │   │                                  maintenance_logs, dashboard, organizations,
-│   │                                  healthsites, admin_email
-│   ├── utils/                      ← profile deps, photo_processing, create_superuser, username
+│   │                                  healthsites, documents, feedback, admin_email,
+│   │                                  discord_link, community, community_work,
+│   │                                  onboarding, calls
+│   ├── utils/                      ← profile deps, community, onboarding, calls, service,
+│   │                                  serialize, photo_processing, create_superuser, username
+│   ├── tests/                      ← pytest, no database needed
 │   └── templates/                  ← Email + SQLAdmin templates
 │
 ├── frontend/                       ← FastHTML server
@@ -67,14 +71,16 @@ fixmymedtech-app/
 │   ├── components.py               ← Page shells, sidebar, badges, map, QR scanner, CSS
 │   ├── i18n.py                     ← Translations (en / es / fr)
 │   └── features/<feature>/         ← auth, dashboard, devices, faults, maintenance,
-│       ├── api.py                     groups, network, profile, tasks, home
+│       ├── api.py                     groups, network, profile, tasks, home, documents,
+│       │                              feedback, community, onboarding, calls
 │       └── pages/*.py
 │
 ├── infrastructure/
 │   ├── migrations/                 ← NNN_name.sql, applied in order, tracked
 │   └── db/init.sql                 ← Base schema for a fresh local PostgreSQL volume
 │
-├── scripts/                        ← seed_test_data.py, generate_qr.py, setup_local_db.sh
+├── scripts/                        ← seed_test_data.py, walk_onboarding.py, generate_qr.py,
+│                                      setup_local_db.sh, docs_screenshots.js
 ├── docker-compose.local.yml        ← Local stack (PostgreSQL + MinIO + backend + frontend)
 ├── docker-compose.dev.yml          ← Dev server (Supabase dev + MinIO)
 ├── docker-compose.yml              ← Production (Supabase prod + MinIO)
@@ -207,11 +213,11 @@ stored in MinIO. A background task produces a white-background variant (local
 
 | URL | Auth | What |
 |-----|------|------|
-| `/login`, `/signup`, `/forgot-password`, `/reset-password` | No | Account pages |
+| `/login`, `/join` (`/signup` redirects), `/clinic/signup`, `/forgot-password`, `/reset-password`, `/invite/{token}` | No | Account pages |
 | `/d/{id}` | **No** | Public device page (QR target) |
-| `/d/{id}/report` | **No** | Report a fault |
+| `/d/{id}/report`, `/d/{id}/call` | Yes | Report a fault, call an engineer (the public page links here; signed-out visitors go to `/login?next=…`) |
 | `/d/{id}/fault/{fault_id}`, `/d/{id}/log/{log_id}` | **No** | Public fault / maintenance log view |
-| `/home` | Yes | Landing page with QR scanner |
+| `/home` | Yes | One door per world (Equipment, Work, Community) |
 | `/dashboard` | Yes | Stats overview |
 | `/devices`, `/new_device` | Yes | Device list, register device |
 | `/device/{id}` | Yes | Device detail, faults, maintenance history |
@@ -221,19 +227,26 @@ stored in MinIO. A background task produces a white-background variant (local
 | `/groups`, `/groups/{org_id}` | Yes | Organizations, members, join requests |
 | `/network` | Yes | Directory of other professionals |
 | `/profile`, `/profile/{profile_id}` | Yes | Your profile, other profiles |
+| `/library` | No | Document library |
+| `/requests`, `/calls/{fault_id}` | Yes | Calls for an engineer: engineer and clinic sides |
+| `/invite-clinic`, `/clinic/setup…`, `/groups/{id}/engineers`, `/groups/{id}/privacy`, `/host` | Yes | Onboarding: invitations, clinic setup, responsible engineers, talk host |
+| `/community/start…`, `/community`, `/community/achievements`, `/community/tasks`, `/community/claims`, `/lead`, `/community/admin…` | Yes | Community journey, task board, claims, admin |
 
 ---
 
-## Data flow — QR scan (no login)
+## Data flow — QR scan
 
 ```
 1. Nurse scans the QR on a device
 2. Browser opens https://{domain}/d/{device_id}  (backend proxies to FastHTML)
 3. FastHTML calls GET {API_URL}/api/devices/public/{device_id}
 4. FastAPI reads PostgreSQL (no auth required for this endpoint)
-5. FastHTML renders device info, documentation and the fault report form
-6. Nurse submits → FastHTML calls POST /api/faults/public
-7. FastAPI stores the report; a high/critical severity sets the device status to "fault"
+5. FastHTML renders the public device page: status, manuals, open faults,
+   and the "Report fault" / "Call an engineer" buttons
+6. "Report fault" opens /d/{device_id}/report, which needs a signed-in user
+   (signed-out visitors go to /login?next=…)
+7. Nurse submits → FastHTML calls POST /api/faults/public with the user's token
+8. FastAPI stores the report; a high/critical severity sets the device status to "fault"
 ```
 
 ## Data flow — login
@@ -262,7 +275,7 @@ filename order, and tracked in `fixmymedtech.schema_migrations`. See
 
 | Compose file | PostgreSQL | Host ports (api / app / minio) | Used by |
 |--------------|------------|--------------------------------|---------|
-| `docker-compose.local.yml` | local container | `8888` / `5001` / `9002–9003` | local development |
+| `docker-compose.local.yml` | local container | `8890` / `5003` / `9002–9003` (`LOCAL_*_PORT` in `.env`) | local development |
 | `docker-compose.dev.yml` | Supabase (dev) | `8889` / `5002` / `9002–9003` | dev server |
 | `docker-compose.yml` | Supabase (prod) | `8888` / `5001` / `9000–9001` | prod server |
 

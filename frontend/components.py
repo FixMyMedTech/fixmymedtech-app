@@ -1205,9 +1205,9 @@ WORLD_TONES = {"equipment": "", "work": "eng", "community": "lead"}
 WORLD_ICONS = {"equipment": "devices", "work": "wrench", "community": "journey"}
 WORLD_PATHS = (
     ("work", ("/tasks", "/requests", "/invite-clinic", "/host", "/getting-started")),
-    ("community", ("/community", "/lead", "/network", "/library", "/documents")),
+    ("community", ("/community", "/lead", "/network")),
     ("equipment", ("/dashboard", "/devices", "/device", "/new_device", "/faults",
-                   "/groups", "/calls", "/clinic", "/d/", "/scan-result")),
+                   "/groups", "/library", "/documents", "/calls", "/clinic", "/d/", "/scan-result")),
 )
 
 
@@ -1248,6 +1248,7 @@ def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
         ("/devices",   "devices",   _("nav.devices")),
         ("/faults",    "faults",    _("nav.faults")),
         ("/groups",    "groups",    _("nav.groups")),
+        ("/library",   "library",   _("nav.library")),
     ]
     leader = [("/lead", "check", _("nav.lead"))] if any(p.startswith("recognise:") for p in perms) else []
     admin = [("/community/admin", "shield", _("nav.community_admin"))] if perms & set(DASHBOARD_PERMISSIONS) else []
@@ -1259,7 +1260,6 @@ def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
         return [world("equipment", equipment + [
             ("/tasks",   "tasks",   _("nav.tasks")),
             ("/network", "network", _("nav.network")),
-            ("/library", "library", _("nav.library")),
         ] + host + leader + admin)]
 
     work = [
@@ -1273,7 +1273,6 @@ def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
         ("/community/achievements", "hexagon", _("nav.community_achievements")),
         ("/network",                "network", _("nav.network")),
         ("/community/tasks",        "board",   _("nav.task_board")),
-        ("/library",                "library", _("nav.library")),
     ] + leader + admin
     return [world("equipment", equipment), world("work", work), world("community", community)]
 

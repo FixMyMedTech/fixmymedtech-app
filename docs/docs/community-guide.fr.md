@@ -56,10 +56,12 @@ Il y a cinq réussites, chacune avec 10 niveaux d'étoiles. Un niveau est attein
     - bordure en pointillés : vient après (par exemple une équipe que vous n'avez pas rejointe) ;
     - gris, sans nom : pas encore découvert.
 2. Touchez une tuile. Le panneau de droite explique l'équipe ou la réussite : ses 10 niveaux, qui la reconnaît, et **Le déclarer** pour les réussites reconnues.
-3. Ouvrez **Mon parcours** pour voir vos équipes, vos réussites avec leurs étoiles, et vos comptes (appareils enregistrés, pannes résolues, visites d'entretien, invités qui ont rejoint, manuels ajoutés).
+3. Ouvrez **Mon parcours**, l'accueil de la Communauté. Il a deux moitiés : **Découvrir l’application** (les guides courts de **Apprendre l’application**, les trois mondes, votre prochaine étape) et ce dont l'application a besoin maintenant (tâches ouvertes, manuels à trouver, demandes à confirmer, personnes qui attendent une rencontre : chaque nombre ouvre la page où vous pouvez aider). En dessous : vos équipes, vos réussites avec leurs étoiles, et vos comptes (appareils enregistrés, pannes résolues, visites d'entretien, invités qui ont rejoint, manuels ajoutés).
 4. Prenez de petits travaux sur le **Tableau des tâches** pour gagner des points.
 
 ![Équipes et réussites](images/guide/achievements-map.png){ .shot loading=lazy }
+
+![Mon parcours : découvrir l'application, et ce dont elle a besoin](images/guide/community-home.png){ .shot loading=lazy }
 
 ## Et ensuite
 

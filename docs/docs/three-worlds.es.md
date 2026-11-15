@@ -10,7 +10,7 @@ FixMyMedTech tiene tres partes, llamadas **mundos**. Cada una tiene su color y s
 | --- | --- | --- | --- |
 | <span class="world equipment">Equipamiento</span> | Azul | Los dispositivos de la clínica: lista, fallas, mantenimiento, manuales | **Panel**, **Dispositivos**, **Fallas**, **Grupos**, **Biblioteca** |
 | <span class="world work">Trabajo</span> | Turquesa | El día del ingeniero: qué hacer ahora, solicitudes de reparación, clínicas que traer | **Tareas**, **Solicitudes**, **Invitar a una clínica**, **Anfitrión de charlas** (solo anfitriones) |
-| <span class="world community">Comunidad</span> | Morado | Tu recorrido, los equipos, las personas, los pequeños trabajos de la comunidad | **Mi recorrido**, **Equipos y logros**, **Red**, **Tablero de tareas**, **Por validar** y **Admin comunidad** (solo miembros de un equipo) |
+| <span class="world community">Comunidad</span> | Morado | Tu recorrido, los equipos, las personas, los pequeños trabajos de la comunidad | **Mi recorrido**, **Equipos y logros**, **Red**, **Tablero de tareas**, **Aprende a usar la app**, **Por validar** y **Admin comunidad** (solo miembros de un equipo) |
 
 ![Inicio: una puerta por mundo](images/guide/home-doors.png){ .shot loading=lazy }
 
@@ -29,15 +29,37 @@ FixMyMedTech tiene tres partes, llamadas **mundos**. Cada una tiene su color y s
 </figure>
 </div>
 
+## La ayuda dentro de la aplicación
+
+No necesitas este sitio para orientarte: la versión corta de cada guía está en la aplicación.
+
+- **La primera vez** que ves los tres mundos, **Inicio** los presenta una vez en tres tarjetas. Pulsa **Entendido** para cerrar.
+- **El botón «?»** (abajo a la derecha, en cada página) abre **Cómo funciona esta página**: unos pocos pasos sobre la página en la que estás.
+- **Aprende a usar la app** lista las guías cortas para tu cuenta. Cada una enlaza con la página completa de este sitio y tiene **Sugerir una mejora** para decirnos qué falta.
+- **Tu próximo paso** aparece arriba en **Panel**, **Tareas** y **Mi recorrido** hasta que lo haces; después desaparece.
+
+<div class="shots" markdown>
+<figure markdown>
+![El botón «?» abre la ayuda de la página en la que estás](images/guide/help-panel.png){ .phone loading=lazy }
+<figcaption>«?» y luego <strong>Cómo funciona esta página</strong>.</figcaption>
+</figure>
+<figure markdown>
+![Una guía corta en la aplicación](images/guide/guide-page.png){ .phone loading=lazy }
+<figcaption>Una guía en <strong>Aprende a usar la app</strong>.</figcaption>
+</figure>
+</div>
+
+![Aprende a usar la app: guías cortas, por mundo](images/guide/learn-the-app.png){ .shot loading=lazy }
+
 ## Quién ve qué
 
 Solo ves lo que puedes usar. Se abre más a medida que avanzas.
 
 | Quién | Qué ves |
 | --- | --- |
-| **Ingeniero nuevo** (Visitante: pasos de bienvenida sin terminar) | Solo **Primeros pasos** y **Biblioteca**. Sin pestañas. Cualquier otra página te devuelve a **Primeros pasos**. |
+| **Ingeniero nuevo** (Visitante: pasos de bienvenida sin terminar) | Solo **Primeros pasos**, **Biblioteca** y **Aprende a usar la app**. Sin pestañas. Cualquier otra página te devuelve a **Primeros pasos**. |
 | **Ingeniero con los pasos de bienvenida hechos** (Colaborador) | Los tres mundos. **Primeros pasos** desaparece; **Invitar a una clínica** es tu siguiente paso. |
-| **Cuenta de clínica y personal de la clínica** (administrador, enfermero, médico, técnico añadido por la clínica) | Un solo menú, sin pestañas: **Panel**, **Dispositivos**, **Fallas**, **Grupos**, **Biblioteca**, **Tareas**, **Red**. |
+| **Cuenta de clínica y personal de la clínica** (administrador, enfermero, médico, técnico añadido por la clínica) | Un solo menú, sin pestañas: **Panel**, **Dispositivos**, **Fallas**, **Grupos**, **Biblioteca**, **Tareas**, **Red**, **Aprende a usar la app**. |
 
 Algunas personas ven unas entradas más:
 

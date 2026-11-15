@@ -56,10 +56,12 @@ Hay cinco logros, cada uno con 10 niveles de estrellas. Se alcanza un nivel cuan
     - borde de rayas: viene después (por ejemplo un equipo al que no te has unido);
     - gris, sin nombre: aún no descubierto.
 2. Toca una casilla. El panel de la derecha explica el equipo o el logro: sus 10 niveles, quién lo reconoce y **Reclamarlo** para los logros reconocidos.
-3. Abre **Mi recorrido** para ver tus equipos, tus logros con sus estrellas y tus contadores (dispositivos registrados, fallas resueltas, visitas de mantenimiento, invitados que se unieron, manuales añadidos).
+3. Abre **Mi recorrido**, el inicio de la Comunidad. Tiene dos mitades: **Descubre la aplicación** (las guías cortas de **Aprende a usar la app**, los tres mundos, tu próximo paso) y lo que la aplicación necesita ahora (tareas abiertas, manuales por encontrar, solicitudes por confirmar, personas que esperan una charla: cada número abre la página donde puedes ayudar). Debajo están tus equipos, tus logros con sus estrellas y tus contadores (dispositivos registrados, fallas resueltas, visitas de mantenimiento, invitados que se unieron, manuales añadidos).
 4. Toma pequeños trabajos en el **Tablero de tareas** para ganar puntos.
 
 ![Equipos y logros](images/guide/achievements-map.png){ .shot loading=lazy }
+
+![Mi recorrido: descubre la aplicación y lo que necesita](images/guide/community-home.png){ .shot loading=lazy }
 
 ## Qué pasa después
 

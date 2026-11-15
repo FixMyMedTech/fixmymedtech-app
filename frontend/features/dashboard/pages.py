@@ -187,8 +187,13 @@ async def get(req):
         cls="hero",
     )
 
+    # Community hub: the Equipment world's next step (clinic accounts).
+    from features.community.hub import next_step_block
+    next_step = await next_step_block(req, token, "equipment", _, total_devices=total if stats else None)
+
     content = Div(
         Style(CMMS_CSS),
+        next_step,
         hero,
         needs,
         wall,

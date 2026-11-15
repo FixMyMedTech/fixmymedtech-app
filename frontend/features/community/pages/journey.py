@@ -7,6 +7,7 @@ import features.auth.helper as auth_helper
 import features.community.api as community_api
 from components import page_shell
 from features.community.ui import hero, name_of, stars, progress_bar, flash, refresh_session, fmt_dt
+from features.community import hub
 from i18n import t as make_t
 
 rt = APIRouter()
@@ -56,7 +57,8 @@ async def get(req):
     if me.get("member_status") == "staff":
         top = hero(_("cj.journey.staff_title"), _("cj.journey.staff_text"), _("cj.journey.eyebrow"))
     else:
-        top = hero(_("cj.journey.title").format(name=first), _("cj.journey.text"), _("cj.journey.eyebrow"))
+        top = hero(_("cj.journey.title").format(name=first),
+                   _("hub.hero_text") if is_member else _("cj.journey.text"), _("cj.journey.eyebrow"))
 
     my_teams = me.get("teams") or []
     team_block = Div(*[
@@ -92,6 +94,12 @@ async def get(req):
             cls="cj-card is-focus",
         )
 
+    if is_member and (req.session.get("user_account_kind") or "engineer") == "engineer":
+        # Community home (members): Discover the app + Nourish the app, then
+        # teams, achievements and counters, more compact.
+        return page_shell(await _member_home(req, token, me, lang, _, top, team_block, my_teams, cards, stats),
+                          current="/community", title=_("cj.title.journey"), lang=lang)
+
     content = Div(
         top,
         flash(_("cj.journey.paused"), "warning") if me.get("paused") and my_teams else "",
@@ -110,3 +118,37 @@ async def get(req):
         cls="cj",
     )
     return page_shell(content, current="/community", title=_("cj.title.journey"), lang=lang)
+
+
+async def _member_home(req, token, me, lang, _, top, team_block, my_teams, cards, stats):
+    data = await hub.load_hub(req, token, me)
+    try:
+        step = await hub.community_step(token, cme=me, board=data["board"] or {})
+        other = await hub.work_step(token, cme=me, inbox=data["inbox"] or {},
+                                    invitations=data["invitations"], clinics=data["clinics"])
+    except Exception:
+        step = other = None
+    teams_card = Div(
+        Div(H2(_("cj.journey.my_teams")),
+            Span(_("cj.journey.member_since").format(date=fmt_dt(me.get("member_since"))[:10]), cls="cj-small")
+            if me.get("member_since") else "", cls="cj-between"),
+        team_block,
+        P(_("cj.journey.teams_help")) if not my_teams else "",
+        cls="cj-card")
+    achievements = Details(
+        Summary(_("cj.journey.my_achievements"), Span(str(len(cards)), cls="hint")),
+        Div(Div(*cards, cls="cj-grid"),
+            A(_("cj.journey.tree_link"), href="/community/achievements", cls="btn btn-secondary btn-sm",
+              style="margin-top:12px;"),
+            cls="fold-body"),
+        cls="fold", style="margin:0;") if cards else ""
+    return Div(
+        Style(hub.HUB_CSS),
+        top,
+        flash(_("cj.journey.paused"), "warning") if me.get("paused") and my_teams else "",
+        hub.next_step_card(step, _),
+        hub.discover_section(lang, _, other),
+        hub.needs_section(data, req, _),
+        Div(teams_card, achievements, stats, cls="hub-compact"),
+        cls="cj",
+    )

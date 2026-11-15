@@ -126,9 +126,14 @@ async def get(req):
             cls="card",
         ))
 
+    # Community hub: the Work world's next step (shown until done).
+    from features.community.hub import next_step_block
+    next_step = await next_step_block(req, token, "work", _, inbox=inbox if is_member else None)
+
     content = Div(
         Style(TASKS_CSS),
         page_head(_("tasks.heading"), "", "tasks", ""),
+        next_step,
         Div(*side, cls="mw-grid") if side else "",
         Div(H3(_("wave3.assigned_to_me"), cls="card-title"), table, cls="card"),
         cls="mywork",

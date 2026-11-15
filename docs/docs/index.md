@@ -1,27 +1,31 @@
-# Welcome to FixMyMedTech Documentation
+# FixMyMedTech Help
 
+FixMyMedTech keeps medical devices working. Clinics list their devices and report faults with a QR sticker; biomedical engineers look after those devices, and a community helps them do it.
 
-[![Build status](https://github.com/FixMyMedTech/fixmymedtech-app/actions/workflows/deploy-dev.yml/badge.svg)](https://github.com/FixMyMedTech/fixmymedtech-app/actions/workflows/deploy-dev.yml)
-[![Build status](https://github.com/FixMyMedTech/fixmymedtech-app/actions/workflows/deploy-prod.yml/badge.svg)](https://github.com/FixMyMedTech/fixmymedtech-app/actions/workflows/deploy-prod.yml)
-[![Documentation Status](https://github.com/FixMyMedTech/fixmymedtech-app/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/FixMyMedTech/fixmymedtech-app/actions/workflows/pages/pages-build-deployment)
-[![Reflex Python Version](https://img.shields.io/pypi/pyversions/reflex.svg)](https://pypi.org/project/reflex/)
-[![License](https://img.shields.io/github/license/FixMyMedTech/fixmymedtech-app)](https://github.com/FixMyMedTech/fixmymedtech-app/blob/main/LICENSE)
+The app is free and works on a phone. It is in English, French and Spanish: change the language at the bottom of the menu.
 
+## Where do you start?
 
-## ✨ What is FixMyMedTech?
+<div class="doors" markdown>
+<a class="door" href="start-clinic/"><strong>I work in a clinic</strong><span>Nurse, doctor or clinic administrator. Set up your clinic, list your devices, report a fault, call an engineer.</span></a>
+<a class="door work" href="start-engineer/"><strong>I am an engineer</strong><span>Biomedical engineer or technician. Join, do your three welcome steps, invite clinics, register and repair their devices.</span></a>
+<a class="door community" href="start-lead/"><strong>I lead or host in the community</strong><span>Talk host, team member or lead. Confirm talks, unlock clinics, validate claims, run the teams.</span></a>
+</div>
 
-> A platform that gives biomedical engineers the knowledge, tools, and community to diagnose, repair, and maintain medical equipment — anywhere on the continent.
+New here? Read [How the app is organised](three-worlds.md) first: it explains the three parts of the app (Equipment, Work and Community) and why you may not see all of them yet.
 
-**Fix My MedTech** is an open-source platform where biomedical engineers tag, track, diagnose, and repair medical devices. It is built around the realities of the field: devices that arrive without manuals, without spare parts, and often already degraded — in environments where heat, humidity, dust and unstable power accelerate failure far beyond what manufacturers expect.
+## Most asked
 
-## 💬 Do you want to collaborate?
+- [Report a fault and get it repaired](report-fault.md)
+- [Register a device](register-device.md)
+- [Call an engineer](call-engineer.md)
+- [Questions and problems](faq.md): "Why can't I register a device?", "My clinic is waiting", "I don't see the Work tab"...
+- [Glossary](glossary.md): the words the app uses.
 
-If you have questions: [contact us](collaboration.md)
+## Need help?
 
-## 📄 License
+In the app, tap the **?** button at the bottom right of any page: **Send feedback** or **Report an issue**. Your message goes to the FixMyMedTech team.
 
-This project is licensed under the [Apache 2.0](LICENSE).
+---
 
-## 📄 Code of conduct
-
-This project follows thsi [Code of Conduct](CODE_OF_CONDUCT.md).
+<small>Building or running FixMyMedTech? See the [developer section](developers.md).</small>

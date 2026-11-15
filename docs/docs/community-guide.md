@@ -1,202 +1,74 @@
-# Community journey: how to use it
+# How the community works
 
-Status: phase 1 rebuilt around teams and achievements (2026-11-04), merged with the engineer and clinic onboarding flow (2026-11-14: three welcome quests, clinics and talk hosts). The design and the later phases are in the [technical plan](community-journey.md).
+<div class="in-app community" markdown>**In the app:** <span class="world community">Community</span> → **My journey**, **Teams and achievements**, **Task board**.</div>
 
-This page explains what the community journey does, how each kind of person uses it, and how to set it up and run it. It is written for whoever runs the community, not only for developers.
+**Who this is for:** engineers, technicians and students who want to take part in the FixMyMedTech community.
 
-## What it does, in short
+**What you need before:** an account (see [I am an engineer](start-engineer.md)).
 
-- **New engineers join at `/join`** (clinics at `/clinic/signup` or through an engineer's invitation). They become **applicants**, shown as **Visitor**. A Visitor can log in, but only sees Getting started, the manual library and their profile. The rest of the platform (devices, faults, dashboard, organisations) stays closed.
-- **Getting started opens on an introduction page** with the concept video first, then "How it works" in three steps. The welcome quests are one click further.
-- **Three welcome quests make you a Contributor**: complete your profile, add a photo, attend a community talk. When all three are done the person's status becomes `member` (shown as **Contributor**; "Member" is kept for after the Sociocracy for All training), they see a welcome page, and the whole platform opens: invite clinics, register devices for the clinics that named them.
-- **There are three teams**: **Communicator**, **Community Builder** and **Clinics Connector**. In each team a person is a **Candidate**, a **Member** or a **Lead**. The team name is the title people put on LinkedIn.
-- **There are five achievements, each with 10 levels of stars.** Mapper and Ambassador belong to Clinics Connector; Supporter, Event Organiser and Active Builder belong to Community Builder. Mapper is counted by the platform (devices added); the others are recognised by members of their team.
-- **The map is public** (`/community/achievements`): hexagon tiles for the first step, the teams and the achievements, with a detail panel beside it.
-- **Every member has a journey** (`/community`): their teams, their achievements with stars, and their counts.
-- **Community admin** (`/community/admin`) is where team members recognise achievements, Community Builders welcome applicants and make candidates, leads manage their team, and superusers name leads.
-- **Nobody already on the platform loses access.** The migration made every existing account a member.
+FixMyMedTech is a community of people who keep medical devices working. You enter with three welcome steps, then you can join a team and earn achievements for what you do.
 
-## The introduction and the welcome quests
+## 1. Welcome steps: from Visitor to Contributor
 
-![Introduction page](images/community/intro.png)
-
-The introduction page (`/community/start`) is the first thing an applicant sees, with the concept video. The video is not a quest.
-
-![Welcome quests](images/community/start.png)
-
-| Quest | How it gets done |
+| Step | Done when |
 | --- | --- |
-| Complete your profile | Automatic once the profile has a name, a country, a city and a "why biomedical engineering" answer. |
-| Add a photo | Automatic once the profile has a photo. |
-| Attend a community talk | A Community Builder (or the talk host on `/host`) presses **The call took place** after the talk. |
+| **Complete your profile** | Your profile has a name, a country, a city and a few words on why you chose biomedical engineering |
+| **Add a photo** | Your profile has a photo |
+| **Attend a community talk** | A host ticks it after a short video call |
 
-Joining the Discord and the social media answer are on the same page as optional extras; they do not open anything.
+When the three are done you are a **Contributor**: the whole platform opens. Joining the Discord and the social media question on the same page are optional.
 
-The quests can be done in any order. The status changes the moment the last one is done; on their next page load the person lands on the welcome page.
+## 2. Teams
 
-**Clinic staff** invited by their clinic (the existing organisation invite) and **clinic accounts** become **staff**, not applicants. The platform is open for them right away. Their Getting started page invites them to do the same quests if they want to become contributors.
+There are three teams. The team name is the title you can put on LinkedIn (for example *Community Builder, FixMyMedTech*).
 
-## Clinics and talk hosts
-
-- A clinic invited by an engineer is active as soon as it is set up. A clinic created without an invitation (at `/clinic/signup`, or from Groups by anyone) waits for its **clinic talk**: until a Clinics Connector unlocks it on `/host`, nobody registers devices for it, its own admins included.
-- `/host` shows Community Builders the Visitors waiting for their talk, and Clinics Connectors the clinics waiting for theirs. Superusers see both.
-
-## Teams and achievements
-
-![Achievements map](images/community/map.png)
-
-### The tiles
-
-| Tile | Meaning |
+| Team | What it does |
 | --- | --- |
-| Green | Done: you are a member, in this team, or have at least one star |
-| Blue border | You can do it now |
-| Dashed border | Comes after (for example a team you haven't joined) |
-| Grey, no label | Not discovered yet: room for future teams and achievements |
+| **Communicator** | Tells the world what the community does |
+| **Community Builder** | Makes the community a place people want to join and stay in. Welcomes new people and hosts the community talks |
+| **Clinics Connector** | Brings the platform to clinics on the ground. Hosts the clinic talks |
 
-Click a tile to see its panel: what a team does and how to join it, or an achievement's stars, the 10 levels and who recognises it.
+In a team you are a **Candidate**, a **Member** or a **Lead**:
 
-### Joining a team
+1. A **Community Builder** makes you a **Candidate** for a team. Ask one (find them in **Network**).
+2. That team's **Lead** makes you a **Member**.
+3. Only superusers name **Leads**.
 
-1. A **Community Builder** makes the person a **Candidate** for any team.
-2. That team's **Lead** makes them a **Member** (or removes them).
-3. Only **superusers** name **Leads**.
+## 3. Achievements and stars
 
-Members and leads see the team's LinkedIn title on its panel and are invited to add it to their profile. Communicators help them share the news.
+There are five achievements, each with 10 levels of stars. A level is reached when your count reaches its number.
 
-### Earning stars
-
-Each achievement has 10 levels. A level is reached when the count reaches its number:
-
-| Achievement | Team | How it's counted | Levels |
+| Achievement | Team | How it is counted | Levels |
 | --- | --- | --- | --- |
-| Mapper | Clinics Connector | Devices the person registered (automatic) | 1, 5, 10, 20, 35, 50, 75, 100, 150, 200 |
-| Ambassador | Clinics Connector | Social posts shared or published, recognised | 1, 3, 5, 10, 15, 25, 40, 60, 80, 100 |
-| Supporter | Community Builder | Times they helped a fellow engineer, recognised | 1, 3, 5, 10, 15, 25, 40, 60, 80, 100 |
-| Event Organiser | Community Builder | Events organised, recognised | 1, 2, 3, 5, 8, 12, 16, 20, 25, 30 |
-| Active Builder | Community Builder | Community meetings attended, recognised | 1, 3, 5, 10, 15, 20, 30, 40, 50, 60 |
+| **Mapper** | Clinics Connector | Devices you registered (automatic) | 1, 5, 10, 20, 35, 50, 75, 100, 150, 200 |
+| **Ambassador** | Clinics Connector | Social media posts shared or published, recognised | 1, 3, 5, 10, 15, 25, 40, 60, 80, 100 |
+| **Supporter** | Community Builder | Times you helped a fellow engineer, recognised | 1, 3, 5, 10, 15, 25, 40, 60, 80, 100 |
+| **Event Organiser** | Community Builder | Events you organised, recognised | 1, 2, 3, 5, 8, 12, 16, 20, 25, 30 |
+| **Active Builder** | Community Builder | Community meetings you attended, recognised | 1, 3, 5, 10, 15, 20, 30, 40, 50, 60 |
 
-These are starting values; a superuser can change them (see below).
+"Recognised" means a member of that team confirms it: you **claim** it, or a member records it for you. See [Claims, task board and missing manuals](community-work.md).
 
-![My journey](images/community/journey.png)
+## Steps
 
-## Who can do what
+1. Open **Teams and achievements**. The map shows the teams and achievements as tiles:
+    - green: done (you are a contributor, in this team, or have at least one star);
+    - blue border: you can do it now;
+    - dashed border: comes after (for example a team you haven't joined);
+    - grey, no label: not discovered yet.
+2. Tap a tile. The panel on the right explains the team or the achievement: its 10 levels, who recognises it, and **Claim it** for recognised achievements.
+3. Open **My journey** to see your teams, your achievements with their stars, and your counts (devices registered, faults resolved, maintenance visits, invites who joined, manuals added).
+4. Take small jobs on the **Task board** to earn points.
 
-| Person | What they can do |
-| --- | --- |
-| Candidate | Nothing extra yet: they are on their way into the team |
-| Any team member or lead | See the Members tab; recognise achievements of their team's category |
-| Community Builder (member or lead) | Also: see and review applicants, record welcome calls, confirm Discord, make anyone a Candidate for any team |
-| A team's Lead | Also: make people Members of their team or remove them, edit the team's page, see the History tab |
-| Superuser | Everything, including naming and removing Leads |
+![Teams and achievements](images/guide/achievements-map.png){ .shot loading=lazy }
 
-Nobody can recognise their own achievements; ask another team member. Team powers **pause** after six months without any activity. Any action on the platform restarts them.
+## What happens next
 
-## For Community Builders: reviewing an applicant
+- Members and leads of a team validate claims in [To validate](validate.md) and see **Community admin**.
+- Community Builders and Clinics Connectors host talks: see [Talk host](talk-host.md).
+- Team powers pause after six months without any activity. Any action in the app restarts them.
 
-![Applicant panel](images/community/applicant.png)
+## If something goes wrong
 
-1. Open **Community admin → Applicants**. "Applying" lists people still doing their quests, newest first.
-2. Click a name. The panel on the right shows their answers and their three quests.
-3. Pick yourself (or another Community Builder) as **Host** and set the call date. Press **Save**. The applicant sees the date and the host's name on their page.
-4. After the call, press **The call took place**. If their other quests are done, they become a member right away.
-5. To refuse, open **Refuse this applicant** and give a reason. The applicant sees the reason. **Reopen the application** undoes it.
-
-The **Clinic staff** filter lists people invited by their clinic who haven't finished the quests. Nothing is needed from you there.
-
-## For team members and leads: the Members tab
-
-![Members tab](images/community/members.png)
-
-1. **Community admin → Members**. Search by name, username or city, or filter by team or country.
-2. Click a member. The panel shows their teams, their achievements with stars, the recognitions and the history.
-3. **Recognise an achievement**: pick the achievement (you only see your team's), how many times (for example 3 posts shared), and an optional note. Press **Recognise**.
-4. **Add to a team**: pick a team and level. You only see the levels you are allowed to give. Giving a new level to someone already in the team changes their level.
-5. **Remove from this team** and **Remove this recognition** ask for a reason, which is kept in the history. A recognition can be removed by the person who gave it, the team's lead or a superuser.
-
-Only members can join teams or earn achievements; applicants have to finish their quests first.
-
-## For leads: editing the team page
-
-![Teams tab](images/community/teams.png)
-
-**Community admin → Teams** shows the three teams, what they do, their LinkedIn titles and the achievements they recognise. A team's lead sees **Edit this team**: the name, short description, LinkedIn title and the list of tasks (one per line), in English, French and Spanish. English is required; empty French or Spanish fields fall back to English.
-
-The same tab lists the achievements with their 10 levels.
-
-## For superusers
-
-- **Make someone a superuser**: SQLAdmin (`/admin`) → Users → edit the user → tick **Is Superuser**.
-- **Name a lead**: Members tab → the person → **Add to a team** → "Team · Lead".
-- **Change the levels of an achievement**: SQLAdmin → **Achievements** → `levels` (exactly 10 numbers, smallest first). The same screen holds the names and descriptions per language. Untick **active** to hide an achievement.
-- **Teams** can also be edited in SQLAdmin → **Community teams**.
-- **History** (Community admin → History) lists every change: joins, calls, quests confirmed, refusals, team changes, recognitions and team page edits. Each line says who did it and why.
-
-Changes apply on the next page load.
-
-## Setting it up
-
-### Settings to fill in
-
-Four links, none of them secret. Locally they go in `.env`. For dev and production, add them as **repository variables** (GitHub → Settings → Secrets and variables → Actions → Variables tab); the deploy workflows write them into the server's `.env`.
-
-| Variable | What it is | If empty |
-| --- | --- | --- |
-| `COMMUNITY_BOOKING_URL` | Booking page for the welcome call (Calendly, Cal.com, Google appointment page…) | Applicants are told a member will email them |
-| `COMMUNITY_INTRO_VIDEO_URL` | YouTube link of the concept video shown on the introduction page | The page says the video isn't available; the "I've watched it" button still works |
-| `STAFF_INTRO_VIDEO_URL` | Shorter video for clinic staff | Uses the main video |
-| `DISCORD_INVITE_URL` | Invite link to the Discord server | The "Open the Discord server" button is hidden |
-
-Connecting Discord also needs the existing `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
-
-### Database
-
-Migration `029_community_journey.sql` runs by itself when the backend starts. It adds the community columns on profiles, creates the team, achievement, quest, application and history tables, seeds the 3 teams and 5 achievements in three languages, and makes every existing account a member. If your local database already ran the earlier draft (`029_community_roles.sql`), the new file removes the old role tables and keeps the history.
-
-### Trying it locally
-
-```bash
-docker compose -f docker-compose.local.yml up --build -d
-python scripts/seed_test_data.py
-```
-
-All test passwords are `Pass123!`.
-
-| Account | What it shows |
-| --- | --- |
-| `applicant@test.org` | An applicant (Esi Boateng, Kampala) with an open application |
-| `tech@mulago.org` (John Okello) | Community Builder lead: reviews applicants, makes candidates, recognises Supporter, Event Organiser and Active Builder |
-| `tech@kenyatta.org` | Communicator lead: can edit the Communicator page |
-| `eng@mulago.org` (Paul Wasswa) | Clinics Connector member with Supporter and Active Builder stars |
-| `nurse@mulago.org` | Clinic staff (a clinic account, not in a team) |
-
-Make one of them a superuser in SQLAdmin to name leads and see everything. To test the full journey, join at `/join` with a new email, then review yourself as `tech@mulago.org`.
-
-### Tests
-
-```bash
-cd backend && pip install pytest && python -m pytest tests -q
-```
-
-The tests cover member status, the pause rule, star levels, the seeded levels and who can do what. They don't need a database.
-
-## Where the code is
-
-| Piece | File |
-| --- | --- |
-| Rules: status, quests, pause, star levels, powers | `backend/utils/community.py` |
-| API (`/api/community/...`) | `backend/routers/community.py` |
-| Platform gate (applicants get 403 `community_access_pending`) | `backend/utils/profile.py` `require_platform_access`, attached to routers in `backend/main.py` |
-| Pages | `frontend/features/community/pages/` (`start.py` intro and quests, `achievements.py` map, `journey.py`, `admin_*.py`) |
-| Hexagon map | `frontend/features/community/ui.py` `hex_map`, `MAP_LAYOUT` |
-| Applicant redirect | `frontend/features/auth/helper.py` `require_auth`, `APPLICANT_PATHS` |
-| Text in three languages | `frontend/i18n.py`, keys `cj.*` |
-| Styles | `.cj-*` classes in `frontend/components.py`, built on the design system tokens |
-
-## Not yet built
-
-- Communicator achievements: none are defined yet, so the Communicator team recognises none.
-- Discord announcements when someone joins a team or earns a star, and the public members page.
-
-Claims for recognised achievements, the leader portal (**To validate**) and the task board with points are described in [Claims, task board and missing manuals](community-work.md).
-- Adding a new team or achievement tile to the map needs a line in `MAP_LAYOUT` (the database rows alone don't place it).
+- **"Not in a team yet."** Ask a Community Builder to make you a candidate.
+- **My stars didn't move.** Recognised achievements need a team member to confirm your claim. Mapper counts only the devices you registered yourself.
+- **I can't claim anything.** Claims open when your welcome steps are done.

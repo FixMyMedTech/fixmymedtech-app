@@ -61,4 +61,7 @@ async def get(req):
     if req.session.pop("show_welcome", None):
         return RedirectResponse("/community/welcome", status_code=302)
 
+    # Community hub: first-visit tour of the three worlds (members only).
+    from features.community.hub import tour_panel
+    landing = Div(tour_panel(req, lang, back="/home"), *landing.children, style="max-width:960px;")
     return page_shell(landing, current="/home", title=_("title.home"), lang=lang)

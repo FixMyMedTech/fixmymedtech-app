@@ -310,7 +310,12 @@ async def get(req, status: str = "", healthsite_id: str = "", view: str = ""):
 
     # Shown instead of the table when there is nothing at all, or when the
     # search filter leaves no rows.
-    empty_msg = Div(Span(lucide("devices"), cls="empty-ico"), Span(_("device_list.empty")),
+    # No device at all: say what to do and link to it (search misses keep the short line).
+    empty_msg = Div(Span(lucide("devices"), cls="empty-ico"),
+        *([B(_("device_list.empty")), Span(_("hub.empty.devices_text")),
+           A(lucide("plus"), _("hub.empty.devices_cta"), href="/new_device", cls="btn btn-primary btn-sm")
+           if auth_helper.adds_devices(req) else ""]
+          if not all_devices else [Span(_("device_list.empty"))]),
         id="dev-empty", cls="empty",
         style="" if not rows else "display:none;")
 

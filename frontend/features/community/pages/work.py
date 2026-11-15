@@ -444,24 +444,38 @@ async def task_board(req, msg: str = "", error: str = ""):
             Button(_("w5.post_task"), type="submit", cls="btn btn-primary"),
             method="post", action="/community/tasks", cls="wform card",
         ),
-        cls="more",
+        cls="more", id="new-task",
     ) if b.get("can_create") else P(_("w5.tasks_members_only"), cls="wempty", style="margin-bottom:16px;")
 
     def section(title, items, mode, empty, anchor):
         return Div(H3(title, cls="wsection", id=anchor),
                    *([card(tk, mode) for tk in items] or [Div(empty, cls="wempty")]))
 
+    # Empty board: say what to do (post a task, or ask for a manual from the library).
+    open_empty = Div(
+        Span(lucide("board"), cls="empty-ico", style="background:var(--lead-tint);color:var(--lead);"),
+        B(_("hub.empty.board_title")), Span(_("hub.empty.board_text")),
+        Div(A(_("w5.new_task"), href="#new-task", cls="btn btn-primary btn-sm",
+              onclick="var d=document.getElementById('new-task');if(d){d.open=true;}")
+            if b.get("can_create") else "",
+            A(_("hub.empty.board_library"), href="/library", cls="btn btn-secondary btn-sm"),
+            style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;"),
+        cls="empty")
+
     content = Div(
         Style(".work details.more>summary{cursor:pointer;list-style:none;padding:14px 18px;background:var(--surface);"
               "border:1px solid var(--border);border-radius:var(--radius-card);font-weight:600;margin-bottom:12px;}"),
         page_head(_("w5.board_title"), _("w5.board_intro"), "board", "lead"),
+        # "Post a task" links (community home, empty board) open the form.
+        Script("if(location.hash==='#new-task'){var d=document.getElementById('new-task');if(d){d.open=true;}}"),
         flash(msg), flash(error, "error"),
         points,
         create,
         section(_("w5.sec_mine"), b.get("mine") or [], "mine", _("w5.mine_none"), "mine"),
         section(_("w5.sec_check"), b.get("to_check") or [], "check", _("w5.check_none"), "check")
         if b.get("to_check") else "",
-        section(_("w5.sec_open"), b.get("open") or [], "open", _("w5.open_none"), "open"),
+        section(_("w5.sec_open"), b.get("open") or [], "open", _("w5.open_none"), "open")
+        if b.get("open") else Div(H3(_("w5.sec_open"), cls="wsection", id="open"), open_empty),
         section(_("w5.sec_done"), b.get("done") or [], "done", _("w5.done_none"), "done"),
     )
     return _shell(content, _("w5.board_title"), lang, "/community/tasks")

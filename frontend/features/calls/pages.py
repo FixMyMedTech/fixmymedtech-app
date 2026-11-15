@@ -20,7 +20,7 @@ import features.auth.helper as auth_helper
 import features.calls.api as calls_api
 import features.faults.api as faults_api
 import features.auth.api as auth_api
-from components import page_shell, status_badge, alert, fmt_date, page_head
+from components import page_shell, status_badge, alert, fmt_date, page_head, lucide
 from i18n import t as make_t
 
 rt = APIRouter()
@@ -521,7 +521,12 @@ async def get_requests(req):
         Div(H3(_("call.your_offers"), cls="card-title"), *[item(r, True) for r in mine], cls="card",
             style="margin-bottom:16px;") if mine else "",
         Div(H3(_("call.near_you"), cls="card-title"),
-            *([item(r) for r in open_] or [P(_("call.nothing_new"), cls="muted")]), cls="card"),
+            *([item(r) for r in open_] or [Div(
+                Span(lucide("inbox"), cls="empty-ico", style="background:var(--accent-tint);color:var(--accent);"),
+                B(_("call.nothing_new")), Span(_("hub.empty.requests_text")),
+                A(_("hub.empty.requests_cta"), href="/invite-clinic", cls="btn btn-secondary btn-sm")
+                if data and data.get("can_offer") else "",
+                cls="empty")]), cls="card"),
     )
     return _shell(content, _("call.requests_title"), lang, current="/requests")
 

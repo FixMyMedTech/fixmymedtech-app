@@ -211,6 +211,7 @@ from features.community.pages import (
     achievements as community_achievements, welcome as community_welcome,
     admin_applicants, admin_members, admin_teams, admin_history, work as community_work,
 )
+from features.community import hub as community_hub
 
 auth_login.rt.to_app(app)
 auth_signup.rt.to_app(app)
@@ -267,6 +268,7 @@ admin_history.rt.to_app(app)
 community_work.rt.to_app(app)
 # In-app help: /community/guides (no other /community route matches it).
 help_pages.rt.to_app(app)
+community_hub.rt.to_app(app)
 
 posthog_log.info(
     "application_started",

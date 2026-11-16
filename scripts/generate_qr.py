@@ -19,8 +19,8 @@ Usage:
     python generate_qr.py --env dev
     python generate_qr.py --env prod
 
-Install dependencies first:
-    pip install qrcode[pil]
+Install dependencies first (repo root, in a venv):
+    python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 """
 
 import argparse

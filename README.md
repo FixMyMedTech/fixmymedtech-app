@@ -51,6 +51,7 @@ docker compose -f docker-compose.local.yml up --build -d
 | API (FastAPI) + Swagger | <http://localhost:8890> · <http://localhost:8890/docs> |
 | Admin portal (SQLAdmin) | <http://localhost:8890/admin/> |
 | MinIO console | <http://localhost:9003> (`minioadmin` / `minioadmin`) |
+| Docs (MkDocs, live reload) | <http://localhost:8001> |
 
 Creating your first admin (optional — set `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD`
 in the environment to have it done automatically on every startup):

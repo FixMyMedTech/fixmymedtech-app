@@ -7,6 +7,23 @@ Python code.
 
 ---
 
+## Python virtual environments
+
+Recent Debian and Ubuntu releases (and Homebrew Python on macOS) refuse a bare
+`pip install` with `error: externally-managed-environment` (PEP 668). Install
+every Python dependency into a virtual environment instead. This page uses one
+venv per part: `backend/.venv`, `frontend/.venv`, and a repo-root `.venv` for
+the docs and the helper scripts. All of them are git-ignored.
+
+If `python3 -m venv` fails with "ensurepip is not available", install the venv
+module first: `sudo apt install python3-venv` (or `python3-full`).
+
+You can call the venv's tools by path (`.venv/bin/pip`, `.venv/bin/python`), or
+run `source .venv/bin/activate` once per terminal so that `pip`, `python` and
+`mkdocs` point at it.
+
+---
+
 ## 1. Start the infrastructure
 
 The backend needs PostgreSQL and MinIO. The easiest option is to start only
@@ -33,6 +50,8 @@ Requires Python 3.12.
 
 ```bash
 cd backend
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
 export DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/fixmymedtech
@@ -51,7 +70,7 @@ Pending migrations are applied on startup. `MIGRATIONS_DIR` must point to
 `infrastructure/migrations` relative to where you run the backend. The default
 is `infrastructure/migrations`, which matches the Docker image layout.
 
-Create a superuser with `python utils/create_superuser.py`, or set
+Create a superuser with `python utils/create_superuser.py` (with the backend venv active), or set
 `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` before starting.
 
 ---
@@ -60,6 +79,8 @@ Create a superuser with `python utils/create_superuser.py`, or set
 
 ```bash
 cd frontend
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
 export API_URL=http://localhost:8888
@@ -78,8 +99,12 @@ The app runs at <http://localhost:5001> with live reload.
 
 ## 4. Seed test data (optional)
 
+From the repo root:
+
 ```bash
-python scripts/seed_test_data.py
+python3 -m venv .venv
+.venv/bin/pip install -r scripts/requirements.txt
+.venv/bin/python scripts/seed_test_data.py
 ```
 
 This creates demo organizations and users (all with password `Pass123!`) in
@@ -90,13 +115,26 @@ the database at `DATABASE_URL`, which defaults to
 
 ## 5. Documentation (MkDocs)
 
+The local stack serves the docs too, with live reload: after
+`docker compose -f docker-compose.local.yml up --build -d` they are at
+<http://localhost:8001> (change the port with `LOCAL_DOCS_PORT` in `.env`).
+Editing a page under `docs/` refreshes the browser; only a change to
+`docs/requirements.txt` needs `--build`. To start the docs alone:
+
 ```bash
-cd docs
-pip install -r requirements.txt
-mkdocs serve
+docker compose -f docker-compose.local.yml up --build -d docs
 ```
 
-The docs are served at <http://localhost:8000>.
+Without Docker, from the repo root (the same `.venv` as the seed script works
+fine):
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r docs/requirements.txt
+cd docs && ../.venv/bin/mkdocs serve
+```
+
+That serves the docs at <http://localhost:8000>.
 
 ---
 

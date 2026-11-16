@@ -25,10 +25,11 @@ Source isn't volume-mounted into the containers, so code changes need `up --buil
 - API + Swagger: http://localhost:8890/docs
 - SQLAdmin: http://localhost:8890/admin/ (superusers only)
 - MinIO console: http://localhost:9003
+- Docs (MkDocs, live reload): http://localhost:8001
 
 To run outside Docker (use a venv per folder, see `docs/docs/setup.md`): `cd backend && uvicorn main:app --reload --port 8888` and `cd frontend && python main.py` (FastHTML `serve()` with live reload). The frontend reads `API_URL` (default `http://localhost:8888`).
 
-Docs: `cd docs && ../.venv/bin/mkdocs serve` (repo-root venv from above).
+Docs: served by the local stack's `docs` service (above); without Docker, `cd docs && ../.venv/bin/mkdocs serve` (repo-root venv from above).
 
 The repo has no test suite and no linter config.
 

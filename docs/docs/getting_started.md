@@ -66,6 +66,7 @@ This builds and starts four containers:
 | **minio**    | console `http://localhost:9003` | S3-compatible file storage |
 | **backend**  | `http://localhost:8890` | FastAPI REST API (also serves the app) |
 | **frontend** | `http://localhost:5003` | FastHTML server-side UI |
+| **docs**     | `http://localhost:8001` | This documentation, with live reload |
 
 On first boot the database is initialised from `infrastructure/db/init.sql`, then the backend
 auto-applies every migration in `infrastructure/migrations/` in order.

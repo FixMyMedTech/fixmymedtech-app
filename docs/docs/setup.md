@@ -115,7 +115,18 @@ the database at `DATABASE_URL`, which defaults to
 
 ## 5. Documentation (MkDocs)
 
-From the repo root (the same `.venv` as the seed script works fine):
+The local stack serves the docs too, with live reload: after
+`docker compose -f docker-compose.local.yml up --build -d` they are at
+<http://localhost:8001> (change the port with `LOCAL_DOCS_PORT` in `.env`).
+Editing a page under `docs/` refreshes the browser; only a change to
+`docs/requirements.txt` needs `--build`. To start the docs alone:
+
+```bash
+docker compose -f docker-compose.local.yml up --build -d docs
+```
+
+Without Docker, from the repo root (the same `.venv` as the seed script works
+fine):
 
 ```bash
 python3 -m venv .venv
@@ -123,7 +134,7 @@ python3 -m venv .venv
 cd docs && ../.venv/bin/mkdocs serve
 ```
 
-The docs are served at <http://localhost:8000>.
+That serves the docs at <http://localhost:8000>.
 
 ---
 

@@ -112,11 +112,13 @@ def _form(_, lang: str, logged_in: bool, values: dict, error: str = ""):
 
 
 @rt("/feedback")
-async def get(req, type: str = "feedback", page: str = ""):
+async def get(req, type: str = "feedback", page: str = "", summary: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     logged_in = bool(auth_helper.get_token(req))
-    values = {"type": type, "page": _safe_page(page)}
+    # summary pre-fills the title (e.g. "Guide: Report a fault" from a help
+    # guide's "Suggest an improvement"); the field's own limit is 100.
+    values = {"type": type, "page": _safe_page(page), "summary": (summary or "").strip()[:100]}
     return pub_shell(_form(_, lang, logged_in, values), title=_("title.feedback"), lang=lang)
 
 

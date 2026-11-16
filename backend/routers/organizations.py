@@ -25,6 +25,11 @@ class OrgUpdate(BaseModel):
     contact_email: Optional[str] = None
 
 
+class PrivacyUpdate(BaseModel):
+    show_devices_on_profiles: Optional[bool] = None
+    hide_name_on_profiles: Optional[bool] = None
+
+
 class MemberRoleUpdate(BaseModel):
     role: str
 
@@ -81,7 +86,7 @@ async def get_my_organizations(
     )
     orgs = result.scalars().all()
     if not orgs:
-        raise HTTPException(status_code=403, detail="No organizations found")
+        return []
     device_org_ids = set((await db.execute(
         select(Device.organization_id).where(or_(
             Device.organization_id.in_([o.id for o in orgs]),
@@ -627,6 +632,11 @@ async def invite_organization_member(
             id=user.id,
             username=await _unique_username(db, _username_base(email)),
             full_name=user.full_name,
+            # Staff added by an organization admin: no welcome quests to get
+            # in (status 'staff'), and not a responsible engineer either. Doing
+            # the quests later makes them a member like everyone else.
+            member_status="staff",
+            join_path="clinic_staff",
         ))
         created_user = True
 
@@ -816,3 +826,57 @@ async def update_organization(
         "address": org.address,
         "contact_email": org.contact_email,
     }
+
+
+# ── Privacy (wave 2, migration 031) ─────────────────────────
+# Whether the clinic's devices show on the profile of the engineer who
+# registered them, and whether the clinic's name is hidden there.
+
+async def _admin_org(db, profile: Profile, org_id: str) -> Organization:
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid organization id")
+    if profile.get_role_for_org(org_uuid) != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can change privacy settings")
+    org = (await db.execute(select(Organization).where(Organization.id == org_uuid))).scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return org
+
+
+def _privacy_out(org: Organization) -> dict:
+    return {
+        "id": str(org.id),
+        "name": org.name,
+        "clinic_status": org.clinic_status,
+        "show_devices_on_profiles": bool(org.show_devices_on_profiles),
+        "hide_name_on_profiles": bool(org.hide_name_on_profiles),
+    }
+
+
+@router.get("/{org_id}/privacy")
+async def get_privacy(
+    org_id: str,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    return _privacy_out(await _admin_org(db, profile, org_id))
+
+
+@router.patch("/{org_id}/privacy")
+async def update_privacy(
+    org_id: str,
+    body: PrivacyUpdate,
+    profile: Profile = Depends(get_current_profile),
+    db: AsyncSession = Depends(get_db),
+):
+    org = await _admin_org(db, profile, org_id)
+    if body.show_devices_on_profiles is not None:
+        org.show_devices_on_profiles = body.show_devices_on_profiles
+    if body.hide_name_on_profiles is not None:
+        org.hide_name_on_profiles = body.hide_name_on_profiles
+    await db.commit()
+    await db.refresh(org)
+    return _privacy_out(org)

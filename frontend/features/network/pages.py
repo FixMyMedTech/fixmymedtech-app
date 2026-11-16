@@ -25,7 +25,7 @@ from i18n import t as make_t
 import features.auth.helper as auth_helper
 import features.profile.api as profile_api
 
-from components import page_shell
+from components import page_shell, page_head
 
 rt = APIRouter()
 
@@ -292,12 +292,7 @@ async def get(req):
 
     content = Div(
         Div(
-            Div(
-                H1(title),
-                P(f"{total} {_('network.member' if total == 1 else 'network.members')}",
-                  style="color:var(--c-text-3);margin:4px 0 0;"),
-            ),
-            cls="page-header",
+            page_head(title, f"{total} {_('network.member' if total == 1 else 'network.members')}", "network", "lead"),
             style="flex-direction:column;align-items:stretch;margin:18px auto 0;",
         ),
         Div(

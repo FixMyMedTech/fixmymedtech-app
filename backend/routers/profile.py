@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import Optional
 
-from models.models import Profile, OrgUser, User, Device, FaultReport, MaintenanceLog
+from models.models import Profile, OrgUser, User, Device, FaultReport, MaintenanceLog, Organization, DeviceCategory
 from config.db_config import get_db
 from config.storage import upload_file, get_file, delete_file
 from config.users import current_active_user
@@ -37,6 +37,8 @@ class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     username: Optional[str] = None
     country: Optional[str] = None
+    city: Optional[str] = None
+    why_bme: Optional[str] = None
 
 
 # ── Me ─────────────────────────────────────────────────────────────────────────
@@ -55,14 +57,34 @@ async def me(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     from routers.discord_link import discord_login_available
+    from utils import community as cm
+    from utils import onboarding as ob
+    powers = await cm.powers_for(db, profile, user)
+    places = await cm.team_places(db, profile.id)
     return {
         "id": profile.id,
         "username": profile.username,
         "full_name": profile.full_name,
         "country": profile.country,
+        "city": profile.city,
+        "why_bme": profile.why_bme,
         "avatar_key": profile.avatar_key,
         "email": user.email,
         "is_verified": user.is_verified,
+        "is_superuser": bool(user.is_superuser),
+        # Onboarding (migration 030): cached in the frontend session.
+        "account_kind": profile.account_kind,
+        "is_unlocked": ob.is_unlocked(profile, user),
+        "is_talk_host": await ob.is_host(db, user, profile),
+        # Community journey (migration 029): cached in the frontend session
+        # to gate pages and build the sidebar.
+        "member_status": profile.member_status,
+        "join_path": profile.join_path,
+        "community": {
+            "teams": {m.team_key: m.level for m in places},
+            "permissions": powers.as_list(),
+            "paused": cm.is_paused(profile.last_active_at),
+        },
         "discord": {
             "available": discord_login_available(),
             "linked": bool(user.discord_user_id),
@@ -106,6 +128,15 @@ async def update_me(
         profile.username = candidate
     if body.country is not None:
         profile.country = body.country.strip() or None
+    if body.city is not None:
+        profile.city = body.city.strip() or None
+    if body.why_bme is not None:
+        story = body.why_bme.strip()
+        if len(story) > 500:
+            raise HTTPException(status_code=400, detail="bio_too_long")
+        profile.why_bme = story or None
+    from utils import onboarding as ob
+    await ob.refresh_onboarding_status(db, profile)
     try:
         await db.commit()
     except Exception as e:
@@ -116,7 +147,10 @@ async def update_me(
         "username": profile.username,
         "full_name": profile.full_name,
         "country": profile.country,
+        "city": profile.city,
+        "why_bme": profile.why_bme,
         "avatar_key": profile.avatar_key,
+        "member_status": profile.member_status,
     }
 
 
@@ -188,6 +222,9 @@ async def upload_avatar(
     )
     old_key = profile.avatar_key
     profile.avatar_key = key
+    # The picture quest is done the moment an avatar exists.
+    from utils import onboarding as ob
+    await ob.refresh_onboarding_status(db, profile)
     await db.commit()
     if old_key and old_key != key:
         delete_file(old_key)
@@ -458,6 +495,33 @@ async def list_profiles(
     }
 
 
+async def _registered_devices(db: AsyncSession, profile_id) -> list[dict]:
+    """One line per device this member registered: device type and clinic.
+    Each clinic decides (privacy switches, migration 031) whether its devices
+    appear here at all, and whether its name is replaced by "a clinic"."""
+    clinic = Organization
+    rows = (await db.execute(
+        select(DeviceCategory.name, DeviceCategory.icon, DeviceCategory.slug,
+               clinic.id, clinic.name, clinic.hide_name_on_profiles)
+        .select_from(Device)
+        .join(clinic, clinic.id == func.coalesce(Device.healthsite_id, Device.organization_id))
+        .outerjoin(DeviceCategory, DeviceCategory.slug == Device.category_id)
+        .where(Device.registered_by == profile_id,
+               clinic.show_devices_on_profiles.is_(True),
+               Device.status != "decommissioned")
+        .order_by(Device.created_at.desc())
+        .limit(50)
+    )).all()
+    return [
+        {
+            "category": cat_name, "icon": icon or "🏥", "slug": slug,
+            "clinic_id": None if hide else str(cid),
+            "clinic_name": None if hide else cname,
+        }
+        for cat_name, icon, slug, cid, cname, hide in rows
+    ]
+
+
 @router.get("/profiles/{profile_id}")
 async def get_profile_view(
     profile_id: uuid.UUID,
@@ -477,6 +541,7 @@ async def get_profile_view(
         # The same four numbers the Network table sorts by, so a member's
         # public page always agrees with their row in the directory.
         **await _counts_for(db, target.id),
+        "registered_devices": await _registered_devices(db, target.id),
         "organizations": [
             {
                 "id": m.organization_id,

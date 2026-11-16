@@ -8,7 +8,7 @@ load_dotenv()
 # __ API imports __
 import features.auth.helper as auth_helper
 
-from components import page_shell, pub_shell
+from components import page_shell, pub_shell, lucide, user_worlds
 from i18n import t as make_t
 rt = APIRouter()
 
@@ -29,20 +29,45 @@ async def get(req):
 
     token, redirect = auth_helper.require_auth(req)
 
+    # Platform brief: a gradient hero with the two main actions, then one big
+    # door per world this account has unlocked (signed in only). The sidebar
+    # has no Home link: the logo opens this page.
+    def door(w):
+        return A(Span(lucide(w["icon"]), cls="door-ico"), B(w["label"]),
+                 P(_(f"home.door_{w['key']}")),
+                 Div(*[Span(lucide(icon), label) for _href, icon, label in w["links"][:4]], cls="door-links"),
+                 href=w["href"], cls=f"door w-{w['key']}")
     landing = Div(
-        H1(_("home.welcome"), style="text-align:center;margin-bottom:6px;"),
-        P(_("home.subtitle"), style="text-align:center;color:var(--c-text-3);margin-bottom:20px;"),
         Div(
-            A(_("home.scan_cta"), href="/new_device", cls="btn btn-primary",
-              style="justify-content:center;"),
-            A(_("home.devices_cta"), href="/devices", cls="btn btn-secondary",
-              style="justify-content:center;"),
-            style="display:flex;gap:10px;justify-content:center;"
+            Div(H1(_("home.welcome")), P(_("home.subtitle"))),
+            Div(
+                A(lucide("qr"), _("home.scan_cta"), href="/new_device", cls="btn btn-light"),
+                A(_("home.devices_cta"), href="/devices", cls="btn btn-ghost-light"),
+                style="display:flex;gap:10px;flex-wrap:wrap;",
+            ),
+            cls="hero",
         ),
-        cls="card", style="max-width:460px;margin:80px auto;padding:40px 32px;align-self:start;"
+        Div(*[door(w) for w in user_worlds(lang)], cls="doors") if not redirect else "",
+        style="max-width:960px;",
     )
 
+    if redirect and token:
+        # Signed in but still a community applicant: their home is the start page.
+        if req.session.pop("show_welcome", None):
+            return RedirectResponse("/community/welcome", status_code=302)
+        return redirect
     if redirect:
         return pub_shell(landing, title=_("title.home"), lang=lang)
+    if req.session.pop("show_welcome", None):
+        return RedirectResponse("/community/welcome", status_code=302)
 
+    # Community hub: first-visit tour of the three worlds (members only).
+    from features.community.hub import tour_panel
+    tour = tour_panel(req, lang, back="/home")
+    if tour:
+        # The tour already shows the three worlds: leave the doors out until
+        # it is dismissed, so they are never on the page twice.
+        landing = Div(tour, *[c for c in landing.children
+                              if "doors" not in str(getattr(c, "attrs", {}).get("class", ""))],
+                      style="max-width:960px;")
     return page_shell(landing, current="/home", title=_("title.home"), lang=lang)

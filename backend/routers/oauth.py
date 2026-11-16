@@ -135,16 +135,8 @@ async def _upsert_user(db: AsyncSession, email: str, name: str):
         db.add(profile)
         await db.flush()
 
-    # Create a default org + admin membership on first run
-    org_count = await db.execute(
-        select(OrgUser).where(OrgUser.profile_id == user.id)
-    )
-    if not org_count.scalar_one_or_none():
-        org = Organization(name=name, country="", type="hospital")
-        db.add(org)
-        await db.flush()
-        db.add(OrgUser(profile_id=user.id, organization_id=org.id, role="admin"))
-
+    # No default organization (migration 030): a new account is an engineer
+    # applicant, like an email signup.
     await db.commit()
 
     strategy = get_jwt_strategy()

@@ -15,8 +15,10 @@ import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 import features.faults.api as faults_api
 
-from components import page_shell, status_badge, fmt_date
+from components import page_shell, status_badge, fmt_date, device_icon, page_head, lucide
+from features.devices.cmms_ui import device_tone
 from features.devices.static.guides import category_label
+from features.devices.cmms_ui import CMMS_CSS, clinic_groups
 rt = APIRouter()
 
 
@@ -116,7 +118,7 @@ function delAsk(id) {
 # ══════════════════════════════════════════════════════════════
 
 @rt("/devices")
-async def get(req, status: str = "", healthsite_id: str = ""):
+async def get(req, status: str = "", healthsite_id: str = "", view: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
@@ -124,7 +126,13 @@ async def get(req, status: str = "", healthsite_id: str = ""):
     _ = make_t(lang)
 
     try:
-        devices = await devices_api.get_devices(token, status or None, healthsite_id or None)
+        # "needs" (wave 3): faults, devices in maintenance and overdue services.
+        api_status = None if status == "needs" else (status or None)
+        devices = await devices_api.get_devices(token, api_status, healthsite_id or None)
+        if status == "needs":
+            today_iso = __import__("datetime").date.today().isoformat()
+            devices = [d for d in devices if d.get("status") in ("fault", "maintenance")
+                       or (d.get("status") == "operational" and str(d.get("next_maintenance") or "9999") < today_iso)]
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
@@ -152,6 +160,7 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
     status_filters = [
         ("", _("device_list.filter_all")),
+        ("needs", _("wave3.needs_attention")),
         ("operational", _("device_list.filter_operational")),
         ("maintenance", _("device_list.filter_maintenance")),
         ("fault", _("device_list.filter_fault")),
@@ -186,11 +195,18 @@ async def get(req, status: str = "", healthsite_id: str = ""):
         _can_edit_device."""
         return auth_helper.can_edit_device(me, d)
 
+    view_q = "&view=clinics" if view == "clinics" else ""
     pills = [
-        A(label, href=f"/devices?status={val}&healthsite_id={healthsite_id}" if healthsite_id else f"/devices?status={val}",
+        A(label, href=(f"/devices?status={val}&healthsite_id={healthsite_id}" if healthsite_id else f"/devices?status={val}") + view_q,
         cls=f"pill {'active' if status == val else ''}")
         for val, label in status_filters
     ]
+    base_q = f"status={status}" + (f"&healthsite_id={healthsite_id}" if healthsite_id else "")
+    view_toggle = Div(
+        A(_("wave3.view_list"), href=f"/devices?{base_q}", cls=f"pill {'' if view == 'clinics' else 'active'}"),
+        A(_("wave3.view_clinics"), href=f"/devices?{base_q}&view=clinics", cls=f"pill {'active' if view == 'clinics' else ''}"),
+        cls="pills", style="display:flex;gap:6px;", role="group", aria_label=_("wave3.view_label"),
+    )
 
     device_healthsites = {}
     for device in all_devices:
@@ -218,12 +234,13 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
     rows = []
     search_index = []
+    today_iso = __import__("datetime").date.today().isoformat()
     for d in devices:
         cat = d.get("category") or {}
         healthsite = d.get("healthsite") or {}
         hs_name = healthsite.get("name", "")
         loc_name = d.get("location", "")
-        cat_text = f"{cat.get('icon','🏥')} {category_label(cat, lang)}"
+        cat_text = category_label(cat, lang) if cat else ""
         nm = d.get("next_maintenance", "")
         overdue = nm and nm < __import__("datetime").datetime.now().isoformat()
 
@@ -239,11 +256,18 @@ async def get(req, status: str = "", healthsite_id: str = ""):
             "m": match,
         })
 
+        # One visible action (open the device); Edit and Delete wait behind
+        # "⋯" (progressive disclosure).
+        menu_items = [
+            A(_("groups.edit"), href=f"/devices/{d['id']}/edit") if can_edit(d) else "",
+            Button(_("groups.delete"), type="button", cls="danger",
+                   onclick=f"this.closest('details').open=false;delAsk({json.dumps(str(d['id']))})") if can_delete(d) else "",
+        ]
         actions = Div(
             A(_("device_list.view"), href=f"/device/{d['id']}", cls="btn btn-secondary btn-sm"),
-            A(_("groups.edit"), href=f"/devices/{d['id']}/edit", cls="btn btn-secondary btn-sm") if can_edit(d) else "",
-            Button(_("groups.delete"), type="button", cls="btn btn-danger btn-sm",
-                   onclick=f"delAsk({json.dumps(str(d['id']))})") if can_delete(d) else "",
+            Details(Summary(lucide("more"), title=_("device_list.more_actions"),
+                            aria_label=_("device_list.more_actions")),
+                    Div(*menu_items, cls="rowmenu-pop"), cls="rowmenu") if any(menu_items) else "",
             cls="actions",
         )
 
@@ -255,10 +279,11 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
         rows.append(Tr(
             Td(
-                Div(d.get("name", ""), style="font-weight:500;font-size:0.875rem;color:var(--c-text);"),
-                Div(cat_text, style="font-size:0.75rem;color:var(--c-text-2);margin-top:2px;"),
-                Div(f"{d.get('manufacturer','')} {d.get('model','')}".strip(),
-                    style="font-size:0.75rem;color:var(--c-text-3);"),
+                A(device_icon(cat, device_tone(d, today_iso)),
+                  Div(B(d.get("name", "")),
+                      Span(" · ".join(p for p in (category_label(cat, lang) if cat else "",
+                                                  f"{d.get('manufacturer','')} {d.get('model','')}".strip()) if p))),
+                  href=f"/device/{d['id']}", cls="dname"),
             ),
             Td(*loc_children, **{"data-label": _("device_list.col_location")}),
             Td(status_badge(d.get("status", "operational"), lang=lang),
@@ -285,10 +310,14 @@ async def get(req, status: str = "", healthsite_id: str = ""):
 
     # Shown instead of the table when there is nothing at all, or when the
     # search filter leaves no rows.
-    empty_msg = Div(_("device_list.empty"),
-        id="dev-empty",
-        style="text-align:center;padding:32px;color:var(--c-text-3);border:1px dashed "
-              "var(--c-border);border-radius:var(--r-lg);" + ("" if not rows else "display:none;"))
+    # No device at all: say what to do and link to it (search misses keep the short line).
+    empty_msg = Div(Span(lucide("devices"), cls="empty-ico"),
+        *([B(_("device_list.empty")), Span(_("hub.empty.devices_text")),
+           A(lucide("plus"), _("hub.empty.devices_cta"), href="/new_device", cls="btn btn-primary btn-sm")
+           if auth_helper.adds_devices(req) else ""]
+          if not all_devices else [Span(_("device_list.empty"))]),
+        id="dev-empty", cls="empty",
+        style="" if not rows else "display:none;")
 
     search_bar = Div(
         Input(id="dev-search", type="search", cls="input",
@@ -337,15 +366,13 @@ async def get(req, status: str = "", healthsite_id: str = ""):
     )
 
     content = Div(
-        Div(
-            Div(H1(_("device_list.title")), count_line),
-            A(_("device_list.add"), href="/new_device", cls="btn btn-primary"),
-            cls="page-header"
-        ),
+        page_head(_("device_list.title"), count_line, "devices", "",
+                  *([A(_("device_list.add"), href="/new_device", cls="btn btn-primary")]
+                    if auth_helper.adds_devices(req) else [])),
         Div(*pills, healthsite_filter, cls="toolbar"),
-        search_bar,
-        table,
-        empty_msg,
+        Div(view_toggle, style="margin:-4px 0 12px;"),
+        *( [Style(CMMS_CSS), clinic_groups(_, devices, __import__("datetime").date.today().isoformat())]
+           if view == "clinics" else [search_bar, table, empty_msg] ),
         delete_dialog,
         page_script,
     )

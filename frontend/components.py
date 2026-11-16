@@ -86,78 +86,126 @@ def _js_json(value) -> str:
 
 # ── Design tokens ────────────────────────────────────────────
 CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
-  --font-body:
-		'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-		'Open Sans', 'Helvetica Neue', sans-serif;
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  /* Type: the design system's system sans (fast on slow connections). */
+  --font-body: var(--font-sans);
+  --font-display: var(--font-sans);
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
-  /* Light */
-  --c-bg:        #f9fafb;
-  --c-bg-2:      #f1f5f9;
-  --c-surface:   #ffffff;
-  --c-border:    #e2e8f0;
-  --c-primary:   #2563eb;
-  --c-primary-lt: rgba(37,99,235,.10);
-  --c-primary-mid: #1d4ed8;
-  --c-text:      #0f172a;
-  --c-text-2:    #475569;
-  --c-text-3:    #94a3b8;
-  --c-green:     #16a34a;
-  --c-green-lt:  #dcfce7;
-  --c-amber:     #d97706;
-  --c-amber-lt:  #fef3c7;
-  --c-red:       #dc2626;
-  --c-red-lt:    #fee2e2;
-  --c-blue:      #2563eb;
-  --c-blue-lt:   #dbeafe;
+  /* Old --c-* names, kept for one release as aliases of the design-system
+     tokens below (docs/design-system/README.md, "Moving the app onto this
+     system"). New code uses the token names directly. Because they point at
+     the tokens, the dark theme needs no copy of them. */
+  --c-bg:          var(--bg);
+  --c-bg-2:        var(--sunken);
+  --c-surface:     var(--surface);
+  --c-border:      var(--border);
+  --c-primary:     var(--primary);
+  --c-primary-lt:  var(--primary-tint);
+  --c-primary-mid: var(--primary-hover);
+  --c-text:        var(--text);
+  --c-text-2:      var(--text-muted);
+  --c-text-3:      var(--text-muted);
+  --c-green:       var(--ok);
+  --c-green-lt:    var(--ok-tint);
+  --c-amber:       var(--warn);
+  --c-amber-lt:    var(--warn-tint);
+  --c-red:         var(--danger);
+  --c-red-lt:      var(--danger-tint);
+  --c-blue:        var(--primary);
+  --c-blue-lt:     var(--primary-tint);
 
   /* legacy aliases used by inline styles */
-  --color-text:  var(--c-text);
-  --color-bg-0:  var(--c-bg);
-  --color-bg-1:  var(--c-bg);
-  --color-bg-2:  var(--c-bg-2);
-  --color-theme-1: var(--c-primary);
-  --color-theme-2: var(--c-primary-mid);
+  --color-text:  var(--text);
+  --color-bg-0:  var(--bg);
+  --color-bg-1:  var(--bg);
+  --color-bg-2:  var(--sunken);
+  --color-theme-1: var(--primary);
+  --color-theme-2: var(--primary-hover);
+
+
+  /* FixMyMedTech design system tokens (docs/design-system/tokens.json). */
+  --brand-teal: #1fb0a9;
+  --brand-deep: #01437a;
+  --brand-navy: #132b45;
+  --on-brand: #ffffff;
+  --bg: #f4f8fb;
+  --surface: #ffffff;
+  --sunken: #e9f0f5;
+  --border: #d5e0e9;
+  --border-strong: #728599;
+  --text: #132b45;
+  --text-muted: #4f6276;
+  --primary: #026fa8;
+  --primary-hover: #01437a;
+  --primary-tint: #e0f0f8;
+  --on-primary: #ffffff;
+  --accent: #007c88;
+  --accent-tint: #dff4f3;
+  --lead: #5b3fa8;
+  --lead-tint: #ece6fa;
+  --frame: #132b45;
+  --ok: #15803d;
+  --ok-tint: #dcfce7;
+  --warn: #b45309;
+  --warn-tint: #fef3c7;
+  --danger: #b91c1c;
+  --danger-tint: #fee2e2;
+  --shadow-card: 0 1px 2px rgba(19,43,69,0.05);
+  --shadow-float: 0 12px 32px rgba(19,43,69,0.14);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-control: 8px;
+  --radius-card: 14px;
+  --radius-panel: 18px;
+  --radius-tile: 10px;
+  --radius-pill: 9999px;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, "Adwaita Sans", sans-serif;
+  --font-mono-ds: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", "Noto Sans Mono", monospace;
+  --gradient-brand: linear-gradient(135deg, var(--brand-teal) 0%, var(--brand-deep) 100%);
 
   --sidebar-w: 248px;
-  --topbar-h: 58px;
-  --r-sm: 6px; --r-md: 8px; --r-lg: 12px;
+  --topbar-h: 56px;
+  --r-sm: 6px; --r-md: 8px; --r-lg: 14px;
 }
 
 :root[data-theme="dark"] {
-  --c-bg:        #0f172a;
-  --c-bg-2:      #1e293b;
-  --c-surface:   #1e293b;
-  --c-border:    #334155;
-  --c-primary:   #60a5fa;
-  --c-primary-lt: rgba(96,165,250,.14);
-  --c-primary-mid: #93c5fd;
-  --c-text:      #f1f5f9;
-  --c-text-2:    #cbd5e1;
-  --c-text-3:    #94a3b8;
-  --c-green:     #4ade80;
-  --c-green-lt:  #14532d;
-  --c-amber:     #fbbf24;
-  --c-amber-lt:  #78350f;
-  --c-red:       #f87171;
-  --c-red-lt:    #7f1d1d;
-  --c-blue:      #60a5fa;
-  --c-blue-lt:   #1e3a8a;
-  --color-text:  var(--c-text);
-  --color-bg-0:  var(--c-bg);
-  --color-bg-1:  var(--c-bg);
-  --color-bg-2:  var(--c-bg-2);
+  --bg: #0b1a2c;
+  --surface: #13283f;
+  --sunken: #112538;
+  --border: #26405a;
+  --border-strong: #6a85a0;
+  --text: #e6eef5;
+  --text-muted: #a9bccd;
+  --primary: #4fb6e8;
+  --primary-hover: #8acff0;
+  --primary-tint: #0e3550;
+  --on-primary: #0b1a2c;
+  --accent: #3cc3cf;
+  --accent-tint: #0f3a3d;
+  --lead: #b9a4f5;
+  --lead-tint: #2c2350;
+  --frame: #33506e;
+  --ok: #4ade80;
+  --ok-tint: #12391f;
+  --warn: #fbbf24;
+  --warn-tint: #3d2a0a;
+  --danger: #f87171;
+  --danger-tint: #44161a;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-float: 0 12px 32px rgba(0,0,0,0.55);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--font-body); font-size: 14px; background: var(--c-bg); color: var(--c-text); -webkit-font-smoothing: antialiased; }
 ::selection { background: var(--c-primary-lt); }
-h1,h2,h3 { font-family: var(--font-display); line-height: 1.25; font-weight: 700; letter-spacing: -.01em; }
-h1 { font-size: 1.5rem; } h2 { font-size: 1.125rem; } h3 { font-size: 1rem; }
+h1,h2,h3 { font-family: var(--font-display); line-height: 1.25; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+h1 { font-size: clamp(1.5rem, 2.6vw, 1.875rem); letter-spacing: -.02em; line-height: 1.15; } h2 { font-size: 1.125rem; } h3 { font-size: 1rem; }
 p { color: var(--c-text-2); font-size: 0.875rem; line-height: 1.65; }
 a { color: var(--c-primary); text-decoration: none; }
 
@@ -165,7 +213,9 @@ a { color: var(--c-primary); text-decoration: none; }
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h);
   display: flex; align-items: center; gap: 10px; padding: 0 14px;
-  background: var(--c-surface); border-bottom: 1px solid var(--c-border);
+  /* Brand bar (platform brief): solid brand-deep with the 4px gradient rule. */
+  background: var(--brand-deep); color: var(--on-brand);
+  border-bottom: 4px solid transparent; border-image: var(--gradient-brand) 1;
   z-index: 400;
 }
 .togg-btn {
@@ -176,6 +226,8 @@ a { color: var(--c-primary); text-decoration: none; }
   cursor: pointer; transition: background .15s, color .15s;
 }
 .togg-btn:hover { background: var(--c-bg-2); color: var(--c-primary); }
+.topbar .togg-btn { color: var(--on-brand); }
+.topbar .togg-btn:hover { background: rgba(255,255,255,.14); color: var(--on-brand); }
 .brand {
   display: flex; align-items: center; gap: 9px;
   font-family: var(--font-display); font-weight: 700; font-size: 1rem;
@@ -189,7 +241,15 @@ a { color: var(--c-primary); text-decoration: none; }
   font-size: .95rem; font-weight: 600;
 }
 .brand-logo { height: 30px; width: auto; flex-shrink: 0; display: block; }
+.topbar .brand, .topbar .brand:hover { color: var(--on-brand); }
+.topbar .brand-logo { height: 26px; }
 .brand-sub { color: var(--c-text-3); font-weight: 500; font-size: .82rem; }
+.topbar .avatar-btn { border: 2px solid rgba(255,255,255,.55); background: rgba(255,255,255,.14); color: var(--on-brand); }
+.topbar .avatar-btn:hover { border-color: var(--on-brand); }
+.topbar .btn-secondary { background: rgba(255,255,255,.12); color: var(--on-brand); border-color: rgba(255,255,255,.45); }
+.topbar .btn-secondary:hover { background: rgba(255,255,255,.22); color: var(--on-brand); border-color: var(--on-brand); }
+.topbar .input-lang { background: rgba(255,255,255,.12); color: var(--on-brand); border-color: rgba(255,255,255,.45); }
+.topbar .input-lang option { color: var(--text); background: var(--surface); }
 .top-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
 /* ── App shell ────────────────────────────────────────────── */
@@ -202,18 +262,28 @@ a { color: var(--c-primary); text-decoration: none; }
   z-index: 300; transition: width .2s ease, transform .2s ease;
 }
 .sb-head { display: none; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--c-border); }
-.sb-nav { flex: 1; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; overflow-x: hidden; }
+.sb-nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; overflow-x: hidden; }
+/* Sidebar sections (platform brief): each group has its audience colour —
+   equipment work in primary blue, growing the network in teal, community in
+   lead purple. The icon sits in a small rounded tile of that colour. */
+.nav-sec { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); padding: 14px 10px 6px; white-space: nowrap; }
 .nav-link {
+  --tone: var(--primary); --tone-tint: var(--primary-tint);
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 10px; border-radius: var(--r-md);
+  padding: 6px 8px; border-radius: 10px;
   font-size: .875rem; font-weight: 500;
   color: var(--c-text-2); text-decoration: none; white-space: nowrap;
   transition: background .15s, color .15s;
 }
+.nav-link.t-eng { --tone: var(--accent); --tone-tint: var(--accent-tint); }
+.nav-link.t-lead { --tone: var(--lead); --tone-tint: var(--lead-tint); }
 .nav-link:hover { background: var(--c-bg-2); color: var(--c-text); }
-.nav-link.active { background: var(--c-primary-lt); color: var(--c-primary); font-weight: 600; }
-.nav-ico { width: 18px; flex-shrink: 0; text-align: center; font-size: 1rem; }
-.nav-ico svg { width: 18px; height: 18px; display: block; margin: 0 auto; }
+.nav-link.active { background: var(--tone-tint); color: var(--text); font-weight: 700; }
+.nav-ico { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; border-radius: 9px; background: var(--tone-tint); color: var(--tone); transition: background .15s, color .15s, transform .15s; }
+.nav-ico svg { width: 17px; height: 17px; display: block; }
+.nav-link:hover .nav-ico { transform: scale(1.06); }
+.nav-link.active .nav-ico { background: var(--tone); color: var(--surface); }
+body.sidebar-collapsed .nav-sec { display: none; }
 .nav-menu-ico svg { width: 16px; height: 16px; display: inline-block; vertical-align: -3px; margin-right: 6px; }
 .sb-foot {
   padding: 12px 14px; border-top: 1px solid var(--c-border);
@@ -231,7 +301,7 @@ a { color: var(--c-primary); text-decoration: none; }
 /* Collapsed sidebar (desktop fold) */
 body.sidebar-collapsed .sidebar { width: 64px; }
 body.sidebar-collapsed .main { margin-left: 64px; }
-body.sidebar-collapsed .nav-link { justify-content: center; padding: 9px 0; }
+body.sidebar-collapsed .nav-link { justify-content: center; padding: 5px 0; }
 body.sidebar-collapsed .nav-label { display: none; }
 body.sidebar-collapsed .sb-foot { display: none; }
 
@@ -239,14 +309,18 @@ body.sidebar-collapsed .sb-foot { display: none; }
 .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 16px; border-radius:var(--r-md); font-family:var(--font-body); font-size:.875rem; font-weight:500; line-height:1.4; cursor:pointer; transition:all .15s; border:1px solid transparent; text-decoration:none; }
 .btn-primary { background:var(--c-primary); color:#fff; }
 .btn-primary:hover { background:var(--c-primary-mid); }
-.btn-secondary { background:var(--c-surface); color:var(--c-text); border-color:var(--c-border); }
+.btn-secondary { background:var(--surface); color:var(--text); border-color:var(--border-strong); }
 .btn-secondary:hover { border-color:var(--c-primary); color:var(--c-primary); }
 .btn-danger { background:var(--c-red-lt); color:var(--c-red); border:1px solid transparent; }
-.btn-warning { background:var(--c-amber-lt); color:var(--c-amber); border:1px solid transparent; }
-.btn-warning:hover { filter:brightness(.96); }
+/* btn-warning and btn-outline are merged into btn-secondary (design system). */
+.btn-warning { background:var(--surface); color:var(--text); border:1px solid var(--border-strong); }
+.btn-warning:hover { border-color:var(--primary); color:var(--primary); }
 .btn-sm { padding:4px 10px; font-size:.8rem; }
-.btn-outline { background:var(--c-surface); color:var(--c-text-2); border:1px solid var(--c-border); }
-.btn-outline:hover { background:var(--c-bg-2); border-color:var(--c-primary); color:var(--c-primary); }
+.btn svg { width:16px; height:16px; flex-shrink:0; }
+.btn-primary { font-weight:600; }
+.btn-light { background:var(--on-brand); color:var(--brand-deep); }
+.btn-outline { background:var(--surface); color:var(--text); border:1px solid var(--border-strong); }
+.btn-outline:hover { border-color:var(--primary); color:var(--primary); }
 .oauth-divider { text-align:center; font-size:.78rem; color:var(--c-text-3); margin:6px 0 10px; position:relative; }
 .oauth-divider::before, .oauth-divider::after { content:""; position:absolute; top:50%; width:34%; height:1px; background:var(--c-border); }
 .oauth-divider::before { left:0; }
@@ -254,7 +328,7 @@ body.sidebar-collapsed .sb-foot { display: none; }
 .oauth-buttons { display:flex; flex-direction:column; gap:8px; }
 
 /* Cards */
-.card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:20px 22px; box-shadow:0 1px 2px rgba(15,23,42,.03); }
+.card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--radius-card); padding:20px 22px; box-shadow:var(--shadow-card); }
 .card-title { font-size:1rem; font-weight:600; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--c-border); }
 .profile-basic { display:flex; gap:24px; align-items:flex-start; }
 .profile-photo-side { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-start; }
@@ -262,12 +336,15 @@ body.sidebar-collapsed .sb-foot { display: none; }
 .profile-fields { flex:1 1 auto; min-width:0; }
 
 /* Badges */
-.badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:9999px; font-size:.7rem; font-weight:600; letter-spacing:.02em; font-family:var(--font-mono); }
-.badge-green { background:var(--c-green-lt); color:var(--c-green); }
-.badge-amber { background:var(--c-amber-lt); color:var(--c-amber); }
-.badge-red   { background:var(--c-red-lt);   color:var(--c-red);   }
-.badge-blue  { background:var(--c-blue-lt);  color:var(--c-blue);  }
-.badge-gray  { background:var(--c-bg-2);     color:var(--c-text-3);}
+.badge { display:inline-flex; align-items:center; gap:5px; padding:2px 10px; border-radius:9999px; font:700 11px/1.6 var(--font-sans); letter-spacing:.02em; white-space:nowrap; }
+/* Status dot in the badge colour (platform brief chips): colour + word. */
+.badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+/* Old badge names, aliases of badge-ok / -warn / -danger / -neutral. */
+.badge-green { background:var(--ok-tint); color:var(--ok); }
+.badge-amber { background:var(--warn-tint); color:var(--warn); }
+.badge-red   { background:var(--danger-tint); color:var(--danger); }
+.badge-blue  { background:var(--primary-tint); color:var(--primary); }
+.badge-gray  { background:var(--sunken); color:var(--text-muted); }
 
 /* Forms */
 .input { width:100%; padding:9px 13px; border:1px solid var(--c-border); border-radius:var(--r-md); font-family:var(--font-body); font-size:.875rem; background:var(--c-surface); color:var(--c-text); transition:border-color .15s, box-shadow .15s; }
@@ -277,9 +354,9 @@ body.sidebar-collapsed .sb-foot { display: none; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
 /* Tables */
-.table-wrap { overflow-x:auto; border:1px solid var(--c-border); border-radius:var(--r-lg); }
+.table-wrap { overflow-x:auto; border:1px solid var(--c-border); border-radius:var(--radius-card); background:var(--surface); box-shadow:var(--shadow-card); }
 table { width:100%; border-collapse:collapse; font-size:.875rem; }
-th { text-align:left; padding:10px 14px; font-size:.7rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-family:var(--font-mono); color:var(--c-text-3); background:var(--c-bg-2); border-bottom:1px solid var(--c-border); }
+th { text-align:left; padding:10px 14px; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--c-text-3); background:var(--c-bg-2); border-bottom:1px solid var(--c-border); }
 td { padding:11px 14px; border-bottom:1px solid var(--c-border); color:var(--c-text-2); }
 tr:last-child td { border-bottom:none; }
 tr:hover td { background:var(--c-bg-2); }
@@ -331,8 +408,8 @@ tr:hover td { background:var(--c-bg-2); }
   .table-wrap.has-cards td:last-child { border-bottom:none; padding-bottom:0; }
   .table-wrap.has-cards td[data-label]::before {
     content:attr(data-label); flex:0 0 auto; padding-top:3px;
-    font-size:.68rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
-    font-family:var(--font-mono); color:var(--c-text-3);
+    font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--c-text-3);
   }
   .table-wrap.has-cards .actions { width:100%; justify-content:stretch; }
   .table-wrap.has-cards .actions .btn { flex:1; text-align:center; }
@@ -346,9 +423,9 @@ tr:hover td { background:var(--c-bg-2); }
 
 /* Stats grid */
 .stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
-.stat-card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg); padding:16px 18px; }
-.stat-label { font-size:.7rem; font-weight:600; color:var(--c-text-3); text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono); margin-bottom:5px; }
-.stat-num { font-family:var(--font-display); font-size:2rem; font-weight:700; color:var(--c-text); line-height:1; }
+.stat-card { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--radius-card); padding:16px 18px; border-top:3px solid var(--border-strong); }
+.stat-label { font-size:11px; font-weight:700; color:var(--c-text-3); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.stat-num { font-family:var(--font-display); font-size:2rem; font-weight:800; color:var(--c-text); line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
 .stat-sub { font-size:.72rem; color:var(--c-text-3); margin-top:3px; }
 .stat-card.g { border-top:3px solid var(--c-green); }
 .stat-card.a { border-top:3px solid var(--c-amber); }
@@ -407,20 +484,22 @@ tr:hover td { background:var(--c-bg-2); }
 
 /* Toolbar */
 .toolbar { display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
-.pill { padding:4px 12px; border-radius:9999px; font-size:.8rem; font-weight:500; background:var(--c-surface); border:1px solid var(--c-border); color:var(--c-text-2); cursor:pointer; text-decoration:none; }
+.pill { padding:5px 14px; border-radius:9999px; font-size:.8rem; font-weight:600; background:var(--c-surface); border:1px solid var(--border-strong); color:var(--c-text-2); cursor:pointer; text-decoration:none; transition:border-color .15s, color .15s; }
+.pill:hover { border-color:var(--primary); color:var(--primary); }
 .pill.active { background:var(--c-primary); color:#fff; border-color:var(--c-primary); }
 
 /* Public QR page */
 .pub-page { max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; background:var(--c-surface); border-left:1px solid var(--c-border); border-right:1px solid var(--c-border); }
 .pub-header {
-  background: linear-gradient(135deg, #0f2a5c 0%, #14438b 55%, #0b6ce0 100%);
+  background: var(--brand-deep);
+  border-bottom: 3px solid transparent; border-image: var(--gradient-brand) 1;
   padding:12px 16px; display:flex; align-items:center; justify-content:space-between;
 }
 .pub-logo { display:flex; align-items:center; gap:7px; color:#fff; font-family:var(--font-display); font-weight:700; font-size:1rem; }
 .pub-cross { color:#5eead4; }
 .device-identity { display:flex; align-items:flex-start; gap:12px; padding:16px; background:var(--c-surface); border-bottom:1px solid var(--c-border); }
 .dev-icon { font-size:2rem; flex-shrink:0; }
-.dev-cat { font-size:.7rem; color:var(--c-text-3); text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono); }
+.dev-cat { font-size:11px; font-weight:700; color:var(--c-text-3); text-transform:uppercase; letter-spacing:.08em; }
 .dev-name { font-size:1.2rem; font-family:var(--font-display); font-weight:700; margin:2px 0; }
 .dev-meta { font-size:.78rem; color:var(--c-text-3); }
 .dev-status { flex-shrink:0; text-align:right; }
@@ -445,14 +524,15 @@ tr:hover td { background:var(--c-bg-2); }
 .auth-brand { margin-bottom:28px; }
 .brand-icon { font-size:1.8rem; color:var(--c-primary); display:block; margin-bottom:8px; }
 .auth-bg {
-  background: linear-gradient(135deg, #0f2a5c 0%, #14438b 55%, #0b6ce0 100%);
+  background: var(--gradient-brand);
   display:flex; align-items:flex-end; padding:48px; position:relative; overflow:hidden;
 }
-.auth-bg::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 20% 30%, rgba(94,234,212,0.12) 0%, transparent 50%); }
-.step-num { flex:0 0 32px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.10); border:1px solid rgba(94,234,212,0.45); color:#5eead4; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:.9rem; }
+/* The white Africa logo, large and calm, as the panel's picture. */
+.auth-bg::before { content:''; position:absolute; top:8%; right:8%; width:min(46%, 420px); aspect-ratio:1; background:url(/static/brand/fixmymedtech-africa-white.png) center/contain no-repeat; opacity:.9; }
+.step-num { flex:0 0 32px; width:32px; height:32px; border-radius:50%; background:var(--on-brand); color:var(--brand-deep); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.9rem; }
 .auth-steps { position:relative; width:100%; }
-.auth-quote { position:relative; font-family:var(--font-display); font-size:1.5rem; color:rgba(255,255,255,0.9); line-height:1.5; border-left:3px solid #5eead4; padding-left:20px; font-weight:600; }
-.auth-quote em { color:#5eead4; }
+.auth-quote { position:relative; font-family:var(--font-display); font-size:clamp(1.4rem, 2.4vw, 2rem); color:var(--on-brand); line-height:1.25; letter-spacing:-.015em; border-left:4px solid var(--on-brand); padding-left:20px; font-weight:700; max-width:22ch; }
+.auth-quote em { color:var(--on-brand); font-style:normal; opacity:.8; }
 .auth-link { margin-top:14px; font-size:.82rem; color:var(--c-text-3); text-align:center; }
 .auth-link a { color:var(--c-primary); font-weight:500; }
 
@@ -507,6 +587,50 @@ tr:hover td { background:var(--c-bg-2); }
 
 /* Public pages (no sidebar): content starts below the fixed top bar */
 .public-shell .pub-page { padding-top: var(--topbar-h); }
+
+/* ── World switcher (three worlds) ────────────────────────────
+   Tabs in the brand bar on wide screens, a bottom tab bar on phones. */
+.worlds { display:flex; gap:4px; }
+.wt { --tone: var(--primary); display:flex; align-items:center; gap:7px; text-decoration:none; font-weight:600; white-space:nowrap; }
+.wt.w-work { --tone: var(--accent); } .wt.w-community { --tone: var(--lead); }
+.wt-ico { display:grid; place-items:center; }
+.wt-ico svg { width:17px; height:17px; display:block; }
+.worlds-top { margin:0 auto; padding:4px; border-radius:12px; background:rgba(255,255,255,.12); }
+.worlds-top .wt { padding:5px 14px; border-radius:9px; font-size:.84rem; color:var(--on-brand); opacity:.85; transition:background .15s, opacity .15s; }
+.worlds-top .wt:hover { background:rgba(255,255,255,.14); opacity:1; }
+.worlds-top .wt.on { background:var(--surface); color:var(--tone); opacity:1; font-weight:700; }
+.worlds-bottom { display:none; }
+@media (max-width: 768px) {
+  .worlds-top { display:none; }
+  .worlds-bottom {
+    display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:0;
+    position:fixed; left:0; right:0; bottom:0; z-index:280;
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:4px 8px calc(4px + env(safe-area-inset-bottom, 0px));
+  }
+  .worlds-bottom .wt { flex-direction:column; gap:2px; padding:4px 0; font-size:.7rem; color:var(--text-muted); }
+  .worlds-bottom .wt-ico { width:44px; height:26px; border-radius:13px; transition:background .15s, color .15s; }
+  .worlds-bottom .wt.on { color:var(--tone); font-weight:700; }
+  .worlds-bottom .wt.on .wt-ico { background:var(--tone); color:var(--surface); }
+  /* Room for the tab bar: lift the "?" button and the page end above it. */
+  body:has(.worlds-bottom) { --worlds-h: 58px; }
+  body:has(.worlds-bottom) .fb-widget { bottom:calc(16px + var(--worlds-h) + env(safe-area-inset-bottom, 0px)); }
+  body:has(.worlds-bottom) .main { padding-bottom:calc(var(--fb-clearance) + var(--worlds-h)); }
+}
+@media print { .worlds { display:none; } }
+/* World doors on /home: one big door per unlocked world. */
+.doors { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-top:18px; }
+.door { --tone: var(--primary); --tone-tint: var(--primary-tint); display:flex; flex-direction:column; gap:10px; padding:20px; border-radius:var(--radius-panel, 18px); background:var(--surface); border:1px solid var(--border); border-top:5px solid var(--tone); text-decoration:none; color:var(--text); transition:transform .15s, box-shadow .15s, border-color .15s; }
+.door.w-work { --tone: var(--accent); --tone-tint: var(--accent-tint); } .door.w-community { --tone: var(--lead); --tone-tint: var(--lead-tint); }
+.door:hover { transform:translateY(-2px); box-shadow:0 14px 30px -20px var(--tone); }
+.door-ico { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; background:var(--tone); color:var(--surface); }
+.door-ico svg { width:26px; height:26px; }
+.door b { font-size:1.1rem; }
+.door p { font-size:.85rem; }
+.door-links { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+.door-links span { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; font-weight:600; padding:3px 9px; border-radius:99px; background:var(--tone-tint); color:var(--tone); }
+.door-links svg { width:13px; height:13px; }
+@media (prefers-reduced-motion: reduce) { .door { transition:none; } .door:hover { transform:none; } }
 
 /* Mobile: drawer sidebar */
 .sb-toggle, .sb-close, .sb-backdrop { display:none; }
@@ -612,6 +736,234 @@ dialog::backdrop {
   animation:spin .6s linear infinite;
 }
 @keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Community journey (design system tokens only) ───────────── */
+.cj { display:flex; flex-direction:column; gap:var(--space-4); max-width:1032px; width:100%; }
+.cj-narrow { max-width:640px; }
+.cj h1 { font-size:24px; line-height:1.25; font-weight:700; color:var(--text); }
+.cj h2 { font-size:20px; line-height:1.3; font-weight:700; color:var(--text); }
+.cj h3 { font-size:16px; line-height:1.35; font-weight:600; color:var(--text); }
+.cj p { color:var(--text-muted); font-size:14px; line-height:1.6; }
+.cj-small { font-size:12px; line-height:1.4; font-weight:500; color:var(--text-muted); }
+.cj-eyebrow { font-size:12px; line-height:1.4; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); }
+.cj-hero { background:var(--gradient-brand); color:var(--on-brand); border-radius:var(--radius-panel); padding:var(--space-8) var(--space-6); display:flex; flex-direction:column; gap:var(--space-2); position:relative; overflow:hidden; }
+.cj-hero > * { position:relative; max-width:calc(100% - 150px); }
+.cj-hero::after { content:""; position:absolute; right:24px; top:50%; transform:translateY(-50%); width:130px; height:130px; background:url(/static/brand/fixmymedtech-africa-white.png) center/contain no-repeat; opacity:.9; pointer-events:none; }
+@media (max-width:640px){ .cj-hero > * { max-width:none; } .cj-hero::after { width:84px; height:84px; top:16px; right:12px; transform:none; opacity:.35; } }
+.cj-hero h1, .cj-hero h2, .cj-hero p, .cj-hero .cj-eyebrow { color:var(--on-brand); }
+.cj-hero p { opacity:.92; }
+.cj-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card); box-shadow:var(--shadow-card); padding:var(--space-4) var(--space-6); display:flex; flex-direction:column; gap:var(--space-3); min-width:0; }
+.cj-card.is-focus { border:2px solid var(--primary); }
+.cj-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:var(--space-4); }
+.cj-row { display:flex; flex-wrap:wrap; gap:var(--space-2); align-items:center; }
+.cj-between { display:flex; justify-content:space-between; align-items:center; gap:var(--space-3); flex-wrap:wrap; }
+.cj-quest { display:flex; gap:var(--space-3); align-items:flex-start; padding:var(--space-3) 0; border-top:1px solid var(--border); }
+.cj-quest:first-child { border-top:0; }
+.cj-check { width:24px; height:24px; flex-shrink:0; border-radius:9999px; border:2px solid var(--border-strong); display:flex; align-items:center; justify-content:center; color:var(--on-primary); }
+.cj-check svg { width:14px; height:14px; }
+.cj-quest.done .cj-check { background:var(--ok); border-color:var(--ok); }
+.cj-quest-body { flex:1; display:flex; flex-direction:column; gap:var(--space-2); min-width:0; }
+.cj-quest-title { font-size:14px; font-weight:600; color:var(--text); }
+.cj-bar { height:6px; border-radius:9999px; background:var(--border); overflow:hidden; }
+.cj-bar > span { display:block; height:6px; background:var(--primary); border-radius:9999px; }
+.cj-hero .cj-bar { background:rgba(255,255,255,.3); }
+.cj-hero .cj-bar > span { background:var(--on-brand); }
+.badge-ok { background:var(--ok-tint); color:var(--ok); }
+.badge-warn { background:var(--warn-tint); color:var(--warn); }
+.badge-danger { background:var(--danger-tint); color:var(--danger); }
+.badge-neutral { background:var(--sunken); color:var(--text-muted); }
+
+.cj .btn-primary { background:var(--primary); color:var(--on-primary); }
+.cj .btn-primary:hover { background:var(--primary-hover); color:var(--on-primary); }
+.cj .btn-secondary { background:var(--surface); color:var(--text); border-color:var(--border-strong); }
+.cj .btn-secondary:hover { border-color:var(--primary); color:var(--primary); }
+.cj .btn-danger { background:var(--danger-tint); color:var(--danger); }
+.cj .btn { min-height:36px; }
+.cj .input, .cj select.input, .cj textarea.input { border-color:var(--border-strong); background:var(--surface); color:var(--text); }
+.cj .label { color:var(--text-muted); font-size:12px; font-weight:500; }
+.cj :focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.cj-video { position:relative; width:100%; aspect-ratio:16/9; border-radius:var(--radius-control); overflow:hidden; background:var(--sunken); }
+.cj-video iframe, .cj-video > div { position:absolute; inset:0; width:100%; height:100%; border:0; }
+.cj-pills { display:flex; gap:6px; flex-wrap:wrap; }
+.cj-choice { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; border:1px solid var(--border-strong); border-radius:var(--radius-control); background:var(--surface); font-size:14px; font-weight:500; color:var(--text); cursor:pointer; }
+.cj-choice:has(input:checked) { border:2px solid var(--primary); background:var(--primary-tint); }
+/* Skill tree */
+/* Achievements map: hexagon tiles (features/community/ui.py hex_map) */
+.cj-mapsplit { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:var(--space-4); align-items:start; }
+@media (max-width: 860px) { .cj-mapsplit { grid-template-columns:1fr; } }
+.cj-legend { display:flex; flex-wrap:wrap; gap:var(--space-3); font-size:12px; color:var(--text-muted); font-weight:500; }
+.cj-legend span { display:inline-flex; align-items:center; gap:6px; }
+.cj-legend i { width:12px; height:12px; border-radius:2px; display:inline-block; }
+.cj-legend .done { background:var(--ok-tint); border:1px solid var(--ok); }
+.cj-legend .now { background:var(--surface); border:2px solid var(--primary); }
+.cj-legend .next { background:var(--surface); border:1px dashed var(--border-strong); }
+.cj-legend .fog { background:var(--sunken); }
+.cj-hexmap { position:relative; width:100%; height:0; }
+.cj-hex { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; text-align:center; text-decoration:none; color:var(--text); }
+.cj-hex > span { position:relative; z-index:1; width:84%; }
+.cj-hex-shape { position:absolute; left:3%; top:3%; width:94%; height:94%; overflow:visible; z-index:0; }
+.cj-hex-shape polygon { fill:var(--sunken); stroke:var(--border); stroke-width:1.5; vector-effect:non-scaling-stroke; transition:stroke .15s; }
+.cj-hex-name { font-size:clamp(9px, 1vw, 13px); font-weight:600; line-height:1.2; overflow-wrap:normal; }
+.cj-hex-sub { font-size:clamp(9px, .95vw, 12px); color:var(--text-muted); font-weight:500; line-height:1.2; }
+.cj-hex.fog polygon { stroke:transparent; }
+.cj-hex.team .cj-hex-name { font-size:clamp(9px, 1.05vw, 14px); }
+.cj-hex.done polygon { fill:var(--ok-tint); stroke:var(--ok); }
+.cj-hex.now polygon { fill:var(--surface); stroke:var(--primary); stroke-width:3; }
+.cj-hex.next polygon { fill:var(--surface); stroke:var(--border-strong); stroke-dasharray:5 4; }
+.cj-hex.next .cj-hex-name { color:var(--text-muted); font-weight:500; }
+.cj-hex:hover polygon, .cj-hex:focus-visible polygon { stroke:var(--primary); stroke-width:3; }
+.cj-hex:focus-visible { outline:none; }
+.cj-hex.sel polygon { stroke:var(--brand-deep); stroke-width:4; }
+.cj-hex.sel { filter:drop-shadow(0 2px 6px rgba(0,0,0,.18)); z-index:2; }
+.cj-stars { display:inline-flex; gap:2px; color:var(--border-strong); font-size:18px; line-height:1; }
+.cj-stars .on, .cj-hex-stars .on { color:var(--warn); }
+.cj-hex > .cj-hex-stars { display:flex; flex-wrap:wrap; justify-content:center; width:58%; color:var(--border-strong); font-size:clamp(7px, .8vw, 11px); line-height:1; letter-spacing:-.5px; }
+.cj-levels { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; }
+.cj-levels span { text-align:center; padding:6px 0; border-radius:var(--radius-control); border:1px solid var(--border); font-size:12px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+.cj-levels span.on { background:var(--warn-tint); border-color:var(--warn); color:var(--text); font-weight:600; }
+
+.cj-tabs { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--border); padding-bottom:var(--space-2); }
+.cj-tab { padding:8px 12px; border-radius:var(--radius-control); font-size:14px; font-weight:500; color:var(--text-muted); text-decoration:none; }
+.cj-tab:hover { color:var(--primary); }
+.cj-tab.on { background:var(--primary-tint); color:var(--primary); }
+.cj-table { width:100%; border-collapse:collapse; font-size:14px; }
+.cj-table th { text-align:left; font-size:12px; font-weight:500; color:var(--text-muted); background:var(--sunken); padding:8px 12px; white-space:nowrap; }
+.cj-table td { padding:10px 12px; border-top:1px solid var(--border); vertical-align:top; color:var(--text); }
+.cj-table td.n, .cj-table th.n { text-align:right; font-variant-numeric:tabular-nums; }
+.cj-table tr.sel td { background:var(--primary-tint); }
+.cj-tablewrap { overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-card); background:var(--surface); }
+.cj-split { display:flex; gap:var(--space-4); flex-wrap:wrap; align-items:flex-start; }
+.cj-split > .wide { flex:999 1 560px; min-width:0; }
+.cj-split > .side { flex:1 1 320px; min-width:0; }
+.cj-dl { display:grid; grid-template-columns:max-content 1fr; gap:6px 12px; font-size:14px; }
+.cj-dl dt { color:var(--text-muted); font-size:12px; font-weight:500; padding-top:2px; }
+.cj-dl dd { margin:0; color:var(--text); overflow-wrap:anywhere; }
+.cj-locked { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; padding:0 12px; border-radius:var(--radius-control); border:1px dashed var(--border-strong); background:var(--sunken); color:var(--text-muted); font-size:14px; font-weight:500; text-decoration:none; }
+/* ── Platform-brief layer: graphic, playful, picture first ─────────────
+   Page heads with an audience icon tile, gradient heroes with "pieces",
+   device icon tiles, "+" disclosures and quiet row menus. Tokens only. */
+.ph { display:flex; align-items:center; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
+.ph-ico { width:52px; height:52px; border-radius:16px; display:grid; place-items:center; flex-shrink:0; color:#fff; background:var(--primary); box-shadow:0 6px 16px -8px var(--primary); }
+.ph-ico svg { width:26px; height:26px; }
+.ph-ico.t-eng { background:var(--accent); box-shadow:0 6px 16px -8px var(--accent); }
+.ph-ico.t-lead { background:var(--lead); box-shadow:0 6px 16px -8px var(--lead); }
+.ph-ico.t-brand { background:var(--gradient-brand); box-shadow:0 6px 16px -8px var(--brand-deep); }
+.ph-ico.t-danger { background:var(--danger); box-shadow:0 6px 16px -8px var(--danger); }
+:root[data-theme="dark"] .ph-ico:not(.t-brand) { color:var(--bg); }
+.ph-text { flex:1 1 260px; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.ph-text p { margin:0; color:var(--text-muted); font-size:.95rem; max-width:70ch; }
+.ph-acts { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+@media (max-width:640px){ .ph { gap:12px; } .ph-ico { width:44px; height:44px; border-radius:12px; } .ph-ico svg { width:22px; height:22px; } .ph-acts { width:100%; } }
+
+/* Gradient hero with clickable "pieces" (dashboard, home). */
+.hero { background:var(--gradient-brand); color:var(--on-brand); border-radius:var(--radius-panel); padding:28px; margin-bottom:20px; position:relative; overflow:hidden; display:grid; gap:20px; }
+.hero::after { content:""; position:absolute; right:-24px; top:-24px; width:220px; height:220px; background:url(/static/brand/fixmymedtech-africa-white.png) center/contain no-repeat; opacity:.16; pointer-events:none; }
+.hero > * { position:relative; z-index:1; }
+.hero-top { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; }
+.hero .eyebrow, .hero-eyebrow { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--on-brand); opacity:.85; }
+.hero h1 { color:var(--on-brand); font-size:clamp(1.6rem, 3.4vw, 2.4rem); line-height:1.08; margin-top:4px; }
+.hero p { color:var(--on-brand); opacity:.92; font-size:1rem; margin-top:6px; max-width:56ch; }
+.hero .btn-light { background:var(--on-brand); color:var(--brand-deep); font-weight:700; box-shadow:0 6px 18px -8px rgba(0,0,0,.4); }
+.hero .btn-light:hover { transform:translateY(-1px); }
+.pieces { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+.piece { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28); border-radius:14px; padding:14px; color:var(--on-brand); text-decoration:none; display:flex; flex-direction:column; gap:6px; transition:transform .15s, background .15s; min-width:0; }
+.piece:hover { background:rgba(255,255,255,.2); transform:translateY(-2px); color:var(--on-brand); }
+.piece-top { display:flex; align-items:center; gap:8px; }
+.piece .dot { width:28px; height:28px; border-radius:50%; background:var(--on-brand); display:grid; place-items:center; color:var(--brand-deep); flex-shrink:0; }
+.piece .dot svg { width:16px; height:16px; }
+.piece .dot.ok { color:var(--ok); } .piece .dot.warn { color:var(--warn); } .piece .dot.danger { color:var(--danger); }
+.piece b { font-size:28px; line-height:1; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+.piece small { font-size:12px; opacity:.9; line-height:1.3; font-weight:600; }
+.meter { height:8px; border-radius:999px; background:rgba(255,255,255,.25); overflow:hidden; }
+.meter > span { display:block; height:100%; background:var(--on-brand); border-radius:999px; }
+@media (max-width:640px){ .hero { padding:20px; border-radius:var(--radius-card); } .pieces { grid-template-columns:1fr 1fr; } }
+
+.hero .btn-ghost-light { background:transparent; color:var(--on-brand); border-color:rgba(255,255,255,.6); }
+.hero .btn-ghost-light:hover { background:rgba(255,255,255,.14); color:var(--on-brand); }
+.big-tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; }
+.big-tile { display:flex; flex-direction:column; align-items:flex-start; gap:14px; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card); color:var(--text); text-decoration:none; box-shadow:var(--shadow-card); transition:transform .15s, border-color .15s, box-shadow .15s; }
+.big-tile:hover { transform:translateY(-2px); border-color:var(--primary); box-shadow:var(--shadow-float); color:var(--text); }
+.big-tile b { font-size:1rem; }
+@media (prefers-reduced-motion: reduce) { .big-tile { transition:none; } .big-tile:hover { transform:none; } }
+
+/* Section head inside a card: icon dot + title + side link. */
+.sec-h { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.sec-h h2 { font-size:1.25rem; margin:0; }
+.sec-h .side { margin-left:auto; font-size:14px; font-weight:600; }
+.sec-ico { width:32px; height:32px; border-radius:10px; display:grid; place-items:center; background:var(--primary-tint); color:var(--primary); flex-shrink:0; }
+.sec-ico svg { width:18px; height:18px; }
+.sec-ico.danger { background:var(--danger-tint); color:var(--danger); }
+.sec-ico.ok { background:var(--ok-tint); color:var(--ok); }
+.sec-ico.eng { background:var(--accent-tint); color:var(--accent); }
+.sec-ico.lead { background:var(--lead-tint); color:var(--lead); }
+
+/* Device icon tile (category picture instead of an emoji or a letter). */
+.dthumb { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:var(--primary-tint); color:var(--primary); flex-shrink:0; }
+.dthumb svg { width:24px; height:24px; }
+.dthumb.lg { width:88px; height:88px; border-radius:var(--radius-card); }
+.dthumb.lg svg { width:44px; height:44px; }
+.dthumb.is-ok { background:var(--ok-tint); color:var(--ok); }
+.dthumb.is-warn { background:var(--warn-tint); color:var(--warn); }
+.dthumb.is-danger { background:var(--danger-tint); color:var(--danger); }
+.dthumb.is-neutral { background:var(--sunken); color:var(--text-muted); }
+.dname { display:flex; align-items:center; gap:12px; min-width:0; color:var(--text); text-decoration:none; }
+.dname:hover b { color:var(--primary); }
+.dname > div > b { display:block; font-size:.9rem; font-weight:600; color:var(--text); overflow-wrap:anywhere; }
+.dname > div > span { display:block; font-size:.75rem; color:var(--text-muted); }
+
+/* "+" disclosure (platform brief build-notes style), for any details.fold. */
+details.fold { border:1px solid var(--border); border-radius:var(--radius-card); background:var(--surface); margin-bottom:16px; }
+details.fold > summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; padding:12px 16px; font-weight:700; font-size:14px; color:var(--primary); }
+details.fold > summary::-webkit-details-marker { display:none; }
+details.fold > summary::before { content:"+"; width:22px; height:22px; border-radius:7px; background:var(--primary-tint); display:grid; place-items:center; font-size:16px; flex-shrink:0; }
+details.fold[open] > summary::before { content:"\2013"; }
+details.fold > summary .hint { margin-left:auto; font-weight:500; font-size:12px; color:var(--text-muted); }
+.fold-body { padding:0 16px 16px; }
+
+/* Quiet row menu: secondary actions behind "⋯". */
+details.rowmenu { position:relative; display:inline-block; }
+details.rowmenu > summary { list-style:none; cursor:pointer; width:34px; height:34px; border-radius:10px; display:grid; place-items:center; color:var(--text-muted); border:1px solid transparent; }
+details.rowmenu > summary::-webkit-details-marker { display:none; }
+details.rowmenu > summary:hover, details.rowmenu[open] > summary { background:var(--sunken); color:var(--text); border-color:var(--border); }
+details.rowmenu > summary svg { width:18px; height:18px; }
+.rowmenu-pop { position:absolute; right:0; top:calc(100% + 6px); z-index:50; min-width:160px; padding:6px; display:flex; flex-direction:column; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-float); }
+.rowmenu-pop a, .rowmenu-pop button { all:unset; box-sizing:border-box; cursor:pointer; padding:8px 12px; border-radius:8px; font-size:.875rem; font-weight:500; color:var(--text); }
+.rowmenu-pop a:hover, .rowmenu-pop button:hover { background:var(--sunken); }
+.rowmenu-pop .danger { color:var(--danger); }
+.rowmenu-pop .danger:hover { background:var(--danger-tint); }
+
+/* Friendly empty state: a big icon circle, one line, one action. */
+.empty { display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:36px 16px; border:2px dashed var(--border); border-radius:var(--radius-panel); color:var(--text-muted); }
+.empty-ico { width:64px; height:64px; border-radius:50%; display:grid; place-items:center; background:var(--primary-tint); color:var(--primary); }
+.empty-ico svg { width:30px; height:30px; }
+.empty b { color:var(--text); font-size:1rem; }
+
+/* Public QR page, brief layout: identity, two big actions, three tiles,
+   everything else folded under "More details". */
+.pub-ident { display:flex; gap:14px; align-items:flex-start; padding:18px 16px; background:var(--surface); border-bottom:1px solid var(--border); }
+.pub-ident .dev-name { font-size:1.35rem; line-height:1.2; margin:2px 0 4px; letter-spacing:-.01em; }
+.pub-ident .grow { flex:1; min-width:0; }
+.pub-acts { display:grid; gap:10px; padding:16px; }
+.pub-acts .btn { width:100%; padding:13px 16px; font-size:1rem; font-weight:700; border-radius:12px; }
+.pub-acts .btn svg { width:18px; height:18px; }
+.mini-tiles { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; padding:0 16px 16px; }
+.mini-tile { background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--border-strong); border-radius:12px; padding:10px 8px; text-align:center; text-decoration:none; color:var(--text); display:flex; flex-direction:column; gap:2px; min-width:0; }
+.mini-tile:hover { border-color:var(--primary); }
+.mini-tile b { font-size:1.15rem; line-height:1.2; font-weight:800; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.mini-tile span { font-size:11px; color:var(--text-muted); font-weight:600; line-height:1.25; }
+.mini-tile.is-ok { border-top-color:var(--ok); } .mini-tile.is-warn { border-top-color:var(--warn); } .mini-tile.is-danger { border-top-color:var(--danger); }
+.mini-tile.is-warn b { color:var(--warn); } .mini-tile.is-danger b { color:var(--danger); }
+.pub-page details.fold { margin:0 16px 16px; }
+.pub-page .fold-body .pub-section { padding:12px 0; border-top:1px solid var(--border); }
+.pub-page .fold-body .info-list { padding:0; }
+
+@media (prefers-reduced-motion: reduce) { .piece, .nav-ico, .net-card { transition:none; } .piece:hover, .nav-link:hover .nav-ico { transform:none; } }
+
+@media (max-width: 760px) {
+  .cj-card { padding:var(--space-4); }
+  .cj-hero { padding:var(--space-4); }
+  .cj .form-row { grid-template-columns:1fr; }
+}
 """
 
 
@@ -619,32 +971,56 @@ def status_badge(status: str, type: str = "device", lang: str = "en"):
     _ = make_t(lang)
     m = {
         "device": {
-            "operational":    (_("badge.operational"),     "badge-green"),
-            "maintenance":    (_("badge.maintenance"),     "badge-amber"),
-            "fault":          (_("badge.fault"),           "badge-red"),
-            "decommissioned": (_("badge.decommissioned"),  "badge-gray"),
+            "operational":    (_("badge.operational"),     "badge-ok"),
+            "maintenance":    (_("badge.maintenance"),     "badge-warn"),
+            "fault":          (_("badge.fault"),           "badge-danger"),
+            "decommissioned": (_("badge.decommissioned"),  "badge-neutral"),
         },
         "fault": {
-            "open":        (_("badge.open"),        "badge-red"),
-            "assigned":    (_("badge.assigned"),    "badge-amber"),
-            "diagnosed":   (_("badge.diagnosed"),   "badge-amber"),
-            "approved":    (_("badge.approved"),    "badge-blue"),
-            "in_progress": (_("badge.in_progress"), "badge-blue"),
-            "resolved":    (_("badge.resolved"),    "badge-green"),
+            "open":        (_("badge.open"),        "badge-danger"),
+            "assigned":    (_("badge.assigned"),    "badge-warn"),
+            "diagnosed":   (_("badge.diagnosed"),   "badge-warn"),
+            "approved":    (_("badge.approved"),    "badge-warn"),
+            "in_progress": (_("badge.in_progress"), "badge-warn"),
+            "resolved":    (_("badge.resolved"),    "badge-ok"),
         },
         "severity": {
-            "low":      (_("badge.low"),      "badge-gray"),
-            "medium":   (_("badge.medium"),   "badge-amber"),
-            "high":     (_("badge.high"),     "badge-red"),
-            "critical": (_("badge.critical"), "badge-red"),
+            "low":      (_("badge.low"),      "badge-neutral"),
+            "medium":   (_("badge.medium"),   "badge-warn"),
+            "high":     (_("badge.high"),     "badge-danger"),
+            "critical": (_("badge.critical"), "badge-danger"),
         },
         "log": {
-            "open":        (_("badge.open"),        "badge-red"),
-            "in_progress": (_("badge.in_progress"), "badge-blue"),
-            "closed":      (_("badge.closed"),      "badge-green"),
+            "open":        (_("badge.open"),        "badge-danger"),
+            "in_progress": (_("badge.in_progress"), "badge-warn"),
+            "closed":      (_("badge.closed"),      "badge-ok"),
+        },
+        # Onboarding (design system: ok = done, warn = someone is on it,
+        # neutral = not in play).
+        "quest": {
+            "done": (_("ob.badge_done"),  "badge-ok"),
+            "todo": (_("ob.badge_todo"),  "badge-neutral"),
+        },
+        "engineer": {
+            "can_register":   (_("ob.badge_can_register"),   "badge-ok"),
+            "waiting_quests": (_("ob.badge_waiting_quests"), "badge-warn"),
+            "waiting_talk":   (_("ob.badge_waiting_talk"),   "badge-warn"),
+            "not_now":        (_("ob.badge_not_now"),        "badge-neutral"),
+        },
+        "invitation": {
+            "sent":            (_("ob.badge_sent"),            "badge-warn"),
+            "account_created": (_("ob.badge_account_created"), "badge-warn"),
+            "clinic_ready":    (_("ob.badge_clinic_ready"),    "badge-warn"),
+            "confirmed":       (_("ob.badge_confirmed"),       "badge-ok"),
+            "not_now":         (_("ob.badge_not_now"),         "badge-neutral"),
+            "cancelled":       (_("ob.badge_cancelled"),       "badge-neutral"),
+        },
+        "clinic": {
+            "active":       (_("ob.badge_clinic_active"),       "badge-ok"),
+            "talk_pending": (_("ob.badge_clinic_talk_pending"), "badge-warn"),
         },
     }
-    label, cls = m.get(type, m["device"]).get(status, (status, "badge-gray"))
+    label, cls = m.get(type, m["device"]).get(status, (status, "badge-neutral"))
     return Span(label, cls=f"badge {cls}")
 
 
@@ -682,6 +1058,15 @@ def stats_section(stats, _, style="max-width:720px;margin-top:20px;"):
 # Inline 24×24 stroke icons (stroke=currentColor) so they inherit link colour
 # and stay crisp in both themes.
 LUCIDE_ICONS = {
+    "board":     '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+    "inbox": '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>'
+             '<path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+    "journey": '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+    "hexagon": '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
+    "shield": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    "check": '<path d="M20 6 9 17l-5-5"/>',
+    "lock": '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    "flag": '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
     "library": '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
     "home": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>'
             '<path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -719,7 +1104,100 @@ LUCIDE_ICONS = {
                '<circle cx="4" cy="4" r="2"/>',
     "logout": '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>'
               '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+    # Onboarding: Getting started, Invite a clinic, Talk host.
+    "flag": '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+    "mail": '<rect width="20" height="16" x="2" y="4" rx="2"/>'
+            '<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>',
+    "mic": '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>'
+           '<rect x="9" y="2" width="6" height="13" rx="3"/>',
+    # Redesign: page heads, hero pieces and device category pictures.
+    "activity": '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    "wind": '<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>'
+            '<path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>',
+    "droplet": '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+    "zap": '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    "heart": '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+    "scan": '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>'
+            '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+    "gauge": '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+    "stethoscope": '<path d="M11 2v2"/><path d="M5 2v2"/><path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"/>'
+                   '<path d="M8 15a6 6 0 0 0 12 0v-3"/><circle cx="20" cy="10" r="2"/>',
+    "sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/>'
+           '<path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    "bed": '<path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>',
+    "weight": '<circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"/>',
+    "flame": '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+    "wrench": '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+    "phone": '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    "calendar": '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+    "more": '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+    "plus": '<path d="M5 12h14"/><path d="M12 5v14"/>',
+    "qr": '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/>'
+          '<rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/>'
+          '<path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/>'
+          '<path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
+    "clipboard": '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
+                 '<path d="m9 14 2 2 4-4"/>',
+    "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>'
+             '<path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
 }
+# In-app help (features/help): guide pictures, the "?" menu and video cards.
+LUCIDE_ICONS.update({
+    "learn": '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>'
+             '<path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+    "layers": '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>'
+              '<path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>'
+              '<path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
+    "file-up": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>'
+               '<path d="M12 12v6"/><path d="m15 15-3-3-3 3"/>',
+    "award": '<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/>'
+             '<circle cx="12" cy="8" r="6"/>',
+    "play": '<polygon points="6 3 20 12 6 21 6 3"/>',
+    "message": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    "bug": '<path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/>'
+           '<path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/>'
+           '<path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/>'
+           '<path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>',
+    "external": '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/>',
+    "arrow-right": '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+    "arrow-left": '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+    "x": '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    "help": '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+})
+
+# Device category slug → picture (lucide name). Replaces the emoji stored on
+# the category row: the design system has no emoji in the product.
+CATEGORY_ICONS = {
+    "ventilator": "wind", "anaesthetic_machine": "wind", "oxygen_concentrator": "wind",
+    "nebulizer": "wind", "oxygen_cylinder_flowmeter": "gauge", "suction_machine": "wind",
+    "defibrillator": "zap", "electrosurgical_unit": "zap",
+    "infusion_pump": "droplet", "infant_incubator": "heart",
+    "autoclave_sterilizer": "flame", "xray_machine": "scan", "ultrasound_machine": "scan",
+    "endoscope": "scan", "ecg_machine": "activity", "pulse_oximeter": "activity",
+    "electronic_diagnostic_equipment": "activity", "sphygmomanometer": "gauge",
+    "scale": "weight", "lamp": "sun", "operating_table": "bed", "stethoscope": "stethoscope",
+}
+
+
+def device_icon(category, tone: str = "", size: str = ""):
+    """A rounded tile with the device category's picture. `category` is the
+    category dict or its slug; `tone` (ok/warn/danger/neutral) tints it with
+    the status colour, `size="lg"` for the device ID card."""
+    slug = category.get("slug") if isinstance(category, dict) else category
+    cls = " ".join(c for c in ("dthumb", size, f"is-{tone}" if tone else "") if c)
+    return Span(lucide(CATEGORY_ICONS.get(slug or "", "devices")), cls=cls, aria_hidden="true")
+
+
+def page_head(title, sub="", icon: str = "", tone: str = "", *actions):
+    """Page title row (platform brief chapter head): an icon tile in the
+    audience colour (""=clinic blue, "eng" teal, "lead" purple, "brand"
+    gradient, "danger"), the title, one line under it, actions on the right."""
+    return Div(
+        Span(lucide(icon), cls=f"ph-ico t-{tone}" if tone else "ph-ico", aria_hidden="true") if icon else "",
+        Div(H1(title), (P(sub) if isinstance(sub, str) else sub) if sub else "", cls="ph-text"),
+        Div(*actions, cls="ph-acts") if actions else "",
+        cls="page-header ph",
+    )
 
 
 def lucide(name: str, cls: str = ""):
@@ -736,25 +1214,143 @@ def lucide(name: str, cls: str = ""):
     )
 
 
-def sidebar(current: str = "", lang: str = "en"):
+# Permissions that open the community admin dashboard (utils/community.py).
+DASHBOARD_PERMISSIONS = ("view_applicants", "view_members", "view_history")
+
+
+# ── Three worlds (platform brief) ───────────────────────────
+# Equipment = the clinic CMMS (primary blue), Work = the engineer's workspace
+# (teal), Community = journey, teams, recognition, library (lead purple).
+# The brand bar switches world, the sidebar lists only the current world's
+# pages. Which world a page belongs to comes from its path; pages outside
+# every world (profile, home) keep the world you came from.
+WORLD_TONES = {"equipment": "", "work": "eng", "community": "lead"}
+WORLD_ICONS = {"equipment": "devices", "work": "wrench", "community": "journey"}
+WORLD_PATHS = (
+    ("work", ("/tasks", "/requests", "/invite-clinic", "/host", "/getting-started")),
+    ("community", ("/community", "/lead", "/network")),
+    ("equipment", ("/dashboard", "/devices", "/device", "/new_device", "/faults",
+                   "/groups", "/library", "/documents", "/calls", "/clinic", "/d/", "/scan-result")),
+)
+
+
+def world_for_path(path: str) -> str:
+    """The world a path belongs to, or "" (profile, home, feedback...)."""
+    for world, prefixes in WORLD_PATHS:
+        for pre in prefixes:
+            if path == pre or path.startswith(pre if pre.endswith("/") else pre + "/"):
+                return world
+    return ""
+
+
+def user_worlds(lang: str = "en", user: dict | None = None) -> list[dict]:
+    """The worlds this account has unlocked, each with its sidebar links:
+    [{"key", "tone", "icon", "label", "href", "links": [(href, icon, label)]}].
+    Guardrail "show less, unlock more": a new engineer (welcome quests not
+    done) has the community only; a clinic account has its equipment only
+    (with the library and the people directory); an engineer whose quests are
+    done has all three."""
     _ = make_t(lang)
-    links = [
-        ("/home",      "home",      _("nav.home")),
+    user = user if user is not None else current_user_ctx()
+    status = user.get("member_status") or "member"
+    perms = set(user.get("permissions") or [])
+    engineer = (user.get("account_kind") or "engineer") == "engineer"
+
+    def world(key, links):
+        return {"key": key, "tone": WORLD_TONES[key], "icon": WORLD_ICONS[key],
+                "label": _(f"nav.world_{key}"), "href": links[0][0], "links": links}
+
+    if status in ("applicant", "refused"):
+        return [world("community", [
+            ("/community/start", "journey", _("nav.community_start")),
+            ("/community/guides", "learn",  _("nav.learn")),
+            ("/library",         "library", _("nav.library")),
+        ])]
+
+    equipment = [
         ("/dashboard", "dashboard", _("nav.dashboard")),
         ("/devices",   "devices",   _("nav.devices")),
         ("/faults",    "faults",    _("nav.faults")),
-        ("/tasks",     "tasks",     _("nav.tasks")),
         ("/groups",    "groups",    _("nav.groups")),
-        ("/network",   "network",   _("nav.network")),
         ("/library",   "library",   _("nav.library")),
-        ("/profile",   "profile",   _("nav.profile")),
-        ("/logout",    "logout",    _("nav.logout")),
     ]
+    leader = [("/lead", "check", _("nav.lead"))] if any(p.startswith("recognise:") for p in perms) else []
+    admin = [("/community/admin", "shield", _("nav.community_admin"))] if perms & set(DASHBOARD_PERMISSIONS) else []
+    host = [("/host", "mic", _("nav.talk_host"))] if user.get("is_talk_host") else []
+
+    if not engineer:
+        # Clinic accounts and clinic staff are not community members: one
+        # world, plus the manuals and the people directory they still need.
+        return [world("equipment", equipment + [
+            ("/tasks",   "tasks",   _("nav.tasks")),
+            ("/network", "network", _("nav.network")),
+            ("/community/guides", "learn", _("nav.learn")),
+        ] + host + leader + admin)]
+
+    work = [
+        ("/tasks",        "tasks", _("nav.tasks")),
+        ("/requests",     "inbox", _("nav.requests")),
+        # Getting started is done (member): the invite page is the next step.
+        ("/invite-clinic", "mail", _("nav.invite_clinic")),
+    ] + host
+    community = [
+        ("/community",              "journey", _("nav.community")),
+        ("/community/achievements", "hexagon", _("nav.community_achievements")),
+        ("/network",                "network", _("nav.network")),
+        ("/community/tasks",        "board",   _("nav.task_board")),
+        ("/community/guides",       "learn",   _("nav.learn")),
+    ] + leader + admin
+    return [world("equipment", equipment), world("work", work), world("community", community)]
+
+
+def current_world(worlds: list[dict], user: dict | None = None) -> dict:
+    user = user if user is not None else current_user_ctx()
+    want = user.get("world") or ""
+    for w in worlds:
+        if w["key"] == want:
+            return w
+    return worlds[0]
+
+
+def world_switcher(lang: str = "en", where: str = "top"):
+    """The world tabs: in the brand bar on wide screens (where="top"), a
+    bottom tab bar on phones (where="bottom"). Hidden while the account has
+    a single world."""
+    _ = make_t(lang)
+    worlds = user_worlds(lang)
+    if len(worlds) < 2:
+        return ""
+    cur = current_world(worlds)["key"]
+    tabs = [A(Span(lucide(w["icon"]), cls="wt-ico"), Span(w["label"], cls="wt-label"),
+              href=w["href"], cls=" ".join(c for c in ("wt", f"w-{w['key']}",
+                                                         "on" if w["key"] == cur else "") if c),
+              aria_current="page" if w["key"] == cur else None)
+            for w in worlds]
+    return Nav(*tabs, cls=f"worlds worlds-{where}", aria_label=_("nav.worlds_label"))
+
+
+def sidebar(current: str = "", lang: str = "en"):
+    worlds = user_worlds(lang)
+    world = current_world(worlds)
+    # One world at a time: no section headings, the tone is the world's.
+    sections = [("", world["tone"], world["links"])]
+    nav_items = []
+    for heading, tone, links in sections:
+        if not links:
+            continue
+        if heading:
+            nav_items.append(Div(heading, cls="nav-sec"))
+        for href, icon, label in links:
+            nav_items.append(A(
+                Span(lucide(icon), cls="nav-ico"), Span(label, cls="nav-label"),
+                href=href, title=label,
+                cls=" ".join(c for c in ("nav-link", f"t-{tone}" if tone else "",
+                                         "active" if current == href else "") if c)))
     return Aside(
         Div(
             A(
-                Span("✚", cls="brand-mark"),
-                Span("FixMyMedTech", cls="brand"),
+                # Design system: the name is always the logo image, never retyped.
+                Img(src="/static/fixmymedtech_logo.png", cls="brand-logo", alt="FixMyMedTech"),
                 href="/home",
                 title="FixMyMedTech",
             ),
@@ -763,10 +1359,7 @@ def sidebar(current: str = "", lang: str = "en"):
             cls="sb-head"
         ),
         Nav(
-            *[A(Span(lucide(icon), cls="nav-ico"), Span(label, cls="nav-label"), href=href,
-                title=label,
-                cls=f"nav-link {'active' if current == href else ''}")
-              for href, icon, label in links],
+            *nav_items,
             cls="sb-nav"
         ),
         Div(
@@ -793,12 +1386,21 @@ def language_switcher(current_lang: str):
 
 def feedback_widget(lang: str = "en"):
     """Floating "?" button (bottom-right) opening a menu to send feedback or
-    report an issue. Rendered by every shell, so it is on every page."""
+    report an issue. Rendered by every shell, so it is on every page.
+    In-app help (features/help) adds "How this page works" when a guide
+    documents the current path, and "Learn the app"."""
     _ = make_t(lang)
+    # Imported here: features.help imports this module.
+    from features.help.widget import help_menu
+    help_items, help_extra = help_menu(lang)
     return Div(
+        *help_extra,
         Div(
-            A("💬 ", _("feedback.menu_feedback"), href="/feedback?type=feedback", data_type="feedback"),
-            A("🐞 ", _("feedback.menu_issue"), href="/feedback?type=issue", data_type="issue"),
+            *help_items,
+            A(Span(lucide("message"), cls="nav-menu-ico"), _("feedback.menu_feedback"),
+              href="/feedback?type=feedback", data_type="feedback"),
+            A(Span(lucide("bug"), cls="nav-menu-ico"), _("feedback.menu_issue"),
+              href="/feedback?type=issue", data_type="issue"),
             id="fb-menu", cls="fb-menu",
         ),
         Button("?", id="fb-btn", type="button", cls="fb-btn",
@@ -1002,13 +1604,15 @@ def topbar(authenticated: bool, current: str = "", lang: str = "en"):
     return Header(
         *left,
         A(
-            Img(src="/static/fixmymedtech_logo.png", cls="brand-logo", alt="FixMyMedTech"),
+            # Brand bar: the white mark on brand-deep (design system: white
+            # rendering on dark grounds).
+            Img(src="/static/brand/fixmymedtech-mark-white.png", cls="brand-logo", alt=""),
             Span("FixMyMedTech", cls="brand"),
-            Span("Operations Console", cls="brand-sub"),
             href="/home" if authenticated else "/",
             title="FixMyMedTech",
             cls="brand"
         ),
+        world_switcher(lang, "top") if authenticated else "",
         Div(*right, cls="top-right"),
         cls="topbar"
     )
@@ -1025,6 +1629,7 @@ def shell(content, title: str = "FixMyMedTech", lang: str = "en",
                 Main(content, cls="main"),
                 cls="shell"
             ),
+            world_switcher(lang, "bottom"),
         )
     else:
         body_inner = Div(content, cls="shell public-shell")

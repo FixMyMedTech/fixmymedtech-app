@@ -5,9 +5,10 @@ from config.api import _get, _post, _patch
 async def login(email: str, password: str):
     return await _post("/api/auth/login", {"email": email, "password": password})
 
-async def signup(email: str, password: str, full_name: str):
+async def signup(email: str, password: str, full_name: str, account_kind: str = "engineer"):
     return await _post("/api/auth/signup", {
         "email": email, "password": password, "full_name": full_name,
+        "account_kind": account_kind,
     })
 
 async def get_me(token: str):

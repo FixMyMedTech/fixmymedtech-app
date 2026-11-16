@@ -8,7 +8,8 @@ import features.devices.api as devices_api
 
 from components import *
 from features.documents.components import DOCS_CSS, doc_item
-from components import page_shell, status_badge, fmt_date, pub_shell, map_component, enum_label
+from components import page_shell, status_badge, fmt_date, pub_shell, map_component, enum_label, device_icon, lucide
+from features.devices.cmms_ui import STATUS_TONE
 from features.devices.static.guides import category_label, GUIDE_INDEX
 from i18n import t as make_t
 
@@ -200,23 +201,37 @@ async def get(req, device_id: str):
             cls="pub-section"
         )
 
+    # Platform brief layout: who the device is, the two things a passer-by
+    # can do, three tiles, and everything else folded under "More details".
+    open_faults = [f for f in faults if f.get("status") != "resolved"]
+    if not nm:
+        svc_num, svc_tone = _("cmms.no_date"), "neutral"
+    elif overdue:
+        svc_num, svc_tone = _("cmms.overdue"), "danger"
+    else:
+        svc_num, svc_tone = fmt_date(nm), "ok"
+    open_more = "document.getElementById('pub-more').open=true"
+    def mini(num, label, tone, anchor):
+        return A(B(num), Span(label), href=f"#{anchor}", onclick=open_more, cls=f"mini-tile is-{tone}")
+    section_h = lambda key: H3(_(key), cls="dev-cat", style="margin-bottom:8px;")
+
     content = Div(
         back_ref,
-        # Device identity
         Div(
-            Div(cat.get("icon","🏥"), cls="dev-icon"),
+            device_icon(cat, STATUS_TONE.get(d.get("status") or "", "") if signed_in else ""),
             Div(
-                Div(category_label(cat, lang), cls="dev-cat"),
+                Div(category_label(cat, lang), cls="dev-cat") if cat else "",
                 Div(d.get("name",""), cls="dev-name"),
                 Div(f"{d.get('manufacturer','')}{_('common.sn_prefix')}{d.get('serial_number','')}".strip(" ·"),
                     cls="dev-meta"),
+                cls="grow",
             ),
             status_loc,
-            cls="device-identity"
+            cls="pub-ident"
         ),
         # Maintenance warning
         Div(
-            Span("⚠", style="font-size:1rem;flex-shrink:0;"),
+            Span(lucide("calendar"), style="width:18px;height:18px;flex-shrink:0;display:inline-flex;"),
             Div(
                 Strong(_("public_qr.maint_overdue")),
                 P(f"{_('public_qr.maint_due')}{fmt_date(nm)}{_('public_qr.maint_contact')}"),
@@ -226,70 +241,47 @@ async def get(req, device_id: str):
               style="flex-shrink:0;margin-left:auto;justify-content:center;"),
             cls="warn-bar"
         ) if overdue else "",
-        # Manuals
         Div(
+            A(_("public_qr.report_btn"), href=f"/d/{device_id}/report", cls="btn btn-primary"),
+            A(lucide("phone"), _("call.call_btn"), href=f"/d/{device_id}/call", cls="btn btn-secondary"),
+            A(lucide("library"), _("public_qr.user_guide"),
+              href=f"/device/{device_id}/maintenace_guide/{maint_slug}", cls="btn btn-secondary")
+            if maint_slug in GUIDE_INDEX else "",
+            cls="pub-acts",
+        ),
+        Div(
+            mini(svc_num, _("cmms.next_service"), svc_tone, "pub-info"),
+            mini(str(len(docs)), _("cmms.manuals"), "ok" if docs else "neutral", "pub-docs"),
+            mini(str(len(open_faults)), _("cmms.repairs"), "danger" if open_faults else "ok", "pub-faults"),
+            cls="mini-tiles",
+        ),
+        Details(
+            Summary(_("cmms.more_details"), Span(_("pub.more_hint"), cls="hint")),
             Div(
-                Strong(_("public_qr.more_info"), style="font-size:0.875rem;"),
-                P(_("public_qr.guidelines"), style="font-size:0.8rem;margin:2px 0 0;"),
+                Div(section_h("public_qr.info"),
+                    Dl(*[Div(Dt(k), Dd(v), cls="info-row") for k, v in info_rows], cls="info-list"),
+                    cls="pub-section", id="pub-info"),
+                Div(section_h("Photo"),
+                    Img(src=f"/d/{device_id}/photo?v={(d.get('photo_key') if d.get('photo_public_variant') == 'original' else d.get('photo_processed_key') or d.get('photo_key')) or 'original'}",
+                        alt=d.get("name", ""),
+                        style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
+                    cls="pub-section",
+                ) if d.get("photo_key") else "",
+                location_section,
+                map_section,
+                Div(section_h("public_qr.documents"),
+                    *doc_items if doc_items else [P(_("public_qr.no_docs"), style="color:var(--c-text-3);font-size:0.875rem;")],
+                    cls="pub-section", id="pub-docs"),
+                Div(section_h("public_qr.faults"),
+                    *fault_items if fault_items else [P(_("public_qr.no_faults"), style="color:var(--c-text-3);font-size:0.875rem;")],
+                    cls="pub-section", id="pub-faults"),
+                Div(section_h("public_qr.logs"),
+                    *log_items if log_items else [P(_("public_qr.no_logs"), style="color:var(--c-text-3);font-size:0.875rem;")],
+                    cls="pub-section"),
+                cls="fold-body",
             ),
-            user_guide_btn,
-            # maint_guide_btn,
-            cls="report-cta"
+            cls="fold", id="pub-more",
         ),
-        # Report fault CTA
-        Div(
-            Div(
-                Strong(_("public_qr.found_problem"), style="font-size:0.875rem;"),
-                P(_("public_qr.report_cta"), style="font-size:0.8rem;margin:2px 0 0;"),
-            ),
-            A(_("public_qr.report_btn"), href=f"/d/{device_id}/report",
-              cls="btn btn-danger btn-sm"),
-            cls="report-cta"
-        ),
-        # Device info
-        Div(
-            H3(_("public_qr.info"),
-               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            Dl(
-                *[Div(Dt(k), Dd(v), cls="info-row") for k, v in info_rows],
-                cls="info-list"
-            ),
-            cls="pub-section"
-        ),
-        # Device photo
-        Div(
-            H3(_("Photo"),
-                style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            Img(src=f"/d/{device_id}/photo?v={(d.get('photo_key') if d.get('photo_public_variant') == 'original' else d.get('photo_processed_key') or d.get('photo_key')) or 'original'}",
-                alt=d.get("name", ""),
-                style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--r-md);"),
-            cls="pub-section",
-        ) if d.get("photo_key") else "",
-        # Location + map
-        location_section,
-        map_section,
-        # Manuals
-        Div(
-            H3(_("public_qr.documents"),
-               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            *doc_items if doc_items else [P(_("public_qr.no_docs"), style="color:var(--c-text-3);font-size:0.875rem;")],
-            cls="pub-section"
-        ) if docs else "",
-        # Recent faults
-        Div(
-            H3(_("public_qr.faults"),
-               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            *fault_items if fault_items else [P(_("public_qr.no_faults"), style="color:var(--c-text-3);font-size:0.875rem;")],
-            cls="pub-section"
-        ),
-        # Recent maintenance logs
-        Div(
-            H3(_("public_qr.logs"),
-               style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3);margin-bottom:8px;"),
-            *log_items if log_items else [P(_("public_qr.no_logs"), style="color:var(--c-text-3);font-size:0.875rem;")],
-            cls="pub-section"
-        ),
-        # Footer
         Div(_("brand_footer"), cls="pub-footer"),
         cls="pub-page"
     )

@@ -17,7 +17,7 @@ from posthog_logs import posthog_log
 
 from features.dashboard import pages as dashboard
 from features.home import pages as home_pages
-from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,device_edit
+from features.devices.pages import device_list,device_detail,new_device,public_qr_page,guides,device_edit, spare_part
 from features.auth.pages import login as auth_login
 from features.auth.pages import signup as auth_signup
 from features.auth.pages import reset_password as auth_reset
@@ -30,6 +30,10 @@ from features.tasks import pages as tasks_pages
 from features.groups.pages import groups_page, organization_detail, organization_manage
 from features.faults.pages import fault_list, report_page, fault_detail, public_fault
 from features.maintenance.pages import public_log, maintenance_log, maintenance_log_detail
+from features.onboarding.pages import (getting_started, invite_clinic, invitation, clinic_setup,
+                                       clinic_engineers, clinic_privacy, host as onboarding_host)
+from features.calls import pages as calls_pages
+from features.help import pages as help_pages
 from i18n import LANGUAGES
 
 SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
@@ -76,7 +80,7 @@ class UserContextMiddleware(BaseHTTPMiddleware):
     """
     async def dispatch(self, request, call_next):
         import features.auth.helper as auth_helper
-        from config.api import token_rejected
+        from config.api import token_rejected, access_pending
 
         # An expired token must not keep a private page "open": clear the
         # session first, so every require_auth() sends the visitor to /login.
@@ -90,26 +94,34 @@ class UserContextMiddleware(BaseHTTPMiddleware):
         rejected = {}
         token_rejected.set(rejected)
 
+        # Filled in by config/api.py when the API answers 403
+        # community_access_pending (the account is a community applicant).
+        pending = {}
+        access_pending.set(pending)
+
+        def from_session():
+            return {
+                "name": request.session.get("user_name", ""),
+                "username": request.session.get("user_username", ""),
+                "email": request.session.get("user_email", ""),
+                "avatar": request.session.get("user_avatar", ""),
+                "member_status": request.session.get("member_status", ""),
+                "permissions": request.session.get("community_permissions", []),
+            }
+
         data = {"name": "", "username": "", "email": "", "avatar": ""}
         if token:
-            if request.session.get("user_name") and request.session.get("user_id"):
-                data = {
-                    "name": request.session.get("user_name", ""),
-                    "username": request.session.get("user_username", ""),
-                    "email": request.session.get("user_email", ""),
-                    "avatar": request.session.get("user_avatar", ""),
-                }
+            # member_status was added with the community journey: sessions
+            # from before it are refreshed once.
+            if request.session.get("user_name") and request.session.get("member_status") \
+                    and request.session.get("user_id"):
+                data = from_session()
             else:
                 try:
                     import features.profile.api as profile_api
                     me = await profile_api.get_me(token)
+                    auth_helper.store_me(request, me)
                     profile_id = str(me.get("id") or "")
-                    email = request.session.get("user_email", "") or me.get("email") or ""
-                    name = me.get("full_name") or me.get("username") or email
-                    request.session["user_name"] = name
-                    request.session["user_username"] = me.get("username") or name
-                    request.session["user_email"] = email
-                    request.session["user_avatar"] = me.get("avatar_key") or ""
                     if profile_id:
                         request.session["user_id"] = profile_id
                         if posthog_client is not None:
@@ -117,23 +129,14 @@ class UserContextMiddleware(BaseHTTPMiddleware):
                                 distinct_id=profile_id,
                                 properties={
                                     key: value
-                                    for key, value in {"email": email, "name": name}.items()
+                                    for key, value in {"email": request.session.get("user_email", ""),
+                                                       "name": request.session.get("user_name", "")}.items()
                                     if value
                                 },
                             )
-                    data = {
-                        "name": name,
-                        "username": request.session["user_username"],
-                        "email": request.session["user_email"],
-                        "avatar": me.get("avatar_key") or "",
-                    }
                 except Exception:
-                    data = {
-                        "name": request.session.get("user_name", ""),
-                        "username": request.session.get("user_username", ""),
-                        "email": request.session.get("user_email", ""),
-                        "avatar": request.session.get("user_avatar", ""),
-                    }
+                    pass
+                data = from_session()
         if rejected.get("rejected"):
             # Refused before the page even ran (e.g. after a JWT secret change).
             request.session.clear()
@@ -147,8 +150,35 @@ class UserContextMiddleware(BaseHTTPMiddleware):
 
         if token and data.get("name"):
             data["id"] = str(request.session.get("user_id") or "")
+            data["account_kind"] = request.session.get("user_account_kind", "")
+            data["is_talk_host"] = bool(request.session.get("user_is_talk_host"))
+            # Three worlds: the page's path picks the world; a page outside
+            # every world (profile, home) keeps the one you came from.
+            from components import world_for_path
+            world = world_for_path(request.url.path)
+            if world and request.method == "GET" and request.session.get("world") != world:
+                request.session["world"] = world
+            data["world"] = world or request.session.get("world", "")
+        data["path"] = request.url.path  # in-app help: the "?" button's guide
         set_current_user(data)
+
+        # Onboarding: a clinic account without its clinic yet goes to clinic
+        # setup. (Applicants are gated by require_auth, see auth/helper.py.)
+        # The API enforces the real rules either way.
+        if token and not rejected.get("rejected"):
+            target = auth_helper.onboarding_redirect(request)
+            if target:
+                return RedirectResponse(target, status_code=302 if request.method == "GET" else 303)
+
         response = await call_next(request)
+
+        if pending.get("pending") and request.session.get("token"):
+            # The session thought this account was a member; it is an
+            # applicant. Refresh the cache and show the start page.
+            request.session["member_status"] = "applicant"
+            if request.method == "GET" and request.headers.get("sec-fetch-mode") == "navigate" \
+                    and not auth_helper.applicant_allowed(request.url.path):
+                return RedirectResponse("/community/start", status_code=302)
 
         if rejected.get("rejected") and request.session.get("token"):
             # The page ran but the API refused the token. End the session and,
@@ -176,6 +206,13 @@ async def post(req):
     referer = req.headers.get("Referer", "/")
     return RedirectResponse(referer, status_code=302)
 
+from features.community.pages import (
+    join as community_join, start as community_start, journey as community_journey,
+    achievements as community_achievements, welcome as community_welcome,
+    admin_applicants, admin_members, admin_teams, admin_history, work as community_work,
+)
+from features.community import hub as community_hub
+
 auth_login.rt.to_app(app)
 auth_signup.rt.to_app(app)
 auth_reset.rt.to_app(app)
@@ -187,8 +224,14 @@ profile_detail.rt.to_app(app)
 network_pages.rt.to_app(app)
 tasks_pages.rt.to_app(app)
 groups_page.rt.to_app(app)
+# Before organization_manage: /groups/{org_id}/engineers is the clinic page's
+# Engineers tab.
+clinic_engineers.rt.to_app(app)
+clinic_privacy.rt.to_app(app)
+calls_pages.rt.to_app(app)
 organization_detail.rt.to_app(app)
 organization_manage.rt.to_app(app)
+spare_part.rt.to_app(app)
 device_detail.rt.to_app(app)
 device_list.rt.to_app(app)
 device_edit.rt.to_app(app)
@@ -206,6 +249,26 @@ maintenance_log_detail.rt.to_app(app)
 guides.rt.to_app(app)
 feedback_pages.rt.to_app(app)
 documents_pages.rt.to_app(app)
+getting_started.rt.to_app(app)
+invite_clinic.rt.to_app(app)
+invitation.rt.to_app(app)
+clinic_setup.rt.to_app(app)
+onboarding_host.rt.to_app(app)
+
+# Community journey (docs/docs/community-journey.md)
+community_join.rt.to_app(app)
+community_start.rt.to_app(app)
+community_welcome.rt.to_app(app)
+community_achievements.rt.to_app(app)
+community_journey.rt.to_app(app)
+admin_applicants.rt.to_app(app)
+admin_members.rt.to_app(app)
+admin_teams.rt.to_app(app)
+admin_history.rt.to_app(app)
+community_work.rt.to_app(app)
+# In-app help: /community/guides (no other /community route matches it).
+help_pages.rt.to_app(app)
+community_hub.rt.to_app(app)
 
 posthog_log.info(
     "application_started",

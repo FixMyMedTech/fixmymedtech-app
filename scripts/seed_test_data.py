@@ -82,6 +82,15 @@ USERS = [
     ("tech@lilongwe.org",      "Pass123!", "Tionge Phiri",         "technician",        4),
 ]
 
+# Onboarding test accounts (migration 030), no organization:
+# (email, password, full_name, is_superuser, member_status)
+ONBOARDING_USERS = [
+    # Talk host: confirms community talks and unlocks clinics at /host.
+    ("host@fmt-demo.org",    "Pass123!", "Talk Host",       True,  "member"),
+    # An engineer who just signed up: a Visitor with three welcome steps to do.
+    ("visitor@fmt-demo.org",    "Pass123!", "Amina Visitor",   False, "applicant"),
+]
+
 
 def _bcrypt_hash(password: str) -> str:
     """BCrypt hash matching FastAPI-Users (pwdlib) format $2b$."""
@@ -136,21 +145,31 @@ async def seed():
                 )
                 print(f"  ✓ {email:<30} → {user_id}")
 
-            # Insert into profiles
+            # Insert into profiles. Engineers (technician, engineering_staff)
+            # are community members already (status 'member', see migration
+            # 029), so they use the whole platform without the welcome quests.
+            # Clinic admins and clinical staff are clinic accounts (030):
+            # account_kind 'clinic', status 'staff', so they see the clinic's
+            # app, not the engineer's.
+            clinic_side = role in ("admin", "clinical_staff")
             await db.execute(
                 text(f"""
-                    INSERT INTO {SCHEMA}.profiles (id, username, full_name)
-                    VALUES (:id, :username, :full_name)
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, member_status, member_since, account_kind)
+                    VALUES (:id, :username, :full_name, :country, :status, NOW(), :kind)
                     ON CONFLICT (id) DO UPDATE SET
-                        full_name=EXCLUDED.full_name
+                        full_name=EXCLUDED.full_name,
+                        member_status=EXCLUDED.member_status,
+                        account_kind=EXCLUDED.account_kind
                 """),
                 {
                     "id": str(user_id),
-                    "username": email.split("@")[0].replace(".", "_"),
+                    "username": email.replace("@", "_").split(".")[0],
                     "full_name": full_name,
+                    "country": ORGANIZATIONS[org_idx]["country"],
+                    "status": "staff" if clinic_side else "member",
+                    "kind": "clinic" if clinic_side else "engineer",
                 },
             )
-
             # Insert into org_users (junction table)
             await db.execute(
                 text(f"""
@@ -160,13 +179,116 @@ async def seed():
                 """),
                 {"profile_id": str(user_id), "org_id": org_id, "role": role},
             )
+            # Technicians register devices as confirmed responsible engineers.
+            if role == "technician":
+                await db.execute(
+                    text(f"""
+                        INSERT INTO {SCHEMA}.responsible_engineers
+                            (organization_id, engineer_id, status, source, kind, confirmed_at)
+                        VALUES (:org_id, :profile_id, 'confirmed', 'backfill', 'internal', NOW())
+                        ON CONFLICT (organization_id, engineer_id) DO NOTHING
+                    """),
+                    {"profile_id": str(user_id), "org_id": org_id},
+                )
 
         await db.commit()
         print(f"✓ {len(USERS)} users seeded")
 
+        # ── 3. Community journey test accounts ───────────────
+        # Teams (see /community/achievements and /community/admin):
+        #   tech@mulago.org    John Okello, lead of Community Builders: reviews
+        #                      applicants, adds Community Builders, recognises
+        #                      Supporter / Event Organiser / Active Builder
+        #   tech@kenyatta.org  lead of Communicators
+        #   eng@mulago.org     Paul Wasswa, member of Clinics Connectors
+        # Clinic admins and nurses are clinic accounts, not in any team.
+        # applicant@test.org has just joined and only sees /community/start.
+        async def profile_id(email):
+            return (await db.execute(
+                text(f"SELECT id FROM {SCHEMA}.users WHERE email = :e"), {"e": email})).scalar()
+
+        places = [("tech@mulago.org", "community_builder", "lead"),
+                  ("tech@kenyatta.org", "communicator", "lead"),
+                  ("eng@mulago.org", "clinics_connector", "member")]
+        for email, team, level in places:
+            pid = await profile_id(email)
+            if pid:
+                await db.execute(text(f"""
+                    INSERT INTO {SCHEMA}.team_members (profile_id, team_key, level)
+                    SELECT :id, :team, :level
+                    WHERE NOT EXISTS (SELECT 1 FROM {SCHEMA}.team_members
+                                      WHERE profile_id = :id AND team_key = :team AND status = 'active')
+                """), {"id": str(pid), "team": team, "level": level})
+        john, paul = await profile_id("tech@mulago.org"), await profile_id("eng@mulago.org")
+        if john and paul:
+            already = (await db.execute(text(
+                f"SELECT count(*) FROM {SCHEMA}.achievement_records WHERE profile_id = :p"),
+                {"p": str(paul)})).scalar()
+            if not already:
+                await db.execute(text(f"""
+                    INSERT INTO {SCHEMA}.achievement_records (profile_id, achievement_key, count, note, recognised_by)
+                    VALUES (:p, 'supporter', 2, 'Helped Kigali fix an infusion pump alarm', :j),
+                           (:p, 'active_builder', 4, 'October and November community calls', :j)
+                """), {"p": str(paul), "j": str(john)})
+        app_id = (await db.execute(
+            text(f"SELECT id FROM {SCHEMA}.users WHERE email = 'applicant@test.org'"))).scalar()
+        if not app_id:
+            app_id = uuid.uuid4()
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.users (id, email, hashed_password, is_active, is_superuser, is_verified, full_name)
+                VALUES (:id, 'applicant@test.org', :pwd, TRUE, FALSE, TRUE, 'Esi Boateng')
+            """), {"id": str(app_id), "pwd": _bcrypt_hash("Pass123!")})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.profiles (id, username, full_name, country, city)
+                VALUES (:id, 'esi_boateng', 'Esi Boateng', 'Uganda', 'Kampala')
+            """), {"id": str(app_id)})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.org_users (profile_id, organization_id, role)
+                VALUES (:id, :org, 'admin')
+            """), {"id": str(app_id), "org": ORGANIZATIONS[0]["id"]})
+            await db.execute(text(f"""
+                INSERT INTO {SCHEMA}.community_applications (profile_id, kind, organisation, motivation)
+                VALUES (:id, 'engineer', 'Mulago National Referral Hospital',
+                        'Our incubators wait months for parts. I want to help fix that.')
+            """), {"id": str(app_id)})
+        await db.commit()
+        print("✓ community accounts seeded: tech@mulago.org leads Community Builders, "
+              "tech@kenyatta.org leads Communicators, applicant@test.org is an applicant")
+
+        # ── 4. Onboarding test accounts ──────────────────────
+        for email, password, full_name, superuser, status in ONBOARDING_USERS:
+            row = (await db.execute(
+                text(f"SELECT id FROM {SCHEMA}.users WHERE email = :email"), {"email": email},
+            )).mappings().first()
+            if row:
+                print(f"  ~ {email:<30} already exists")
+                continue
+            user_id = uuid.uuid4()
+            await db.execute(
+                text(f"""
+                    INSERT INTO {SCHEMA}.users
+                        (id, email, hashed_password, is_active, is_superuser, is_verified, full_name)
+                    VALUES (:id, :email, :pwd, TRUE, :su, TRUE, :full_name)
+                """),
+                {"id": str(user_id), "email": email, "pwd": _bcrypt_hash(password),
+                 "su": superuser, "full_name": full_name},
+            )
+            await db.execute(
+                text(f"""
+                    INSERT INTO {SCHEMA}.profiles (id, username, full_name, member_status, account_kind)
+                    VALUES (:id, :username, :full_name, :status, 'engineer')
+                """),
+                {"id": str(user_id), "username": email.split("@")[0] + "_" + user_id.hex[:4],
+                 "full_name": full_name, "status": status},
+            )
+            print(f"  ✓ {email:<30} ({status}{', superuser' if superuser else ''})")
+        await db.commit()
+
     await engine.dispose()
     print("\nDone. You can now log in with any of these credentials.")
     print("Example: admin@mulago.org / Pass123!")
+    print("Talk host (confirms talks, unlocks clinics at /host): host@fmt-demo.org / Pass123!")
+    print("Engineer still doing the welcome steps: visitor@fmt-demo.org / Pass123!")
 
 
 if __name__ == "__main__":

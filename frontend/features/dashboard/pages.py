@@ -12,7 +12,9 @@ import features.dashboard.api as dashboard_api
 import features.devices.api as devices_api
 
 from i18n import t as make_t
-from components import page_shell, status_badge, fmt_date, map_component
+from components import page_shell, status_badge, fmt_date, map_component, lucide, current_user_ctx
+from features.devices.cmms_ui import CMMS_CSS, device_wall, needs_list
+from datetime import date
 rt = APIRouter()
 
 # ══════════════════════════════════════════════════════════════
@@ -83,7 +85,7 @@ async def get(req):
     # Open faults
     fault_rows = []
     for f in stats.get("open_faults", []):
-        device = f.get("device") or {}
+        device = {"name": f.get("device_name"), "location": f.get("device_location")}
         fault_rows.append(
             Div(
                 Div(
@@ -102,7 +104,7 @@ async def get(req):
     # Recent maintenance
     maint_rows = []
     for m in stats.get("recent_maintenance", []):
-        device = m.get("device") or {}
+        device = {"name": m.get("device_name")}
         color = "var(--c-green)" if m.get("type") == "preventive" else "var(--c-amber)"
         maint_rows.append(
             Div(
@@ -130,15 +132,80 @@ async def get(req):
         cls="two-col"
     )
 
-    content = Div(
-        Div(
-            Div(H1(_("dashboard.title")), P(_("dashboard.subtitle"), style="color:var(--c-text-3);")),
-            A(_("dashboard.add_device"), href="/new_device", cls="btn btn-primary"),
-            cls="page-header"
-        ),
+    active = [d for d in devices if d.get("status") != "decommissioned"]
+    needs = Div(
+        Div(Span(lucide("flag"), cls="sec-ico danger" if stats.get("needs_you_total") else "sec-ico ok"),
+            H2(_("cmms.needs_today")),
+            Span(_("cmms.needs_count").format(n=stats.get("needs_you_total", 0)),
+                 cls="badge badge-danger" if stats.get("needs_you_total") else "badge badge-ok"),
+            cls="sec-h"),
+        needs_list(_, stats.get("needs_you", []), stats.get("needs_you_total", 0), lang),
+        cls="card", style="margin-bottom:16px;", id="needs",
+    )
+    wall = Div(
+        Div(Span(lucide("devices"), cls="sec-ico"), H2(_("cmms.wall_title")),
+            A(_("cmms.all_devices"), href="/devices", cls="side"),
+            cls="sec-h"),
+        device_wall(_, active, date.today().isoformat()),
+        cls="card", style="margin-bottom:16px;",
+    )
+    numbers = Details(
+        Summary(_("cmms.numbers"), Span(f'{total} · {pct}{_("dashboard.pct_operational")}',
+                style="font-weight:400;font-size:12px;color:var(--text-muted);margin-left:auto;")),
         stat_cards,
         two_col,
-        map_component(lat=0.3476, lng=32.5825, markers=markers, fit=True),
+        map_component(lat=0.3476, lng=32.5825, markers=markers, fit=True) if markers else "",
+        cls="more",
+    )
+
+    # Hero (platform brief): a greeting, one line with the share of working
+    # devices, and four "pieces" that open the device list on that status.
+    words = (current_user_ctx().get("name") or "").split()
+    # "Dr. Amina Okello" → "Dr. Amina"; "Amina Okello" → "Amina".
+    first = " ".join(words[:2] if words and words[0].endswith(".") else words[:1])
+    def piece(icon, tone, num, label, href):
+        return A(Div(Span(lucide(icon), cls=f"dot {tone}"), B(str(num)), cls="piece-top"),
+                 Small(label), href=href, cls="piece")
+    # Community hub: the Equipment world's next step (clinic accounts). A
+    # clinic still waiting for its clinic talk can't add devices yet, so the
+    # hero's "Add device" gives way to the "Book your clinic talk" card.
+    from features.community import hub
+    try:
+        step = (await hub.equipment_step(req, token, total_devices=total if stats else None)
+                if not hub._is_engineer(req) else None)
+    except Exception:
+        step = None
+    next_step = Div(Style(hub.HUB_CSS), hub.next_step_card(step, _)) if step else ""
+    can_add = auth_helper.adds_devices(req) and not (step and step.get("key") == "book_talk")
+    hero = Div(
+        Div(
+            Div(Div(_("dash.hero_eyebrow"), cls="hero-eyebrow"),
+                H1(_("dash.hero_hi").format(name=first) if first else _("dash.hero_hi_anon")),
+                P(_("dash.hero_line").format(pct=pct, n=total) if total else _("dash.hero_empty"))),
+            A(lucide("plus"), _("dashboard.add_device").lstrip("+ "), href="/new_device", cls="btn btn-light")
+            if can_add else "",
+            cls="hero-top",
+        ),
+        Div(Span(style=f"width:{pct}%"), cls="meter", role="img",
+            aria_label=f'{pct}{_("dashboard.pct_operational")}') if total else "",
+        Div(
+            piece("check", "ok", by_status.get("operational", 0), _("dash.piece_working"), "/devices?status=operational"),
+            piece("wrench", "warn", by_status.get("maintenance", 0), _("dash.piece_service"), "/devices?status=maintenance"),
+            piece("faults", "danger", by_status.get("fault", 0), _("dash.piece_fault"), "/devices?status=fault"),
+            piece("calendar", "warn", stats.get("maintenance_overdue", 0), _("dash.piece_overdue"), "#needs"),
+            cls="pieces",
+        ) if total else "",
+        cls="hero",
+    )
+
+
+    content = Div(
+        Style(CMMS_CSS),
+        next_step,
+        hero,
+        needs,
+        wall,
+        numbers,
     )
 
     return page_shell(content, current="/dashboard", title=_("title.dashboard"), lang=lang)

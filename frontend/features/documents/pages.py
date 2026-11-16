@@ -16,7 +16,7 @@ from i18n import t as make_t
 import features.auth.helper as auth_helper
 import features.documents.api as docs_api
 
-from components import pub_shell
+from components import pub_shell, page_head
 from features.documents.components import (DOCS_CSS, TYPES, count_label, doc_list, ifixit_results,
                                            type_label, TYPE_ICONS)
 from posthog_client import posthog_client
@@ -50,8 +50,14 @@ async def attach_selected(token: str, device_id: str, values: list) -> int:
 
 # ── library ──────────────────────────────────────────────────────────────────
 
+def flash_msg(msg: str, error: str):
+    if error:
+        return Div(error, cls="alert alert-error", role="alert")
+    return Div(msg, cls="alert alert-success", role="status") if msg else ""
+
+
 @rt("/library")
-async def get(req, q: str = "", type: str = ""):
+async def get(req, q: str = "", type: str = "", msg: str = "", error: str = ""):
     lang = req.session.get("lang", "en")
     _ = make_t(lang)
     q = q.strip()[:100]
@@ -98,9 +104,50 @@ async def get(req, q: str = "", type: str = ""):
             cls="ifx-page", style="margin-bottom:14px;",
         )
 
+    # Wave 5: manuals by brand and model. Without a search, our documents are
+    # grouped brand → model; a search with nothing anywhere offers a
+    # "find this manual" task (signed-in users; visitors are asked to log in).
+    def by_brand(docs):
+        brands: dict = {}
+        for d in docs:
+            brand = (d.get("manufacturer") or "").strip() or _("w5.no_brand")
+            brands.setdefault(brand, {}).setdefault((d.get("model") or "").strip() or _("w5.any_model"), []).append(d)
+        return Div(*[
+            Details(
+                Summary(Span(brand, style="font-weight:600;"),
+                        Span(f" · {sum(len(v) for v in models.values())}", style="color:var(--text-muted);")),
+                *[Div(Div(model, cls="eyebrow", style="margin:10px 0 6px;"),
+                      Div(*[our_item(d) for d in ds], cls="doc-list")) for model, ds in sorted(models.items())],
+                cls="brand-fold", open=(len(brands) <= 3),
+            ) for brand, models in sorted(brands.items(), key=lambda kv: (kv[0] == _("w5.no_brand"), kv[0].lower()))
+        ])
+
+    nothing = bool(q) and not ours and not ifx
+    signed_in = bool(auth_helper.get_token(req))
+    ask = ""
+    if nothing:
+        ask = Div(
+            H3(_("w5.lib_ask_title"), cls="card-title"),
+            P(_("w5.lib_ask_text"), style="color:var(--text-muted);font-size:14px;"),
+            Form(
+                Input(type="text", name="manufacturer", cls="input", placeholder=_("spare.f_brand"),
+                      aria_label=_("spare.f_brand"), style="flex:1 1 160px;"),
+                Input(type="text", name="model", value=q, cls="input", required=True, placeholder=_("spare.f_model"),
+                      aria_label=_("spare.f_model"), style="flex:1 1 160px;"),
+                Input(type="hidden", name="back", value=f"/library?q={quote(q)}"),
+                Button(_("w5.find_manual_btn"), type="submit", cls="btn btn-primary"),
+                method="post", action="/community/tasks/find-manual",
+                style="display:flex;gap:8px;flex-wrap:wrap;",
+            ) if signed_in else A(_("w5.lib_login"), href="/login", cls="btn btn-secondary"),
+            cls="card", style="margin-bottom:16px;border-style:dashed;",
+        )
+
     content = Div(
         Style(DOCS_CSS),
-        Div(H1(_("docs.library_heading")), cls="page-header"),
+        Style(".brand-fold{border-bottom:1px solid var(--border);padding:10px 0;}"
+              ".brand-fold>summary{cursor:pointer;}"),
+        page_head(_("docs.library_heading"), "", "library", "lead"),
+        flash_msg(msg, error),
         P(_("docs.library_intro"), style="margin-bottom:14px;"),
         Form(
             Input(type="search", name="q", value=q, cls="input", placeholder=_("docs.search_placeholder"),
@@ -113,10 +160,11 @@ async def get(req, q: str = "", type: str = ""):
         ),
         Div(
             H3(_("docs.in_fmmt"), cls="card-title"),
-            Div(*[our_item(d) for d in ours], cls="doc-list") if ours else
+            (by_brand(ours) if not q else Div(*[our_item(d) for d in ours], cls="doc-list")) if ours else
             P(_("docs.none_library"), style="color:var(--c-text-3);font-size:.875rem;"),
             cls="card", style="margin-bottom:16px;",
         ),
+        ask,
         Div(
             H3(_("docs.on_ifixit"), cls="card-title"),
             P(ifx_error, cls="alert alert-warning") if ifx_error else

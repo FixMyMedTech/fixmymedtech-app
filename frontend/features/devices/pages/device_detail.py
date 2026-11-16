@@ -11,11 +11,24 @@ import features.auth.helper as auth_helper
 import features.auth.api as auth_api
 import features.devices.api as devices_api
 
-from components import page_shell, status_badge, fmt_date, map_component, enum_label
+from components import page_shell, status_badge, fmt_date, map_component, enum_label, device_icon
 from features.devices.static.guides import category_label
 from features.documents.components import DOCS_CSS, doc_list
+from features.devices.cmms_ui import CMMS_CSS, STATUS_TONE
+from datetime import date
 from i18n import t as make_t
 rt = APIRouter()
+
+# A tile links to a section inside "More details": open it first.
+TILE_JS = """
+document.querySelectorAll('[data-open]').forEach(function (a) {
+  a.addEventListener('click', function () {
+    var d = document.getElementById(a.getAttribute('data-open'));
+    if (d) d.open = true;
+  });
+});
+if (location.hash && document.querySelector('#more ' + location.hash)) document.getElementById('more').open = true;
+"""
 
 
 def _public_base(req) -> str:
@@ -83,19 +96,41 @@ async def get_photo(req, device_id: str):
         return Response(status_code=404)
 
 
-def _documents_card(_, docs):
-    """Read-only: what's attached. Managing documents is on the edit page."""
+def _documents_card(_, docs, device: dict | None = None, device_id: str = ""):
+    """Read-only: what's attached. Managing documents is on the edit page.
+    Wave 5: manuals in the library for the same brand and model show too
+    (by_model); with none at all, anyone can ask the community to find it."""
+    device = device or {}
+    linked = [d for d in docs if not d.get("by_model")]
+    same_model = [d for d in docs if d.get("by_model")]
+    ask = ""
+    if not docs and device.get("model"):
+        ask = Form(
+            Input(type="hidden", name="manufacturer", value=device.get("manufacturer") or ""),
+            Input(type="hidden", name="model", value=device.get("model") or ""),
+            Input(type="hidden", name="device_id", value=device_id),
+            Input(type="hidden", name="back", value=f"/device/{device_id}#documents"),
+            P(_("w5.find_manual_ask"), style="color:var(--text-muted);font-size:14px;margin:0;flex:1;min-width:200px;"),
+            Button(_("w5.find_manual_btn"), type="submit", cls="btn btn-secondary btn-sm"),
+            method="post", action="/community/tasks/find-manual",
+            style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding:12px;"
+                  "border:1px dashed var(--border-strong);border-radius:var(--radius-card);",
+        )
     return Div(
         Style(DOCS_CSS),
         H3(_("docs.heading"), style="margin-bottom:12px;"),
-        doc_list(_, docs) if docs else
-        P(_("docs.none_assigned"), style="color:var(--c-text-3);font-size:.875rem;"),
+        doc_list(_, linked) if linked else
+        P(_("docs.none_assigned"), style="color:var(--text-muted);font-size:.875rem;"),
+        Div(Div(_("w5.same_model_docs").format(model=" ".join(x for x in (device.get("manufacturer"), device.get("model")) if x)),
+                cls="eyebrow", style="margin:14px 0 8px;"),
+            doc_list(_, same_model)) if same_model else "",
+        ask,
         id="documents", cls="card", style="margin-bottom:16px;",
     )
 
 
 @rt("/device/{device_id}")
-async def get(req, device_id: str):
+async def get(req, device_id: str, msg: str = "", error: str = ""):
     token, redirect = auth_helper.require_auth(req)
     if redirect: return redirect
 
@@ -108,9 +143,11 @@ async def get(req, device_id: str):
         if e.response.status_code == 401:
             auth_helper.clear_session(req)
             return RedirectResponse("/login?expired=1", status_code=302)
-        return RedirectResponse(f"/device/{device_id}", status_code=302)
+        # Not one of the clinic's people or its responsible engineers (or no
+        # such device): the public QR page is what everyone else sees.
+        return RedirectResponse(f"/d/{device_id}", status_code=302)
     except Exception:
-        return RedirectResponse(f"/device/{device_id}", status_code=302)
+        return RedirectResponse(f"/d/{device_id}", status_code=302)
 
     d = data.get("device", {})
     cat = d.get("category") or {}
@@ -218,35 +255,71 @@ async def get(req, device_id: str):
         ) for f in faults
     ]
 
+    # ── ID card: who/what/where, one main action, three tiles ──
+    service = data.get("service") or {}
+    today = date.today()
+    nm = d.get("next_maintenance")
+    try:
+        days = (date.fromisoformat(str(nm)[:10]) - today).days if nm else None
+    except ValueError:
+        days = None
+    state = service.get("state") or "none"
+    if days is None:
+        svc_num, svc_sub, svc_tone = _("cmms.no_date"), _("cmms.set_in_edit"), "neutral"
+    elif days < 0:
+        svc_num, svc_sub, svc_tone = _("cmms.overdue"), _("cmms.days_late").format(n=-days), "danger"
+    elif state == "due_soon" or days <= 14:
+        svc_num, svc_sub, svc_tone = fmt_date(nm), _("cmms.in_days").format(n=days), "warn"
+    else:
+        svc_num, svc_sub, svc_tone = fmt_date(nm), _("cmms.on_track"), "ok"
+    open_faults = [f for f in faults if f.get("status") != "resolved"]
+    def _tile(label, num, sub, tone, anchor):
+        return A(Div(label, cls="eyebrow"), Div(num, cls="tile-num"), Div(sub, cls="tile-sub"),
+                 href=f"#{anchor}", cls=f"tile is-{tone}", data_open="more")
+    photo = (Img(src=f"/device/{device_id}/photo?v={photo_cache_key or 'original'}", alt="", cls="id-photo")
+             if d.get("photo_key") else
+             device_icon(cat, STATUS_TONE.get(d.get("status") or "", ""), "lg"))
+    sub_bits = [b for b in (" ".join(p for p in (d.get("manufacturer"), d.get("model")) if p),
+                            d.get("location") or _("device_detail.no_location")) if b]
+    id_card = Div(
+        Div(
+            photo,
+            Div(Div(category_label(cat, lang) if cat else _("common.device"), cls="eyebrow"),
+                H1(d.get("name", "")),
+                P(" · ".join(sub_bits), cls="id-sub"),
+                cls="id-main"),
+            Div(status_badge(d.get("status", "operational"), lang=lang), cls="id-status"),
+            cls="id-head",
+        ),
+        Div(
+            A(_("cmms.report_problem"), href=f"/d/{device_id}/report", cls="btn btn-primary"),
+            A(_("call.call_btn"), href=f"/d/{device_id}/call", cls="btn btn-secondary"),
+            A(_("maintenance_log.submit"), href=f"/d/{device_id}/maintenance-log", cls="btn btn-secondary btn-sm"),
+            # Spare parts are the engineer's job; clinic accounts call one.
+            A(_("spare.cta"), href=f"/device/{device_id}/spare-part", cls="btn btn-secondary btn-sm")
+            if not auth_helper.is_clinic_account(req) else "",
+            Button(_("device_detail.show_qr"), type="button", cls="btn btn-secondary btn-sm", onclick="showDeviceQR()"),
+            cls="id-cta",
+        ),
+        Div(
+            _tile(_("cmms.next_service"), svc_num, svc_sub, svc_tone, "service"),
+            _tile(_("cmms.manuals"), str(len(docs)),
+                  _("cmms.manuals_sub") if docs else _("cmms.manuals_none"), "ok" if docs else "neutral", "documents"),
+            _tile(_("cmms.repairs"), str(len(open_faults)),
+                  _("cmms.repairs_open") if open_faults else _("cmms.repairs_none"),
+                  "danger" if open_faults else "ok", "faults"),
+            cls="id-tiles",
+        ),
+        cls="id-card",
+    )
+
     content = Div(
+        Style(CMMS_CSS),
         A(_("device_detail.back"), href="/devices",
         style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;margin-bottom:14px;display:inline-block;"),
-        Div(
-            Div(
-                Div(f"{cat.get('icon','🏥')} {category_label(cat, lang)}",
-                    style="font-size:0.8rem;color:var(--c-text-3);margin-bottom:4px;"),
-                H1(d.get("name",""), style="margin-bottom:4px;"),
-                P(f"{d.get('manufacturer','')} {d.get('model','')} · {d.get('location',_('device_detail.no_location'))}",
-                style="color:var(--c-text-3);"),
-            ),
-            Div(status_badge(d.get("status","operational"), lang=lang),
-                style="flex-shrink:0;"),
-            cls="page-header", style="margin-bottom:14px;"
-        ),
-        # QR banner
-        Div(
-            Span("▣", style="font-size:1.3rem;"),
-            Div(
-                Div(_("device_detail.public_qr"), style="font-size:0.75rem;font-weight:500;color:var(--c-primary);"),
-                A(qr_url, href=qr_url, target="_blank",
-                style="font-size:0.8rem;color:var(--c-primary-md);font-family:monospace;overflow-wrap:anywhere;"),
-                style="min-width:0;flex:1;",
-            ),
-            Button("▣ " + _("device_detail.show_qr"), type="button",
-                   cls="btn btn-primary btn-sm", onclick="showDeviceQR()",
-                   style="flex-shrink:0;"),
-            style="display:flex;align-items:center;gap:12px;background:var(--c-primary-lt);border:1px solid #a7d9ce;border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;"
-        ),
+        Div(msg, cls="alert alert-success", role="status") if msg else "",
+        Div(error, cls="alert alert-error", role="alert") if error else "",
+        id_card,
         # QR popup + generator
         Script(src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"),
         Script(f"""
@@ -372,9 +445,9 @@ async def get(req, device_id: str):
                     style="display:flex;justify-content:center;margin-bottom:14px;"
                 ),
                 Div(
-                    Button("⬇ " + _("device_detail.download_qr"), type="button",
+                    Button(_("device_detail.download_qr"), type="button",
                            cls="btn btn-primary btn-sm", onclick="downloadDeviceQR()"),
-                    Button("🖨 " + _("device_detail.print_qr"), type="button",
+                    Button(_("device_detail.print_qr"), type="button",
                            cls="btn btn-secondary btn-sm", onclick="printDeviceQR()"),
                     Button(_("groups.close_btn"), type="button", cls="btn btn-secondary btn-sm",
                            onclick="document.getElementById('deviceQrDialog').close()"),
@@ -385,7 +458,10 @@ async def get(req, device_id: str):
             id="deviceQrDialog",
             style="border:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.2);"
         ),
-        # Ownership: full-width row above the two-column info cards
+        # Everything else is folded away (progressive disclosure); the tiles
+        # above open it at the right section.
+        Details(
+        Summary(_("cmms.more_details"), Span(_("cmms.more_details_hint"), style="font-weight:400;font-size:12px;color:var(--text-muted);margin-left:auto;")),
         ownership,
         # Device info
         Div(
@@ -413,9 +489,10 @@ async def get(req, device_id: str):
                         (_("device_detail.acquisition"),   f"{enum_label(_, 'acquisition', d.get('acquisition_type'))} · {fmt_date(d.get('acquisition_date',''))}"),
                         (_("device_detail.last_maint"), fmt_date(d.get("last_maintenance",""))),
                         (_("device_detail.next_maint"), fmt_date(d.get("next_maintenance",""))),
+                        (_("cmms.interval"), _("cmms.every_months").format(n=service.get("interval_months") or 6)),
                     ]]
                 ),
-                cls="card"
+                cls="card", id="service",
             ),
             cls="two-col", style="margin-bottom:16px;"
         ),
@@ -470,13 +547,13 @@ async def get(req, device_id: str):
             ),
             cls="two-col", style="margin-bottom:16px;"
         ),
-        _documents_card(_, docs),
+        _documents_card(_, docs, d, device_id),
         # Maintenance logs
         Div(
             Div(
                 H3(_("device_detail.history"), style="margin:0;"),
                 A(_("maintenance_log.submit"), href=f"/d/{device_id}/maintenance-log",
-                  cls="btn btn-primary btn-sm"),
+                  cls="btn btn-secondary btn-sm"),
                 style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;",
             ),
             Div(
@@ -495,7 +572,7 @@ async def get(req, device_id: str):
             Div(
                 H3(_("device_detail.faults"), style="margin:0;"),
                 A(_("report_fault.heading"), href=f"/d/{device_id}/report",
-                  cls="btn btn-primary btn-sm"),
+                  cls="btn btn-secondary btn-sm"),
                 style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;",
             ),
             Div(
@@ -507,8 +584,10 @@ async def get(req, device_id: str):
                 ),
                 cls="table-wrap", style="border:none;border-radius:0;"
             ),
-            cls="card"
+            cls="card", id="faults",
         ),
+        cls="more", id="more"),
+        Script(TILE_JS),
     )
 
     return page_shell(content, current="/devices", lang=lang, title=f"{d.get('name',_('common.device'))}{_('title.device_detail')}")

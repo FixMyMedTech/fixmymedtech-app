@@ -9,6 +9,7 @@ import features.auth.helper as auth_helper
 import features.groups.api as groups_api
 from components import page_shell
 from components import alert as alert_box
+from features.onboarding.ui import ONBOARDING_CSS, clinic_tabs
 from i18n import t as make_t
 from posthog_client import posthog_client
 
@@ -368,6 +369,8 @@ async def get_organization(req, org_id: str):
         A(_("groups.back_to_groups"), href="/groups",
           style="font-size:0.875rem;color:var(--c-text-3);text-decoration:none;display:inline-block;margin-bottom:16px;"),
         H1(org.get("name", "")),
+        Style(ONBOARDING_CSS),
+        clinic_tabs(org_id, "overview", _),
         P(_("groups.manage_desc"), style="color:var(--c-text-3);margin-bottom:18px;"),
         Div(_basic_card(org, _), _contact_card(org, _),
             cls="two-col", style="max-width:960px;margin-top:16px;"),

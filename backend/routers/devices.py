@@ -1,12 +1,14 @@
 # routers/devices.py
 
+from utils.serialize import device_out, log_out, fault_brief
+from utils import service as svc
 from datetime import date
 from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File as FileParam
 from fastapi.responses import Response as FastAPIResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -14,8 +16,9 @@ from sqlalchemy.orm import selectinload
 from config.db_config import get_db
 from utils.profile import get_current_profile
 from models.models import (
-    Device, DeviceCategory, MaintenanceLog, FaultReport, Profile, OrgJoinRequest,
+    Device, DeviceCategory, MaintenanceLog, FaultReport, Profile,
 )
+from utils import onboarding as ob
 from config.storage import upload_file, get_file
 from config.db_config import AsyncSessionLocal
 from config.discord import welcome_enabled
@@ -30,13 +33,7 @@ import os
 router = APIRouter()
 
 
-def add_months(d: date, months: int) -> date:
-    month_index = d.month - 1 + months
-    year = d.year + month_index // 12
-    month = month_index % 12 + 1
-    import calendar
-    day = min(d.day, calendar.monthrange(year, month)[1])
-    return date(year, month, day)
+add_months = svc.add_months
 
 
 class DeviceCreate(BaseModel):
@@ -57,6 +54,7 @@ class DeviceCreate(BaseModel):
     notes: Optional[str] = None
     last_maintenance: Optional[date] = None
     next_maintenance: Optional[date] = None
+    service_interval_months: Optional[int] = Field(default=None, ge=1, le=60)
 
 
 DEVICE_STATUSES = ("operational", "maintenance", "fault", "decommissioned")
@@ -77,6 +75,7 @@ class DeviceUpdate(BaseModel):
     notes: Optional[str] = None
     last_maintenance: Optional[date] = None
     next_maintenance: Optional[date] = None
+    service_interval_months: Optional[int] = Field(default=None, ge=1, le=60)
     acquisition_date: Optional[date] = None
     acquisition_type: Optional[str] = None
     healthsite_id: Optional[UUID] = None
@@ -153,6 +152,7 @@ def _device_payload(device: Device) -> dict:
         "registered_by": str(device.registered_by) if device.registered_by else None,
         "last_maintenance": device.last_maintenance,
         "next_maintenance": device.next_maintenance,
+        "service_interval_months": device.service_interval_months,
         "notes": device.notes,
         "created_at": device.created_at,
         "updated_at": device.updated_at,
@@ -203,10 +203,10 @@ async def get_device_public(device_id: UUID, db: AsyncSession = Depends(get_db))
     recent_logs = logs_result.scalars().all()
 
     return {
-        "device": device,
+        "device": device_out(device),
         "documents": docs,
-        "recent_faults": recent_faults,
-        "recent_logs": recent_logs,
+        "recent_faults": [fault_brief(f) for f in recent_faults],
+        "recent_logs": [log_out(l) for l in recent_logs],
     }
 
 
@@ -234,11 +234,15 @@ async def list_devices(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
+    # Members of the device's organizations, plus the responsible engineers
+    # of its clinic (confirmed, quests done, clinic active).
     org_ids = profile.org_ids()
+    responsible = await ob.responsible_org_ids(db, profile, profile.user)
     query = (
         select(Device)
         .options(
             selectinload(Device.category),
+            selectinload(Device.organization),
             selectinload(Device.organization_maintenance),
             selectinload(Device.healthsite),
         )
@@ -246,6 +250,8 @@ async def list_devices(
             Device.organization_id.in_(org_ids),
             Device.organization_maintenance_id.in_(org_ids),
             Device.healthsite_id.in_(org_ids),
+            Device.organization_id.in_(responsible),
+            Device.healthsite_id.in_(responsible),
         ))
         .order_by(Device.name)
     )
@@ -256,7 +262,7 @@ async def list_devices(
         query = query.where(Device.healthsite_id == healthsite_id)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    return [device_out(d) for d in result.scalars().all()]
 
 
 @router.get("/categories")
@@ -289,6 +295,8 @@ async def get_device(
     device = device_result.scalar_one_or_none()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
+    if not await _can_view_device(db, profile, device):
+        raise HTTPException(status_code=403, detail="Not authorized")
 
     logs_result = await db.execute(
         select(MaintenanceLog)
@@ -328,24 +336,33 @@ async def get_device(
             }
 
     return {
-        "device": device,
-        "maintenance_logs": logs,
-        "fault_reports": faults,
+        "device": device_out(device),
+        "maintenance_logs": [log_out(l) for l in logs],
+        "fault_reports": [fault_brief(f) for f in faults],
         "documents": docs,
         "registered_by_profile": registrant,
+        "service": {
+            "interval_months": svc.interval_months(device, device.category),
+            "category_interval_months": svc.interval_months(Device(), device.category),
+            "state": svc.service_state(device.next_maintenance),
+        },
     }
 
 
-async def _pending_request_role(db: AsyncSession, profile_id, org_id):
-    """Role carried by the caller's pending join request for this org, if any."""
-    result = await db.execute(
-        select(OrgJoinRequest.role).where(
-            OrgJoinRequest.profile_id == profile_id,
-            OrgJoinRequest.organization_id == org_id,
-            OrgJoinRequest.status == "pending",
-        )
-    )
-    return result.scalar_one_or_none()
+async def _can_view_device(db: AsyncSession, profile: Profile, device: Device) -> bool:
+    """The private device page: members of any of the device's three
+    organizations, the user who registered it, the clinic's responsible
+    engineers (confirmed, quests done, clinic active) and superusers. Everyone
+    else has the public QR page."""
+    if profile.user is not None and profile.user.is_superuser:
+        return True
+    if device.registered_by == profile.id:
+        return True
+    mine = set(profile.org_ids())
+    if {device.organization_id, device.organization_maintenance_id, device.healthsite_id} & mine:
+        return True
+    responsible = set(await ob.responsible_org_ids(db, profile, profile.user))
+    return bool({device.organization_id, device.healthsite_id} & responsible)
 
 
 @router.post("/")
@@ -354,28 +371,23 @@ async def create_device(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
-    org_id = (
-        body.organization_id
-        or (profile.org_memberships[0].organization_id if profile.org_memberships else None)
-    )
+    # Registering for a clinic (migration 030): its own admins, or its
+    # confirmed responsible engineers whose welcome quests are done, once the
+    # clinic is active. A pending join request no longer allows it.
+    org_id = body.organization_id
     if not org_id:
-        raise HTTPException(status_code=403, detail="No organization membership")
+        raise HTTPException(status_code=400, detail="choose_clinic")
 
-    role = profile.get_role_for_org(org_id)
-    if role is None:
-        # Not a member yet. A pending join request allows registering a device
-        # in that clinic, carrying the role that was requested. Device *listing*
-        # stays membership-gated, so nothing else in the org is exposed.
-        role = await _pending_request_role(db, profile.id, org_id)
-        if role is None:
-            raise HTTPException(status_code=403, detail="Not authorized")
-
-    if role not in ("admin", "technician"):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    for target in {org_id, body.healthsite_id} - {None}:
+        allowed, reason = await ob.registration_check(db, profile, target, profile.user)
+        if not allowed:
+            raise HTTPException(status_code=403, detail=f"registration_locked:{reason}")
 
     payload = body.model_dump(exclude_none=True)
     payload.pop("organization_id", None)
-    payload.setdefault("next_maintenance", add_months(date.today(), 6))
+    if "next_maintenance" not in payload:
+        months = payload.get("service_interval_months") or await svc.category_interval(db, payload.get("category_id"))
+        payload["next_maintenance"] = add_months(date.today(), months)
     device = Device(
         **payload,
         organization_id=org_id,
@@ -388,7 +400,7 @@ async def create_device(
 
     if welcome_enabled():
         spawn(announce_new_device(profile.id))
-    return device
+    return device_out(device)
 
 
 @router.patch("/{device_id}")

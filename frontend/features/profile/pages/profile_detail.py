@@ -95,6 +95,7 @@ def _view_content(p, _, back=""):
         ),
         # The same four numbers as their row in the Network directory.
         stats_section(p, _, style="max-width:720px;margin-bottom:16px;"),
+        _devices_card(p, _),
         Div(
             H3(_("profile.orgs_heading"), cls="card-title"),
             Div(*org_cards, cls="own-grid") if org_cards
@@ -103,6 +104,28 @@ def _view_content(p, _, back=""):
             cls="card",
             style="max-width:720px;",
         ),
+    )
+
+
+def _devices_card(p: dict, _):
+    """One line per registered device: type and clinic. Each clinic chooses
+    (its Privacy tab) whether its devices show here and whether its name is
+    replaced by "a clinic"."""
+    devices = p.get("registered_devices") or []
+    if not devices:
+        return ""
+    rows = []
+    for d in devices:
+        kind = d.get("category") or _("common.device")
+        clinic = (A(d["clinic_name"], href=f"/groups/{d['clinic_id']}/view",
+                    style="color:var(--c-primary);text-decoration:none;")
+                  if d.get("clinic_id") else Span(_("privacy.a_clinic")))
+        rows.append(Li(Span(kind, style="font-weight:600;color:var(--text);"), " · ", clinic,
+                       style="padding:8px 0;border-top:1px solid var(--border);font-size:.875rem;color:var(--text-muted);"))
+    return Div(
+        H3(_("profile.devices_heading"), cls="card-title"),
+        Ul(*rows, style="list-style:none;margin:0;padding:0;"),
+        cls="card", style="max-width:720px;margin-bottom:16px;",
     )
 
 

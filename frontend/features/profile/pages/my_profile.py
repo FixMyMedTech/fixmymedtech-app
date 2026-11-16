@@ -12,7 +12,7 @@ from starlette.responses import RedirectResponse, Response
 import features.profile.api as profile_api
 import features.auth.helper as auth_helper
 from i18n import t as make_t
-from components import (page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF,
+from components import (page_shell, AVATAR_IMG_STYLE, TRANSPARENT_GIF, page_head,
                         stats_section)
 
 rt = APIRouter()
@@ -67,6 +67,20 @@ def _account_section(me, _=None, saved=False, error=None):
                     Input(id="country", name="country", type="text",
                           value=me.get("country", "") or "", cls="input",
                           style="max-width:320px;"),
+                    cls="form-group"
+                ),
+                Div(
+                    Label(_("profile.city_label"), cls="label", for_="city"),
+                    Input(id="city", name="city", type="text",
+                          value=me.get("city", "") or "", cls="input",
+                          style="max-width:320px;"),
+                    cls="form-group"
+                ),
+                Div(
+                    Label(_("profile.bio_label"), cls="label", for_="why_bme"),
+                    Textarea(me.get("why_bme", "") or "", id="why_bme", name="why_bme", rows="3",
+                             maxlength="500", cls="input", style="max-width:480px;",
+                             placeholder=_("profile.bio_placeholder")),
                     cls="form-group"
                 ),
                 save_msg,
@@ -156,10 +170,28 @@ def _stats_section(stats, _=None):
     return stats_section(stats, _)
 
 
+def _status_line(me, _):
+    """Engineer account status: Visitor while the welcome quests run,
+    Contributor once they are done (labels in i18n: ob.status_*)."""
+    if me.get("account_kind") != "engineer":
+        return ""
+    if me.get("member_status") == "applicant":
+        return Div(
+            Strong(_("ob.status_label")), " ", Span(_("ob.status_visitor"), cls="badge badge-amber"), " ",
+            A(_("ob.status_visitor_hint"), href="/community/start/quests"),
+            cls="alert alert-warning", style="max-width:720px;",
+        )
+    if me.get("member_status") == "member":
+        return Div(Strong(_("ob.status_label")), " ", Span(_("ob.status_contributor"), cls="badge badge-green"),
+                   style="max-width:720px;margin-bottom:14px;")
+    return ""
+
+
 def _content(me, _, stats=None, saved=False, error=None, notice=None):
     return Div(
-        Div(H1(_("profile.heading")), cls="page-header"),
+        page_head(_("profile.heading"), "", "profile", "brand"),
         notice,
+        _status_line(me, _),
         Form(
             _account_section(me, _, saved=saved, error=error),
             method="post", action="/profile",
@@ -267,6 +299,8 @@ async def post(req):
     username = (form.get("username") or "").strip()
     full_name = (form.get("full_name") or "").strip()
     country = (form.get("country") or "").strip()
+    city = (form.get("city") or "").strip()
+    why_bme = (form.get("why_bme") or "").strip()
     avatar_file = form.get("avatar")
 
     error = None
@@ -276,6 +310,8 @@ async def post(req):
             "username": username,
             "full_name": full_name,
             "country": country,
+            "city": city,
+            "why_bme": why_bme,
         })
         saved = True
     except Exception as e:
@@ -311,6 +347,8 @@ async def post(req):
         me["avatar_key"] = avatar_key
 
     if saved and "token" in req.session:
+        # A profile or photo change can finish a welcome quest.
+        auth_helper.store_me(req, me)
         name = me.get("full_name") or me.get("username") or req.session.get("user_email", "")
         req.session["user_name"] = name
         req.session["user_username"] = me.get("username") or name
@@ -320,6 +358,8 @@ async def post(req):
         me["full_name"] = full_name
         me["username"] = username
         me["country"] = country
+        me["city"] = city
+        me["why_bme"] = why_bme
 
     return page_shell(_content(me, _, stats=stats, saved=saved, error=error),
                       current="/profile", title=_("title.profile"), lang=lang)

@@ -217,6 +217,10 @@ class FacilityCandidate(BaseModel):
     lng: Optional[float] = None
 
 
+def _is_superuser(profile: Profile) -> bool:
+    return bool(profile.user and profile.user.is_superuser)
+
+
 class ImportBody(BaseModel):
     facility: FacilityCandidate
     role: Optional[str] = None
@@ -241,6 +245,9 @@ async def create_healthsite(
         address=(body.address or "").strip(),
         type=body.type,
         source="app",
+        # A clinic created here waits for its clinic talk before anyone
+        # registers devices for it (decision 2026-11-13). utils/onboarding.py
+        clinic_status="active" if _is_superuser(profile) else "talk_pending",
     )
     db.add(org)
     await db.flush()
@@ -263,6 +270,15 @@ async def search_healthsites(
     profile: Profile = Depends(get_current_profile),
     db: AsyncSession = Depends(get_db),
 ):
+    facilities = await find_facilities(db, body.lat, body.lng, body.radius_km)
+    return {"facilities": facilities[:MAX_IMPORT_RESULTS]}
+
+
+async def find_facilities(db: AsyncSession, lat: float, lng: float, radius_km: float) -> list:
+    """healthsites.io facilities within radius_km of a point, nearest first,
+    each with distance_km and already_imported / existing_org_id. Also used by
+    clinic onboarding (routers/onboarding.py)."""
+    body = SearchBody.model_construct(lat=lat, lng=lng, radius_km=radius_km)
     api_key = os.getenv("HEALTHSITES_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail="No healthsites.io API key configured on the server")
@@ -344,7 +360,7 @@ async def search_healthsites(
                 if not f.get("address") and geo["city"]:
                     f["address"] = geo["city"]
 
-    return {"facilities": results[:MAX_IMPORT_RESULTS]}
+    return results
 
 
 # ── import a selected facility (source='healthsites.io') ─────
@@ -378,6 +394,7 @@ async def import_healthsite(
         osm_id=fac.osm_id,
         osm_type=fac.osm_type,
         source="healthsites.io",
+        clinic_status="active" if _is_superuser(profile) else "talk_pending",
     )
     db.add(org)
     creator_role = (body.role or "admin").strip().lower()

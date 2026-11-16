@@ -87,6 +87,16 @@ class Organization(Base):
     osm_id          = Column(Text)
     osm_type        = Column(Text)
     source          = Column(Text, default="app", nullable=False)
+    # Onboarding (migration 030). Plain FK columns, no relationships, so
+    # serializing an Organization never reaches a Profile (and its User).
+    invited_by          = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    push_to_healthsites = Column(Boolean, nullable=False, default=False)
+    clinic_status       = Column(Text, nullable=False, default="active")   # active | talk_pending
+    talk_confirmed_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    talk_confirmed_at   = Column(DateTime(timezone=True))
+    # Privacy (migration 031): devices on the registering engineer's profile.
+    show_devices_on_profiles = Column(Boolean, nullable=False, default=True)
+    hide_name_on_profiles    = Column(Boolean, nullable=False, default=False)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -114,6 +124,21 @@ class Profile(Base):
     avatar_key      = Column(Text)
     country         = Column(Text)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
+    # Community journey (migration 029). member_status gates the platform:
+    # applicant (doing the three welcome quests) → member; staff for clinic
+    # accounts and clinic staff (no quests); refused.
+    city                = Column(Text)
+    country_trained     = Column(Text)
+    why_bme             = Column(Text)
+    member_status       = Column(Text, nullable=False, default="applicant", server_default="applicant")
+    join_path           = Column(Text, nullable=False, default="community", server_default="community")
+    member_since        = Column(DateTime(timezone=True))
+    social_consent      = Column(Boolean)
+    social_consent_at   = Column(DateTime(timezone=True))
+    members_page_hidden = Column(Boolean, nullable=False, default=False, server_default="false")
+    last_active_at      = Column(DateTime(timezone=True))
+    # Onboarding (migration 030). Clinic accounts have no quests.
+    account_kind        = Column(Text, nullable=False, default="engineer", server_default="engineer")  # engineer | clinic
 
     # Relationships
     user            = relationship("User", back_populates="profile", lazy="selectin")
@@ -211,6 +236,60 @@ class OrgJoinRequest(Base):
 
 
 # ══════════════════════════════════════════════════════════════
+# ONBOARDING (migration 030)
+# ══════════════════════════════════════════════════════════════
+
+class ResponsibleEngineer(Base):
+    """An engineer a clinic named to register devices in its name.
+
+    Only status='confirmed' counts, and only once the engineer is active
+    (quests done) and the clinic is active."""
+    __tablename__ = "responsible_engineers"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "engineer_id", name="uq_responsible_engineers"),
+        CheckConstraint("status IN ('confirmed', 'not_now')", name="responsible_engineers_status_check"),
+        CheckConstraint("source IN ('inviter', 'added', 'backfill')", name="responsible_engineers_source_check"),
+        CheckConstraint("kind IS NULL OR kind IN ('internal', 'external')", name="responsible_engineers_kind_check"),
+        {"schema": SCHEMA},
+    )
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="CASCADE"), nullable=False)
+    engineer_id     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    status          = Column(Text, nullable=False, default="confirmed")
+    source          = Column(Text, nullable=False, default="added")
+    kind            = Column(Text)
+    added_by        = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    confirmed_by    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    confirmed_at    = Column(DateTime(timezone=True))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class OnboardingInvitation(Base):
+    """An engineer inviting a clinic (kind='clinic'), or a clinic inviting an
+    engineer (kind='engineer'), by email. The token is the invitation link."""
+    __tablename__ = "onboarding_invitations"
+    __table_args__ = (
+        CheckConstraint("kind IN ('clinic', 'engineer')", name="onboarding_invitations_kind_check"),
+        CheckConstraint("status IN ('sent', 'accepted', 'cancelled')", name="onboarding_invitations_status_check"),
+        {"schema": SCHEMA},
+    )
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    kind            = Column(Text, nullable=False)
+    email           = Column(Text, nullable=False)
+    message         = Column(Text)
+    token           = Column(Text, nullable=False, unique=True)
+    invited_by      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    organization_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="SET NULL"))
+    engineer_kind   = Column(Text)
+    status          = Column(Text, nullable=False, default="sent")
+    accepted_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    accepted_at     = Column(DateTime(timezone=True))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ══════════════════════════════════════════════════════════════
 # DEVICE CATEGORIES
 # ══════════════════════════════════════════════════════════════
 
@@ -222,6 +301,7 @@ class DeviceCategory(Base):
     name    = Column(Text, nullable=False)
     slug    = Column(Text, nullable=False, unique=True)
     icon    = Column(Text, default="🏥")
+    service_interval_months = Column(Integer)   # NULL = platform default (migration 031)
 
     # Relationships
     devices   = relationship("Device", back_populates="category")
@@ -271,6 +351,7 @@ class Device(Base):
     registered_by               = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"), nullable=True)
     last_maintenance            = Column(Date)
     next_maintenance            = Column(Date)
+    service_interval_months     = Column(Integer)   # overrides the category's (migration 031)
     notes                       = Column(Text)
     created_at                  = Column(DateTime(timezone=True), server_default=func.now())
     updated_at                  = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -453,6 +534,12 @@ class FaultReport(Base):
     # Step 5 — the assignee's repair and final price
     final_price         = Column(Numeric(12, 2))
     resolved_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id"))
+    # Call an engineer (migration 032)
+    call_status         = Column(Text)        # searching | agreed | closed
+    urgency             = Column(Text)        # now | this_week
+    call_started_at     = Column(DateTime(timezone=True))
+    call_started_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    call_widened_at     = Column(DateTime(timezone=True))
 
     # Relationships
     device                  = relationship("Device", back_populates="fault_reports")
@@ -523,3 +610,236 @@ class Feedback(Base):
 
     def __repr__(self):
         return f"<Feedback {self.type}: {self.summary[:40]!r} [{self.discord_status}]>"
+
+
+# ══════════════════════════════════════════════════════════════
+# COMMUNITY JOURNEY (migration 029) — community teams, not org roles
+# ══════════════════════════════════════════════════════════════
+#
+# Plain FK columns and no relationships to Profile, on purpose: nothing here
+# can drag Profile.user (and its hashed_password) into a response.
+
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
+
+
+class CommunityTeam(Base):
+    """Communicator, Community Builder, Clinics Connector. Texts are {lang: text}."""
+    __tablename__ = "community_teams"
+    __table_args__ = {"schema": SCHEMA}
+
+    key             = Column(Text, primary_key=True)
+    sort            = Column(Integer, nullable=False, default=0)
+    names           = Column(JSONB, nullable=False)
+    descriptions    = Column(JSONB, nullable=False, default=dict)
+    tasks           = Column(JSONB, nullable=False, default=dict)    # {lang: [line, ...]}
+    linkedin_titles = Column(JSONB, nullable=False, default=dict)
+    active          = Column(Boolean, nullable=False, default=True)
+    updated_by      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<CommunityTeam {self.key}>"
+
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+    __table_args__ = {"schema": SCHEMA}
+
+    id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    team_key       = Column(Text, ForeignKey(f"{SCHEMA}.community_teams.key"), nullable=False)
+    level          = Column(Text, nullable=False)                     # candidate | member | lead
+    status         = Column(Text, nullable=False, default="active")   # active | removed
+    granted_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    granted_at     = Column(DateTime(timezone=True), server_default=func.now())
+    removed_at     = Column(DateTime(timezone=True))
+    removed_reason = Column(Text)
+
+
+class Achievement(Base):
+    """Something members earn, with 10 star levels. Edit thresholds in SQLAdmin."""
+    __tablename__ = "achievements"
+    __table_args__ = {"schema": SCHEMA}
+
+    key          = Column(Text, primary_key=True)
+    team_key     = Column(Text, ForeignKey(f"{SCHEMA}.community_teams.key"), nullable=False)
+    source       = Column(Text, nullable=False)          # metric | recognised
+    metric       = Column(Text)                          # for source = metric
+    levels       = Column(ARRAY(Integer), nullable=False)  # 10 ascending thresholds
+    sort         = Column(Integer, nullable=False, default=0)
+    names        = Column(JSONB, nullable=False)
+    descriptions = Column(JSONB, nullable=False, default=dict)
+    active       = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f"<Achievement {self.key}>"
+
+
+class AchievementRecord(Base):
+    """One recognition: 'Amina helped an engineer' (count 1), by a team member."""
+    __tablename__ = "achievement_records"
+    __table_args__ = {"schema": SCHEMA}
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    achievement_key = Column(Text, ForeignKey(f"{SCHEMA}.achievements.key"), nullable=False)
+    count           = Column(Integer, nullable=False, default=1)
+    note            = Column(Text)
+    recognised_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MemberQuest(Base):
+    __tablename__ = "member_quests"
+    __table_args__ = {"schema": SCHEMA}
+
+    profile_id   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), primary_key=True)
+    quest_key    = Column(Text, primary_key=True)
+    count        = Column(Integer, nullable=False, default=1)
+    confirmed_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    updated_at   = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CommunityApplication(Base):
+    """The /join answers and the welcome meeting, one row per applicant."""
+    __tablename__ = "community_applications"
+    __table_args__ = {"schema": SCHEMA}
+
+    profile_id           = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), primary_key=True)
+    kind                 = Column(Text, nullable=False, default="other")
+    organisation         = Column(Text)
+    motivation           = Column(Text)
+    heard_from           = Column(Text)
+    host_id              = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    meeting_at           = Column(DateTime(timezone=True))
+    meeting_held_at      = Column(DateTime(timezone=True))
+    meeting_confirmed_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    notes                = Column(Text)
+    status               = Column(Text, nullable=False, default="open")
+    decision_reason      = Column(Text)
+    created_at           = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at           = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CommunityChange(Base):
+    """Append-only log of team, achievement and applicant changes."""
+    __tablename__ = "community_changes"
+    __table_args__ = {"schema": SCHEMA}
+
+    id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    actor_id   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    action     = Column(Text, nullable=False)
+    target     = Column(Text)
+    before     = Column(JSONB)
+    after      = Column(JSONB)
+    reason     = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MaintenanceReminder(Base):
+    """One reminder email per device, due date and kind (migration 031)."""
+    __tablename__ = "maintenance_reminders"
+    __table_args__ = {"schema": SCHEMA}
+
+    id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    device_id  = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="CASCADE"), nullable=False)
+    due_date   = Column(Date, nullable=False)
+    kind       = Column(Text, nullable=False)   # due_soon | overdue
+    recipients = Column(Integer, nullable=False, default=0)
+    sent_at    = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Call an engineer (migration 032). Plain FK columns, no relationships, so
+# serializing these never reaches a Profile (and its User). ────────────────
+
+class FaultCallNotice(Base):
+    __tablename__ = "fault_call_notices"
+    __table_args__ = {"schema": SCHEMA}
+
+    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fault_id    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.fault_reports.id", ondelete="CASCADE"), nullable=False)
+    engineer_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    tier        = Column(Text, nullable=False)   # responsible | registrant | city
+    notified_at = Column(DateTime(timezone=True), server_default=func.now())
+    passed_at   = Column(DateTime(timezone=True))
+
+
+class FaultOffer(Base):
+    __tablename__ = "fault_offers"
+    __table_args__ = {"schema": SCHEMA}
+
+    id           = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fault_id     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.fault_reports.id", ondelete="CASCADE"), nullable=False)
+    engineer_id  = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    visit_fee    = Column(Numeric(12, 2), nullable=False)
+    currency     = Column(Text, nullable=False, default="XAF")
+    arrival_at   = Column(DateTime(timezone=True), nullable=False)
+    note         = Column(Text)
+    status       = Column(Text, nullable=False, default="pending")
+    counter_fee  = Column(Numeric(12, 2))
+    counter_note = Column(Text)
+    countered_by = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    countered_at = Column(DateTime(timezone=True))
+    agreed_fee   = Column(Numeric(12, 2))
+    decided_by   = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    decided_at   = Column(DateTime(timezone=True))
+    created_at   = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class FaultRating(Base):
+    __tablename__ = "fault_ratings"
+    __table_args__ = {"schema": SCHEMA}
+
+    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fault_id    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.fault_reports.id", ondelete="CASCADE"), nullable=False, unique=True)
+    engineer_id = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    rated_by    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    rating      = Column(Integer, nullable=False)
+    comment     = Column(Text)
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Wave 5 (migration 033): claims and the community task board. Plain FK
+# columns, no relationships. ─────────────────────────────────────────────
+
+class AchievementClaim(Base):
+    __tablename__ = "achievement_claims"
+    __table_args__ = {"schema": SCHEMA}
+
+    id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_id      = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="CASCADE"), nullable=False)
+    achievement_key = Column(Text, ForeignKey(f"{SCHEMA}.achievements.key"), nullable=False)
+    count           = Column(Integer, nullable=False, default=1)
+    note            = Column(Text, nullable=False)
+    proof_key       = Column(Text)
+    status          = Column(Text, nullable=False, default="pending")   # pending | more_info | confirmed | declined
+    confirmed_by    = Column(ARRAY(UUID(as_uuid=True)), nullable=False, default=list)
+    reviewed_by     = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    reviewed_at     = Column(DateTime(timezone=True))
+    review_note     = Column(Text)
+    record_id       = Column(UUID(as_uuid=True))
+    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CommunityTask(Base):
+    __tablename__ = "community_tasks"
+    __table_args__ = {"schema": SCHEMA}
+
+    id               = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    kind             = Column(Text, nullable=False, default="other")   # find_manual | verify_clinic | fill_brand_list | other
+    title            = Column(Text, nullable=False)
+    details          = Column(Text)
+    points           = Column(Integer, nullable=False, default=10)
+    status           = Column(Text, nullable=False, default="open")    # open | taken | review | done | cancelled
+    ref_manufacturer = Column(Text)
+    ref_model        = Column(Text)
+    ref_device_id    = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.devices.id", ondelete="SET NULL"))
+    ref_org_id       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.organizations.id", ondelete="SET NULL"))
+    created_by       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    taken_by         = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    taken_at         = Column(DateTime(timezone=True))
+    done_note        = Column(Text)
+    done_at          = Column(DateTime(timezone=True))
+    checked_by       = Column(UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profiles.id", ondelete="SET NULL"))
+    checked_at       = Column(DateTime(timezone=True))
+    created_at       = Column(DateTime(timezone=True), server_default=func.now())
